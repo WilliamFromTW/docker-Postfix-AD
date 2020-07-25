@@ -1,0 +1,10 @@
+server_host = HOST_IP
+search_base = SEARCH_BASE
+#scope = sub
+query_filter = (memberOf:1.2.840.113556.1.4.1941:=CN=%s,ALIASES)
+result_attribute = mail
+result_format = %s
+version = 3
+bind = yes
+bind_dn = BIND_DN
+bind_pw = BIND_PW
