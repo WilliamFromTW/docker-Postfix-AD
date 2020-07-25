@@ -46,7 +46,7 @@ Usage
     -e BIND_PW=<BIND_PW> 
     -e ALIASES=<ALIASES> 
     -e MY_NETWORKS="<PERMIT_NETWORKS>" 
-    --restart always -d postfixldap
+    --restart always -d inmethod/postfixad
 
 Example
 -----
@@ -85,6 +85,6 @@ docker launch command
     -e BIND_PW=password \
     -e ALIASES=OU=aliases,DC=hlmt,DC=com \
     -e MY_NETWORKS="192.1.0.0\/24" \
-    --restart always -d postfixldap 
+    --restart always -d inmethod/postfixad 
 
 
