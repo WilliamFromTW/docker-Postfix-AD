@@ -26,8 +26,12 @@ Notice
 * Login Name can different with email name    
 Login name must be created lower case (because dovecot always use lower case login name)    
 
-* Mapping /etc/letsencrypt     
-just mapping host's /etc/letsencrypt to this docker images     
+Prerequisite
+----    
+* Make Mail Server  letencrypt ready .     
+e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
+Mapping host's /etc/letsencrypt to this docker images       
+
 
 Usage
 -----
@@ -35,25 +39,25 @@ Usage
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
 
-    docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt 
-    -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix 
-    -p 25:25 -p 587:587 -p 143:143 -p 993:993 -p 995:995 
-    -e DOMAIN_NAME=<DOMAIN_NAME> 
-    -e HOST_NAME=<HOST_NAME> 
-    -e HOST_IP=<HOST_IP> 
-    -e SEARCH_BASE=<SEARCH_BASE> 
-    -e BIND_DN=<BIND_DN> 
-    -e BIND_PW=<BIND_PW> 
-    -e ALIASES=<ALIASES> 
-    -e MY_NETWORKS="<PERMIT_NETWORKS>" 
-    --restart always -d inmethod/postfixad
+    docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
+    -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
+    -p 25:25 -p 587:587 -p 143:143 -p 993:993 -p 995:995  \
+    -e DOMAIN_NAME=<EMAIL_DOMAIN_NAME>  \
+    -e HOST_NAME=<MAIL_HOST_NAME>  \
+    -e HOST_IP=<AD_HOST_IP>  \
+    -e SEARCH_BASE=<SEARCH_BASE>  \
+    -e BIND_DN=<BIND_DN>  \
+    -e BIND_PW=<BIND_PW>  \
+    -e ALIASES=<ALIASES>  \
+    -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
+    --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
 
 Example
 -----
 Microsfot AD    
 
-    <HOST_IP> : 192.1.0.227
-    <DOMAIN_NAME> : test.com
+    <AD_HOST_IP> : 192.1.0.227
+    <EMAIL_DOMAIN_NAME> : test.com
     <SEARCH_BASE> : cn=Users,dc=test,dc=com
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
@@ -61,7 +65,7 @@ Microsfot AD
   
 Mail server(docker)
 
-    <HOST_NAME> : mail.test.com
+    <MAIL_HOST_NAME> : mail.test.com
     
 permit networks
 
@@ -85,6 +89,6 @@ docker launch command
     -e BIND_PW=password \
     -e ALIASES=OU=aliases,DC=hlmt,DC=com \
     -e MY_NETWORKS="192.1.0.0\/24" \
-    --restart always -d inmethod/postfixad 
+    --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
 
 
