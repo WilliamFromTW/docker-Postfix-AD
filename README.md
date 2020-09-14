@@ -1,6 +1,6 @@
+docker-Postfix-AD
 ===================
 
-Mail server on CentOS 7 with Microsoft AD backend
 
 Support
 ----------
@@ -29,6 +29,16 @@ Prerequisite
 * Make Mail Server  let\'sencrypt ready .     
 e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
 Mapping host's /etc/letsencrypt to this docker images       
+
+Enable DKIM Feature
+----    
+* add the following settings to /etc/postfix/main.cf    
+
+    smtpd_milters = inet:127.0.0.1:8891    
+    non_smtpd_milters = $smtpd_milters    
+    milter_default_action = accept    
+
+* add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
 
 
 Usage

@@ -6,6 +6,7 @@ if [ -n "${DOMAIN_NAME}" ]; then
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/helo_check 
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/amavisd/amavisd.conf
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/domains
+ sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/opendkim.conf
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/TrustedHosts
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/SigningTable
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/KeyTable
@@ -60,7 +61,7 @@ fi
 
 TZ="${TZ}"; export TZ
 
-if [ !-f "/etc/opendkim/keys/default.private" ];  then
+if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
   /usr/bin/cp default.* /etc/opendkim/keys
 fi
