@@ -60,7 +60,7 @@ Usage
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
-    -p 25:25 -p 587:587 -p 143:143 -p 993:993 -p 995:995  \
+    -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995  \
     -e DOMAIN_NAME=<EMAIL_DOMAIN_NAME>  \
     -e HOST_NAME=<MAIL_HOST_NAME>  \
     -e HOST_IP=<AD_HOST_IP>  \
@@ -104,7 +104,7 @@ Example
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
-    -p 25:25 -p 587:587 -p 143:143 -p 993:993 -p 995:995 \
+    -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
     -e DOMAIN_NAME=test.com \
     -e HOST_NAME=mail.test.com \
     -e HOST_IP=192.1.0.227 \
