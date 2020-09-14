@@ -21,14 +21,14 @@ port 143(TLS),993(TLS)
 
 * Microsoft AD(only one domain)
 
-Notice
+Active Directory Notice
 ----
 * Login Name can different with email name    
-Login name must be created lower case (because dovecot always use lower case login name)    
+* Login Name must be created lower case (because dovecot always use lower case)    
 
 Prerequisite
 ----    
-* Make Mail Server  letencrypt ready .     
+* Make Mail Server  let\'sencrypt ready .     
 e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
 Mapping host's /etc/letsencrypt to this docker images       
 
@@ -36,8 +36,23 @@ Mapping host's /etc/letsencrypt to this docker images
 Usage
 -----
 
+**Create Volume**
+
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
+
+**Prepare parameter**
+
+    <AD_HOST_IP> : active directory ip
+    <SEARCH_BASE> : active directory ldap search base
+    <BIND_DN> : active directory ldap bind dn
+    <BIND_PW> : active directory ldap bind password
+    <ALIASES> : active directory ldap aliase
+    <EMAIL_DOMAIN_NAME> :  email domain name
+    <MAIL_HOST_NAME> :  mail host name
+    <PERMIT_NETWORKS> :  permit network (intranet)
+
+**docker command**
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
@@ -54,24 +69,24 @@ Usage
 
 Example
 -----
-Microsfot AD    
+**Microsfot AD**    
 
     <AD_HOST_IP> : 192.1.0.227
-    <EMAIL_DOMAIN_NAME> : test.com
     <SEARCH_BASE> : cn=Users,dc=test,dc=com
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
     <ALIASES> : OU=aliases,DC=test,DC=com
   
-Mail server(docker)
+**Mail server(docker)**    
 
+    <EMAIL_DOMAIN_NAME> : test.com
     <MAIL_HOST_NAME> : mail.test.com
     
-permit networks
+**permit networks**    
 
-    <PERMIT_NETWORKS> : 192.1.0.0/24    
+    <PERMIT_NETWORKS> : 192.1.0.0\/24    
 
-docker launch command
+**docker launch command**
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
