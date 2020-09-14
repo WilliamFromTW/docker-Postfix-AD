@@ -52,6 +52,10 @@ Usage
     <MAIL_HOST_NAME> :  mail host name
     <PERMIT_NETWORKS> :  permit network (intranet)
 
+**TimeZone**
+
+    <TZ>: time zone ( reference /usr/share/zoneinfo/ )        
+
 **docker command**
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
@@ -65,6 +69,7 @@ Usage
     -e BIND_PW=<BIND_PW>  \
     -e ALIASES=<ALIASES>  \
     -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
+    -e TZ="<TZ>" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
 
 Example
@@ -86,6 +91,10 @@ Example
 
     <PERMIT_NETWORKS> : 192.1.0.0\/24    
 
+**TimeZone**
+
+    <TZ>:Asia/Taipei
+
 **docker launch command**
 
     docker volume create postfixldap_vmail    
@@ -104,7 +113,9 @@ Example
     -e BIND_PW=password \
     -e ALIASES=OU=aliases,DC=hlmt,DC=com \
     -e MY_NETWORKS="192.1.0.0\/24" \
+    -e TZ="Asia/Taipei" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
+
 
 Trouble Shotting
 ----

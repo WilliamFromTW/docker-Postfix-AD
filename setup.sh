@@ -55,7 +55,10 @@ if [ -n "${MY_NETWORKS}" ]; then
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
 fi
 
-#TZ='Asia/Taipei'; export TZ
-TZ='Asia/Ho_Chi_Minh'; export TZ
+TZ='GMT'; export TZ
+if [ -n "${TZ}" ]; then
+  TZ="${TZ}"; export TZ
+fi
+
 /usr/bin/chown -R vmail:vmail /home/vmail
 /usr/bin/supervisord -c /etc/supervisord.conf
