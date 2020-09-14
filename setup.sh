@@ -67,4 +67,5 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
 fi
 
 /usr/bin/chown -R vmail:vmail /home/vmail
+chown -R opendkim:opendkim /etc/opendkim
 /usr/bin/supervisord -c /etc/supervisord.conf
