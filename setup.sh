@@ -55,10 +55,7 @@ if [ -n "${MY_NETWORKS}" ]; then
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
 fi
 
-TZ='GMT'; export TZ
-if [ -n "${TZ}" ]; then
-  TZ="${TZ}"; export TZ
-fi
+TZ="${TZ}"; export TZ
 
 /usr/bin/chown -R vmail:vmail /home/vmail
 /usr/bin/supervisord -c /etc/supervisord.conf
