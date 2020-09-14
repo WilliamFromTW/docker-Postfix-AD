@@ -1,4 +1,3 @@
-docker-Postfix-AD
 ===================
 
 Mail server on CentOS 7 with Microsoft AD backend
@@ -7,14 +6,13 @@ Support
 ----------
 * SMTP    
 port 25    
+port 465(SSL)
 port 587(TLS)
 
 * POP3    
-port 110    
 port 995(SSL)    
 
 * imap    
-port 143    
 port 143(TLS),993(TLS)    
 
 * amavisd+clamav    
@@ -60,7 +58,7 @@ Usage
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
-    -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995  \
+    -p 25:25 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995  \
     -e DOMAIN_NAME=<EMAIL_DOMAIN_NAME>  \
     -e HOST_NAME=<MAIL_HOST_NAME>  \
     -e HOST_IP=<AD_HOST_IP>  \

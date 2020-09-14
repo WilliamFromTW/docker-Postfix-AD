@@ -6,7 +6,9 @@ if [ -n "${DOMAIN_NAME}" ]; then
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/helo_check 
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/amavisd/amavisd.conf
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/domains
- 
+ sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/TrustedHosts
+ sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/SigningTable
+ sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/opendkim/KeyTable
 fi
 
 if [ -n "${HOST_NAME}" ]; then
@@ -14,6 +16,7 @@ if [ -n "${HOST_NAME}" ]; then
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/postfix/local-host-names
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/amavisd/amavisd.conf
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/dovecot/conf.d/10-ssl.conf
+ sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/opendkim/TrustedHosts
 
 fi
 
@@ -56,6 +59,11 @@ if [ -n "${MY_NETWORKS}" ]; then
 fi
 
 TZ="${TZ}"; export TZ
+
+if [ !-f "/etc/opendkim/keys/default.private" ];  then
+  /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
+  /usr/bin/cp default.* /etc/opendkim/keys
+fi
 
 /usr/bin/chown -R vmail:vmail /home/vmail
 /usr/bin/supervisord -c /etc/supervisord.conf
