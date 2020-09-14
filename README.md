@@ -106,4 +106,17 @@ Example
     -e MY_NETWORKS="192.1.0.0\/24" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
 
+Trouble Shotting
+----
+**Checking service**
 
+     1. login container 
+    docker exec -it <container name> bash
+     2. testing service
+    telnet localhost 10024 (checking amavisd)
+    telnet localhost 143 (checking dovecot)
+    telnet localhost 25(checking postfix)
+    3. any service above is not working
+    more /etc/supervisord.conf and find the launch command of the stoped service
+    execute command to see error messages .
+    
