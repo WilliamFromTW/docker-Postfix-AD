@@ -678,6 +678,8 @@ readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
 
 ###############################################################
 smtpd_recipient_restrictions =
+ check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
+ check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
  permit_mynetworks,
  permit_sasl_authenticated,
  reject_non_fqdn_hostname,
@@ -734,6 +736,7 @@ virtual_alias_maps = hash:/etc/aliases,ldap:/etc/postfix/ldap-aliases.cf
 ##############################################################
 recipient_bcc_maps = hash:/etc/postfix/recipient_bcc
 sender_bcc_maps = hash:/etc/postfix/sender_bcc
+#always_bcc =
 inet_protocols = ipv4
 
 
@@ -783,4 +786,13 @@ minimal_backoff_time = 300s
 # lda vacation
 #dovecot_destination_recipient_limit = 1
 #virtual_transport = dovecot
+
+smtpd_restriction_classes = local_only local_only2
+local_only = check_recipient_access hash:/etc/postfix/local_only_domains, reject
+local_only2 = check_sender_access hash:/etc/postfix/local_only2_domains, reject
+
+# dkim 
+#smtpd_milters = inet:127.0.0.1:8891
+#non_smtpd_milters = $smtpd_milters
+#milter_default_action = accept
 

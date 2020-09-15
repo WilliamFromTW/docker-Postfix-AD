@@ -13,4 +13,7 @@ MAILTO=root
 # |  |  |  |  |
 # *  *  *  *  * user-name  command to be executed
 0 0 * * * /usr/bin/freshclam
+0 1 * * * /usr/sbin/ntpdate -s HOST_IP
+
+
 

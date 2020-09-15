@@ -40,6 +40,16 @@ Enable DKIM Feature
 
 * add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
 
+Active Directory 
+----
+* ALIASES    
+    Create Group and give an aliases email in attribute "mail" ,  and include account in group    
+
+* Account    
+    Create User and give email in attribute "mail" , account must be lower case    
+
+* local_only    
+    write "local_only" in attribute "description" of user account to restrict use in local domain only    
 
 Usage
 -----
@@ -132,9 +142,10 @@ Trouble Shotting
      1. login container 
     docker exec -it <container name> bash
      2. testing service
-    telnet localhost 10024 (checking amavisd)
-    telnet localhost 143 (checking dovecot)
-    telnet localhost 25(checking postfix)
+    telnet localhost 10024 (amavisd)
+    telnet localhost 143 (dovecot)
+    telnet localhost 25(postfix)
+    telnet localhost 8891(dkim service)
     3. any service above is not working
     more /etc/supervisord.conf and find the launch command of the stoped service
     execute command to see error messages .
