@@ -49,7 +49,10 @@ Active Directory
     Create User and give email in attribute "mail" , account must be lower case    
 
 * local_only    
-    write "local_only" in attribute "description" of user account to restrict use in local domain only    
+    Write "local_only" in attribute "description" of user or group to restrict the use in local domain only    
+
+* restricted and granted     
+    Write "restricted" in attribute "description" of user or group that can only received from user that write "granted" in attribute "description"
 
 Usage
 -----
@@ -95,7 +98,7 @@ Example
 **Microsfot AD**    
 
     <AD_HOST_IP> : 192.1.0.227
-    <SEARCH_BASE> : cn=Users,dc=test,dc=com
+    <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com" for whole zone
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
     <ALIASES> : OU=aliases,DC=test,DC=com

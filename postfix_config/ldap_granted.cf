@@ -1,10 +1,10 @@
 server_host = HOST_IP
 search_base = SEARCH_BASE
 version = 3
-query_filter = (&(description=*local_only*)(&(objectclass=*)(mail=%s)))
+query_filter = (&(description=*granted*)(&(objectclass=*)(mail=%s)))
 result_attribute = samaccountname  #Account from DC
 result_filter = dunno
-result_format = local_only2
+result_format = OK
 bind = yes
 bind_dn = BIND_DN
 bind_pw = BIND_PW
