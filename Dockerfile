@@ -10,7 +10,6 @@ COPY listen.conf /etc/rsyslog.d/listen.conf
 COPY postfix_config/ /etc/postfix/
 COPY amavisd/ /etc/amavisd/
 COPY sysconfig/ /etc/sysconfig/
-COPY etc/ /etc/
 COPY dovecot/ /etc/dovecot/
 COPY opendkim/ /etc/opendkim/
 COPY setup.sh /setup.sh

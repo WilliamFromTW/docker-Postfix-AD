@@ -82,5 +82,7 @@ chown -R opendkim:opendkim /etc/opendkim
 postmap /etc/postfix/local_only_domains
 postmap /etc/postfix/local_only2_domains
 postmap /etc/postfix/helo_check
+cat "0 0 * * * root /usr/bin/freshclam" >> /etc/crontab
+cat "0 1 * * * root /usr/sbin/ntpdate -s ${HOST_IP}" >> /etc/crontab
 /usr/bin/crontab /etc/crontab
 /usr/bin/supervisord -c /etc/supervisord.conf
