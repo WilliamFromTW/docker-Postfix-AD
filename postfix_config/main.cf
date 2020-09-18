@@ -705,9 +705,9 @@ smtpd_sender_restrictions =
  reject_unknown_sender_domain
 
 ###############################################################
-message_size_limit = 250600000
-mailbox_size_limit = 450600000
-virtual_mailbox_limit = 250600000
+message_size_limit = 104857600
+mailbox_size_limit = 209715200
+virtual_mailbox_limit = 104857600
 disable_vrfy_command = yes
 strict_rfc821_envelopes = yes
 bounce_queue_lifetime = 1d
@@ -722,6 +722,7 @@ smtpd_helo_required = yes
 smtpd_delay_reject = yes
 smtpd_helo_restrictions =
  permit_mynetworks,
+ permit_sasl_authenticated,
  check_helo_access hash:/etc/postfix/helo_check,
  permit
 ##############################################################
