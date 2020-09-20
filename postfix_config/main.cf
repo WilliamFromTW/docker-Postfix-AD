@@ -786,8 +786,8 @@ maximal_backoff_time = 1000s
 minimal_backoff_time = 300s
 
 # lda vacation
-#dovecot_destination_recipient_limit = 1
-#virtual_transport = dovecot
+dovecot_destination_recipient_limit = 1
+virtual_transport = dovecot
 
 smtpd_restriction_classes = restricted local_only local_only2
 restricted = check_sender_access ldap://etc/postfix/ldap-granted.cf,reject

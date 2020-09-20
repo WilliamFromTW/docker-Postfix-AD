@@ -86,6 +86,7 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
 fi
 
 /usr/bin/chown -R vmail:vmail /home/vmail
+mkdir -p /usr/local/etc/dovecot/sieve/global
 chown -R opendkim:opendkim /etc/opendkim
 postmap /etc/postfix/local_only_domains
 postmap /etc/postfix/local_only2_domains
@@ -93,4 +94,8 @@ postmap /etc/postfix/helo_check
 echo "0 0 * * * root /usr/bin/freshclam" >> /etc/crontab
 echo "0 1 * * * root /usr/sbin/ntpdate -s ${HOST_IP}" >> /etc/crontab
 /usr/bin/crontab /etc/crontab
+mysql_install_db
+chown -R mysql:mysql /var/lib/mysql
+mysqld_safe&
+'/usr/bin/mysqladmin' -u root password 'onepizza'
 /usr/bin/supervisord -c /etc/supervisord.conf
