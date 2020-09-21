@@ -136,7 +136,7 @@ Example
     -e MY_NETWORKS="192.1.0.0\/24" \
     -e TZ="Asia/Taipei" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
-
+    
 
 Trouble Shotting
 ----
@@ -153,3 +153,14 @@ Trouble Shotting
     more /etc/supervisord.conf and find the launch command of the stoped service
     execute command to see error messages .
     
+**Performance Tunning**
+
+    1. /etc/dovecot/conf.d/10-auth.conf
+      auth_cache_size = 512M    
+      auth_cache_verify_password_with_worker = yes
+    2. /etc/dovecot/conf.d/10-master.conf
+      default_vsz_limit = 512M
+      service_count = 0
+      
+**fail2ban**    
+     * add --net=host in docker launch command to get real remote ip from log      
