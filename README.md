@@ -161,6 +161,8 @@ Trouble Shotting
     2. /etc/dovecot/conf.d/10-master.conf
       default_vsz_limit = 512M
       service_count = 0
+    3.. /etc/amavisd/amavisd.conf
+      $max_servers = 15;  
       
 **fail2ban**    
      * add --net=host in docker launch command to get real remote ip from log      
