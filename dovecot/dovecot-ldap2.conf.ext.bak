@@ -12,11 +12,10 @@ deref           = never
 
 user_attrs      = homeDirectory=home, uidNumber=uid, gidNumber=gid,  userPassword=password,mail=mail=maildir:/home/vmail/%$/Maildir
 default_pass_scheme = CRYPT
-hosts = HOST_IP:389
-base= SEARCH_BASE 
-dn = BIND_DN
-dnpass = BIND_PW
+hosts = 192.1.2.227:389
+base= dc=hlmt-vn,dc=com
+dn = cn=ldap,cn=Users,dc=hlmt-vn,dc=com
+dnpass = onepizza
 #pass_filter     = (&(mail=%u)(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
 user_filter     = (&(samaccountname=%u)(objectClass=person))
-
 
