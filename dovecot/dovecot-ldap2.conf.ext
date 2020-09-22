@@ -1,0 +1,21 @@
+ldap_version = 3
+auth_bind = yes
+
+# This tells Dovecot to search all entries that fall below the base entry.
+# If it were set to "onelevel", Dovecot would search only entries one levely.
+# If it were set to "base", Dovecot would search only the base entry.
+scope           = subtree
+
+# If you are referencing and dereferencing aliases,
+# then you know a lot more about LDAP than I do.
+deref           = never
+
+user_attrs      = homeDirectory=home, uidNumber=uid, gidNumber=gid,  userPassword=password,mail=mail=maildir:/home/vmail/%$/Maildir
+default_pass_scheme = CRYPT
+hosts = 192.1.2.227:389
+base= dc=hlmt-vn,dc=com
+dn = cn=ldap,cn=Users,dc=hlmt-vn,dc=com
+dnpass = onepizza
+#pass_filter     = (&(mail=%u)(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
+user_filter     = (&(samaccountname=%u)(objectClass=person))
+

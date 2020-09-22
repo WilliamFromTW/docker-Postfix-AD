@@ -27,7 +27,15 @@ passdb {
 # If you don't have any user-specific settings, you can avoid the userdb LDAP
 # lookup by using userdb static instead of userdb ldap, for example:
 # <doc/wiki/UserDatabase.Static.txt>
+#userdb {
+#  driver = static
+#  args = uid=vmail gid=vmail home=/home/vmail/%u/Maildir
+#}
 userdb {
-  driver = static
-  args = uid=vmail gid=vmail home=/home/vmail/%u/Maildir
+  driver = ldap
+  args = /etc/dovecot/dovecot-ldap2.conf.ext
+
+  #Default fields can be used to specify defaults that LDAP may override
+  default_fields = uid=vmail gid=vmail
 }
+

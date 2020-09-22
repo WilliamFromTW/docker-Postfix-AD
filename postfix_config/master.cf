@@ -136,7 +136,7 @@ submission inet n       -       n       -       -       smtpd
     -o content_filter=amavisfeed:[127.0.0.1]:10024
 # Use dovecot's `deliver` program as LDA.
 dovecot unix    -       n       n       -       -      pipe
-    flags=DRhu user=vmail:vmail argv=/usr/libexec/dovecot/dovecot-lda -f ${sender} -d ${user}
+    flags=DRhu user=vmail:vmail argv=/usr/libexec/dovecot/dovecot-lda -f ${sender} -d ${recipient}
 
 #smtp      inet  n       -       n       -       1       postscreen
 #smtpd     pass  -       -       n       -       -       smtpd
