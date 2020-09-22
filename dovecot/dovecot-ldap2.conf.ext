@@ -10,7 +10,7 @@ scope           = subtree
 # then you know a lot more about LDAP than I do.
 deref           = never
 
-user_attrs      = homeDirectory=home, uidNumber=uid, gidNumber=gid,  userPassword=password,mail=mail=maildir:/home/vmail/%$/Maildir
+user_attrs      = homeDirectory=home, uidNumber=uid, gidNumber=gid,  userPassword=password,mail=mail=maildir:/home/vmail/%$/Maildir,mail=sieve=/home/vmail/%$/sieve/dovecot.sieve, mail=sieve_dir=/home/vmail/%$/sieve
 default_pass_scheme = CRYPT
 hosts = HOST_IP:389
 base= SEARCH_BASE 
