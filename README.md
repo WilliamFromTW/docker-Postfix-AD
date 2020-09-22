@@ -42,7 +42,7 @@ Enable DKIM Feature
 
 Enable lda sieve( filter and vacation) 
 ----    
-* IMPORTANT : account and email name should be the same 
+* IMPORTANT : Make soft link if AD account are not the same with email account 
 * Modify main.cf    
     
     dovecot_destination_recipient_limit = 1    
