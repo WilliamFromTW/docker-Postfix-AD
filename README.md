@@ -33,12 +33,37 @@ Mapping host's /etc/letsencrypt to this docker images
 Enable DKIM Feature
 ----    
 * add the following settings to /etc/postfix/main.cf    
-
+    
     smtpd_milters = inet:127.0.0.1:8891    
     non_smtpd_milters = $smtpd_milters    
     milter_default_action = accept    
 
 * add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
+
+Enable lda sieve( filter and vacation) 
+----    
+* IMPORTANT : account and email name should be the same 
+* Modify main.cf    
+    
+    dovecot_destination_recipient_limit = 1    
+    virtual_transport = dovecot    
+    
+* Modify config.inc.php in roundcubemail    
+    $config['plugins'] = array(    
+      'archive',    
+      'zipdownload',    
+      'managesieve',    
+    );
+  
+    * for roundcube and mail are the same host    
+      $config['managesieve_host'] = 'localhost';    
+    * for roundcube and mail are the different host    
+      $config['managesieve_port'] = 4190;    
+      $config['managesieve_host'] = 'tls://\<mail server name\>';    
+    * general    
+    $config['managesieve_default'] = '/etc/dovecot/sieve/global';    
+    $config['managesieve_vacation'] = 1;    
+    $config['managesieve_vacation_interval'] = 1;    
 
 Active Directory 
 ----
