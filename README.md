@@ -40,9 +40,8 @@ Enable DKIM Feature
 
 * add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
 
-Enable lda sieve( filter and vacation) 
+Enable lda sieve( filter and vacation)  
 ----    
-* IMPORTANT : Make soft link if AD account are not the same with email account 
 * Modify main.cf    
     
     dovecot_destination_recipient_limit = 1    
