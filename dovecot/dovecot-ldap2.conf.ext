@@ -10,6 +10,7 @@ scope           = subtree
 # then you know a lot more about LDAP than I do.
 deref           = never
 
+#這段很特別, 可以將AD的任何屬性傳送到整個dovecot的變數, 例如底下就呈現將AD的mail屬性, 傳送給sieve與sieve_dir這兩個變數, 而這兩個變數利用 %$ 這個來承接, 請注意原本設定參數還是必須有,只是數值被取代
 user_attrs      = homeDirectory=home, uidNumber=uid, gidNumber=gid,  userPassword=password,mail=mail=maildir:/home/vmail/%$/Maildir,mail=sieve=/home/vmail/%$/sieve/dovecot.sieve, mail=sieve_dir=/home/vmail/%$/sieve
 default_pass_scheme = CRYPT
 hosts = HOST_IP:389
