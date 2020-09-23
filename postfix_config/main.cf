@@ -701,6 +701,7 @@ smtpd_client_restrictions =
 smtpd_sender_restrictions =
  permit_mynetworks,
  permit_sasl_authenticated,
+ check_sender_access hash:/etc/postfix/sender_vip,
  reject_non_fqdn_sender,
  reject_unknown_sender_domain
 

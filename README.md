@@ -194,3 +194,8 @@ Trouble Shotting
       
 **fail2ban**    
      * add --net=host in docker launch command to get real remote ip from log      
+      
+**amavisd**     
+     * amavisd-release <quarantine file name> to release files    
+     * whitelist in /etc/postfix/amavisd_whitelist    
+     * modify /etc/amavisd/amavisd.conf "$final_spam_destiny" from D_DISCARD to D_PASS if you don't want to block spam
