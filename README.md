@@ -1,5 +1,5 @@
-docker-Postfix-AD
-===================
+docker-Postfix-MailServer
+=========================
 
 
 Support
@@ -17,7 +17,11 @@ port 143(TLS),993(TLS)
 
 * amavisd+clamav    
 
-* Microsoft AD(only one domain)
+* Microsoft AD(only one domain)    
+
+* OpenDKIM
+
+* managesieve
 
 Active Directory Notice
 ----
