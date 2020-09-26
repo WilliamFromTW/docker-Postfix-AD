@@ -681,6 +681,7 @@ smtpd_recipient_restrictions =
  check_recipient_access ldap:/etc/postfix/ldap-restricted.cf,
  check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
  check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
+ QUOTA_MAIN ,
  permit_mynetworks,
  permit_sasl_authenticated,
  reject_non_fqdn_hostname,

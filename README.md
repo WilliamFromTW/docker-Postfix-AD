@@ -1,6 +1,14 @@
 docker-Postfix-MailServer
 =========================
 
+Feature
+----------
+* Login account can diferent with account email. e.g. account: 520001 , email: william@test.com
+* postfix mail server    
+* User Account backend with Microsoft Active Directory(2008R2,2012,2016)    
+* OpenDKIM    
+* managesieve    
+* user email quota 
 
 Support
 ----------
@@ -19,10 +27,6 @@ port 143(TLS),993(TLS)
 
 * Microsoft AD(only one domain)    
 
-* OpenDKIM
-
-* managesieve
-
 Active Directory Notice
 ----
 * Login Name can different with email name    
@@ -34,7 +38,7 @@ Prerequisite
 e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
 Mapping host's /etc/letsencrypt to this docker images       
 
-Enable DKIM Feature
+Enable DKIM 
 ----    
 * add the following settings to /etc/postfix/main.cf    
     
@@ -77,10 +81,10 @@ Active Directory
     Create User and give email in attribute "mail" , account must be lower case    
 
 * local_only    
-    Write "local_only" in attribute "description" of user or group to restrict the use in local domain only    
+    Write "local_only" attribute "description" in user or group to restrict the use in local domain only    
 
 * restricted and granted     
-    Write "restricted" in attribute "description" of user or group that can only received from user that write "granted" in attribute "description"
+    Write "restricted" attribute "description" in user or group that can only received from user that write "granted" in attribute "description"
 
 Usage
 -----
@@ -90,7 +94,7 @@ Usage
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
 
-**Prepare parameter**
+**parameters**
 
     <AD_HOST_IP> : active directory ip
     <SEARCH_BASE> : active directory ldap search base
@@ -100,9 +104,6 @@ Usage
     <EMAIL_DOMAIN_NAME> :  email domain name
     <MAIL_HOST_NAME> :  mail host name
     <PERMIT_NETWORKS> :  permit network (intranet)
-
-**TimeZone**
-
     <TZ>: time zone ( reference /usr/share/zoneinfo/ )        
 
 **docker command**
@@ -110,15 +111,16 @@ Usage
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
-    -e DOMAIN_NAME=<EMAIL_DOMAIN_NAME>  \
-    -e HOST_NAME=<MAIL_HOST_NAME>  \
-    -e HOST_IP=<AD_HOST_IP>  \
-    -e SEARCH_BASE=<SEARCH_BASE>  \
-    -e BIND_DN=<BIND_DN>  \
-    -e BIND_PW=<BIND_PW>  \
-    -e ALIASES=<ALIASES>  \
+    -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
+    -e HOST_NAME="<MAIL_HOST_NAME>"  \
+    -e HOST_IP="<AD_HOST_IP>"  \
+    -e SEARCH_BASE="<SEARCH_BASE>"  \
+    -e BIND_DN="<BIND_DN>"  \
+    -e BIND_PW="<BIND_PW>"  \
+    -e ALIASES="<ALIASES>"  \
     -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
     -e TZ="<TZ>" \
+    -e ENABLE_QUOTA="true" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
 
 Example
@@ -154,15 +156,16 @@ Example
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
     -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
-    -e DOMAIN_NAME=test.com \
-    -e HOST_NAME=mail.test.com \
-    -e HOST_IP=192.1.0.227 \
-    -e SEARCH_BASE=cn=Users,dc=test,dc=com \
-    -e BIND_DN=cn=ldap,cn=Users,dc=test,dc=com \
-    -e BIND_PW=password \
+    -e DOMAIN_NAME="test.com" \
+    -e HOST_NAME="mail.test.com" \
+    -e HOST_IP="192.1.0.227" \
+    -e SEARCH_BASE="cn=Users,dc=test,dc=com" \
+    -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
+    -e BIND_PW="password" \
     -e ALIASES=OU=aliases,DC=hlmt,DC=com \
     -e MY_NETWORKS="192.1.0.0\/24" \
     -e TZ="Asia/Taipei" \
+    -e ENABLE_QUOTA="true" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
     
 
@@ -197,5 +200,8 @@ Trouble Shotting
       
 **amavisd**     
      * amavisd-release <quarantine file name> to release files    
-     * whitelist in /etc/postfix/amavisd_whitelist    
-     * modify /etc/amavisd/amavisd.conf "$final_spam_destiny" from D_DISCARD to D_PASS if you don't want to block spam
+     * whitelist in /etc/postfix/amavisd_whitelist       
+     * modify /etc/amavisd/amavisd.conf "$final_spam_destiny" from D_DISCARD to D_PASS if you don't want to block spam    
+      
+**quota**
+     * modify /etc/dovecot/conf.d/90-quota.cf to change quota limit    

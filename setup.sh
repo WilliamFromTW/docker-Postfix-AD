@@ -82,7 +82,21 @@ if [ -n "${MY_NETWORKS}" ]; then
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
 fi
 
-TZ="${TZ}"; export TZ
+if [[ "${ENABLE_QUOTA}" == "true" ]]; then
+  sed -i "s/QUOTA_MAIN/check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
+  sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.cf
+  sed -i "s/QUOTA_IMAP/imap_quota/g" /etc/dovecot/conf.d/20-imap.cf
+else
+  sed -i "s/QUOTA_MAIN/#check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
+  sed -i "s/QUOTA_MAIL/ /g" /etc/dovecot/conf.d/10-mail.cf
+  sed -i "s/QUOTA_IMAP/ /g" /etc/dovecot/conf.d/20-imap.cf  
+fi
+
+if [ -n "${TZ}}" ] ; then
+ TZ="${TZ}"; export TZ ;
+else
+ TZ="Asia/Taipei"; export TZ ;
+fi 
 
 if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
