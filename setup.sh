@@ -84,15 +84,15 @@ fi
 
 if [[ "${ENABLE_QUOTA}" == "true" ]]; then
   sed -i "s/QUOTA_MAIN/check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
-  sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.cf
-  sed -i "s/QUOTA_IMAP/imap_quota/g" /etc/dovecot/conf.d/20-imap.cf
+  sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.conf
+  sed -i "s/QUOTA_IMAP/imap_quota/g" /etc/dovecot/conf.d/20-imap.conf
 else
   sed -i "s/QUOTA_MAIN/#check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
-  sed -i "s/QUOTA_MAIL/ /g" /etc/dovecot/conf.d/10-mail.cf
-  sed -i "s/QUOTA_IMAP/ /g" /etc/dovecot/conf.d/20-imap.cf  
+  sed -i "s/QUOTA_MAIL/ /g" /etc/dovecot/conf.d/10-mail.conf
+  sed -i "s/QUOTA_IMAP/ /g" /etc/dovecot/conf.d/20-imap.conf  
 fi
 
-if [ -n "${TZ}}" ] ; then
+if [ -n "${TZ}" ] ; then
  TZ="${TZ}"; export TZ ;
 else
  TZ="Asia/Taipei"; export TZ ;

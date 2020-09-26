@@ -8,7 +8,7 @@ Feature
 * User Account backend with Microsoft Active Directory(2008R2,2012,2016)    
 * OpenDKIM    
 * managesieve    
-* user email quota 
+* user email quota (default 20G)
 
 Support
 ----------
@@ -71,7 +71,11 @@ Enable lda sieve( filter and vacation)
     $config['managesieve_default'] = '/etc/dovecot/sieve/global';    
     $config['managesieve_vacation'] = 1;    
     $config['managesieve_vacation_interval'] = 1;    
-
+    
+Enable Quota    
+--    
+** launch docker with -e ENABLE_QUOTA="true"    
+    
 Active Directory 
 ----
 * ALIASES    
@@ -85,6 +89,7 @@ Active Directory
 
 * restricted and granted     
     Write "restricted" attribute "description" in user or group that can only received from user that write "granted" in attribute "description"
+
 
 Usage
 -----
