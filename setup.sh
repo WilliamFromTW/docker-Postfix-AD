@@ -108,7 +108,6 @@ chown -R opendkim:opendkim /etc/opendkim
 postmap /etc/postfix/local_only_domains
 postmap /etc/postfix/local_only2_domains
 postmap /etc/postfix/helo_check
-postmap /etc/postfix/sender_vip
 postmap /etc/postfix/sender_bcc
 postmap /etc/postfix/recipient_bcc
 
