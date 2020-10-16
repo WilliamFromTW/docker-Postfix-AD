@@ -678,7 +678,8 @@ readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
 
 ###############################################################
 smtpd_recipient_restrictions =
- check_sender_access hash:/etc/postfix/sender_vip,
+ check_sender_access pcre:/etc/postfix/sender_access,
+ check_client_access pcre:/etc/postfix/client_access,
  check_recipient_access ldap:/etc/postfix/ldap-restricted.cf,
  check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
  check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
@@ -696,7 +697,8 @@ smtpd_recipient_restrictions =
  reject_rbl_client cbl.abuseat.org
 
 smtpd_client_restrictions =
- check_sender_access hash:/etc/postfix/sender_vip,
+ check_sender_access pcre:/etc/postfix/sender_access,
+ check_client_access pcre:/etc/postfix/client_access,
  permit_sasl_authenticated,
  permit_mynetworks,
  reject_rbl_client zen.spamhaus.org,
@@ -705,7 +707,8 @@ smtpd_client_restrictions =
  reject_rbl_client cbl.abuseat.org
 
 smtpd_sender_restrictions =
- check_sender_access hash:/etc/postfix/sender_vip,
+ check_sender_access pcre:/etc/postfix/sender_access,
+ check_client_access pcre:/etc/postfix/client_access,
  permit_mynetworks,
  permit_sasl_authenticated,
  reject_non_fqdn_sender,

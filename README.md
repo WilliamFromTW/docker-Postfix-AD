@@ -208,5 +208,5 @@ Trouble Shotting
      * whitelist in /etc/postfix/amavisd_whitelist       
      * modify /etc/amavisd/amavisd.conf "$final_spam_destiny" from D_DISCARD to D_PASS if you don't want to block spam    
       
-**quota**
+**quota**    
      * modify /etc/dovecot/conf.d/90-quota.cf to change quota limit    
