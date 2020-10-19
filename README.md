@@ -1,4 +1,4 @@
-docker-Postfix-MailServer
+Docker-Postfix-MailServer
 =========================
 
 Feature
@@ -27,72 +27,16 @@ port 143(TLS),993(TLS)
 
 * Microsoft AD(only one domain)    
 
-Active Directory Notice
-----
-* Login Name can different with email name    
-* Login Name must be created lower case (because dovecot always use lower case)    
 
-Prerequisite
+Prerequisites
 ----    
 * Make Mail Server  let\'sencrypt ready .     
 e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
 Mapping host's /etc/letsencrypt to this docker images       
 
-Enable DKIM 
-----    
-* add the following settings to /etc/postfix/main.cf    
-    
-    smtpd_milters = inet:127.0.0.1:8891    
-    non_smtpd_milters = $smtpd_milters    
-    milter_default_action = accept    
 
-* add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
-
-Enable lda sieve( filter and vacation)  
-----    
-* Modify main.cf    
-    
-    dovecot_destination_recipient_limit = 1    
-    virtual_transport = dovecot    
-    
-* Modify config.inc.php in roundcubemail    
-    $config['plugins'] = array(    
-      'archive',    
-      'zipdownload',    
-      'managesieve',    
-    );
-  
-    * for roundcube and mail are the same host    
-      $config['managesieve_host'] = 'localhost';    
-    * for roundcube and mail are the different host    
-      $config['managesieve_port'] = 4190;    
-      $config['managesieve_host'] = 'tls://\<mail server name\>';    
-    * general    
-    $config['managesieve_default'] = '/etc/dovecot/sieve/global';    
-    $config['managesieve_vacation'] = 1;    
-    $config['managesieve_vacation_interval'] = 1;    
-    
-Enable Quota    
---    
-** launch docker with -e ENABLE_QUOTA="true"    
-    
-Active Directory 
-----
-* ALIASES    
-    Create Group and give an aliases email in attribute "mail" ,  and include account in group    
-
-* Account    
-    Create User and give email in attribute "mail" , account must be lower case    
-
-* local_only    
-    Write "local_only" attribute "description" in user or group to restrict the use in local domain only    
-
-* restricted and granted     
-    Write "restricted" attribute "description" in user or group that can only received from user that write "granted" in attribute "description"
-
-
-Usage
------
+Start Steps
+-----------
 
 **Create Volume**
 
@@ -173,6 +117,72 @@ Example
     -e ENABLE_QUOTA="true" \
     --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
     
+White and Black list
+----
+**First priority amavisd**    
+  modify /etc/postfix/amavisd_whitelist    
+  modify /etc/postfix/amavisd_blacklist    
+
+**Sencond priority postfix sender access**    
+  modify /etc/postfix/sender_access and use postmap to build hash file    
+
+
+Enable DKIM 
+----    
+* add the following settings to /etc/postfix/main.cf    
+    
+    smtpd_milters = inet:127.0.0.1:8891    
+    non_smtpd_milters = $smtpd_milters    
+    milter_default_action = accept    
+
+* add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
+
+Enable lda sieve( filter and vacation)  
+----    
+* Modify main.cf    
+    
+    dovecot_destination_recipient_limit = 1    
+    virtual_transport = dovecot    
+    
+* Modify config.inc.php in roundcubemail    
+    $config['plugins'] = array(    
+      'archive',    
+      'zipdownload',    
+      'managesieve',    
+    );
+  
+    * for roundcube and mail are the same host    
+      $config['managesieve_host'] = 'localhost';    
+    * for roundcube and mail are the different host    
+      $config['managesieve_port'] = 4190;    
+      $config['managesieve_host'] = 'tls://\<mail server name\>';    
+    * general    
+    $config['managesieve_default'] = '/etc/dovecot/sieve/global';    
+    $config['managesieve_vacation'] = 1;    
+    $config['managesieve_vacation_interval'] = 1;    
+    
+Enable Quota    
+--    
+**launch docker with -e ENABLE_QUOTA="true"**    
+    
+Active Directory Notice
+----
+* Login Name can different with email name    
+
+* Login Name must be created lower case (because dovecot always use lower case)    
+
+* ALIASES    
+    Create Group and give an aliases email in attribute "mail" ,  and include account in group    
+
+* Account    
+    Create User and give email in attribute "mail" , account must be lower case    
+
+* local_only    
+    Write "local_only" attribute "description" in user or group to restrict the use in local domain only    
+
+* restricted and granted     
+    Write "restricted" attribute "description" in user or group that can only received from user that write "granted" in attribute "description"
+
 
 Trouble Shotting
 ----
