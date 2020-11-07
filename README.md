@@ -30,8 +30,8 @@ port 143(TLS),993(TLS)
 
 Prerequisites
 ----    
-* Make Mail Server  let\'sencrypt ready .     
-e.g. mail.test.com , must the same with \<MAIL_HOST_NAME\>                
+* Make let\'sencrypt ready in your docker host.     
+e.g. mail.test.com(lets encrypt) , must the same with \<MAIL_HOST_NAME\>                
 Mapping host's /etc/letsencrypt to this docker images       
 
 
@@ -99,11 +99,13 @@ Example
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
+    docker volume create postfixldap_log    
     
     docker run --name postfixldap \
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
+	-v postfixldap_log:/var/log \
     -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
     -e DOMAIN_NAME="test.com" \
     -e HOST_NAME="mail.test.com" \
@@ -121,6 +123,7 @@ White and Black list
 ----
 **First priority amavisd**    
   modify /etc/postfix/amavisd_whitelist    
+  modify /etc/postfix/amavisd_whitelist_ip    
   modify /etc/postfix/amavisd_blacklist    
 
 **Sencond priority postfix sender access**    
