@@ -42,6 +42,7 @@ Start Steps
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
+    docker volume create postfixldap_log    
 
 **parameters**
 
@@ -59,6 +60,7 @@ Start Steps
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
+    -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
     -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
     -e HOST_NAME="<MAIL_HOST_NAME>"  \
@@ -105,7 +107,7 @@ Example
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
-	-v postfixldap_log:/var/log \
+    -v postfixldap_log:/var/log \
     -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
     -e DOMAIN_NAME="test.com" \
     -e HOST_NAME="mail.test.com" \
