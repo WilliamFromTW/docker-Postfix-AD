@@ -84,7 +84,7 @@ Example
   
 **Mail server(docker)**    
 
-    <EMAIL_DOMAIN_NAME> : test.com
+    <EMAIL_DOMAIN_NAME> : test.com 
     <MAIL_HOST_NAME> : mail.test.com
     
 **permit networks**    
