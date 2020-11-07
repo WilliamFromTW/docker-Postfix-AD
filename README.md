@@ -212,7 +212,7 @@ Trouble Shotting
       
 **fail2ban**    
 
-    * add --net=host in docker launch command to get real remote ip from log      
+    * add --net=host in docker launch command to get real remote ip from log(strong recommended)      
       
 **amavisd**     
 
