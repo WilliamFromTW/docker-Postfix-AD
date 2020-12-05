@@ -1,4 +1,0 @@
-initpass
-./sysconfig/postgrey:POSTGREY_OPTS="--delay=60"
-
-cat /var/log/maillog | postgreyreport --nosingle_line --check_sender=mx,a --show_tries --separate_by_subnet=":=================================================================\n"

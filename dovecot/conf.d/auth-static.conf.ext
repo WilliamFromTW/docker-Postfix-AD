@@ -10,7 +10,7 @@
 
 passdb {
   driver = static
-  args =  nopassword=y
+  args =  proxy=y host=localhost nopassword=y
 }
 
 #passdb {
