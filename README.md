@@ -143,12 +143,12 @@ Enable DKIM
 
 * add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
 
-Enable lda sieve( filter and vacation)  
+Enable lmtp sieve( filter and vacation)  
 ----    
 * Modify main.cf    
     
     dovecot_destination_recipient_limit = 1    
-    virtual_transport = dovecot    
+    virtual_transport = lmtp:unix:private/dovecot-lmtp    
     
 * Modify config.inc.php in roundcubemail    
     $config['plugins'] = array(    

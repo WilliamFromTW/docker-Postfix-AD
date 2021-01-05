@@ -795,9 +795,9 @@ smtp_destination_concurrency_limit=100
 maximal_backoff_time = 1000s
 minimal_backoff_time = 300s
 
-# lda vacation
+# lmtp sieve vacation
 #dovecot_destination_recipient_limit = 1
-#virtual_transport = dovecot
+#virtual_transport = lmtp:unix:private/dovecot-lmtp
 
 smtpd_restriction_classes = restricted local_only local_only2
 restricted = check_sender_access ldap://etc/postfix/ldap-granted.cf,reject
