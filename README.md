@@ -5,7 +5,7 @@ Feature
 ----------
 * Login account can diferent with account email. e.g. account: 520001 , email: william@test.com
 * postfix mail server    
-* User Account backend with Microsoft Active Directory(2008R2,2012,2016)    
+* User Account backend with Microsoft Active Directory(2008R2,2012R2,2016)    
 * OpenDKIM    
 * managesieve    
 * user email quota (default 20G)
@@ -42,6 +42,7 @@ Start Steps
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
+    docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
 
 **parameters**
@@ -59,7 +60,7 @@ Start Steps
 **docker command**
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
-    -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  \
+    -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  -v postfixldap_dovecot:/etc/dovecot \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
     -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
