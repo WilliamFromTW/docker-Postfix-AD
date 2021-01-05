@@ -102,12 +102,14 @@ Example
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
+    docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
     
     docker run --name postfixldap \
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
+    -v postfixldap_dovecot:/etc/dovecot \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
     -e DOMAIN_NAME="test.com" \
