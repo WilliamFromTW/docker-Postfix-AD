@@ -215,8 +215,16 @@ Trouble Shotting
     2. /etc/dovecot/conf.d/10-master.conf
       default_vsz_limit = 512M
       service_count = 0
-    3.. /etc/amavisd/amavisd.conf
+    3. /etc/amavisd/amavisd.conf
       $max_servers = 15;  
+    4. /etc/dovecot/dovecot.conf , 15-lda.conf , 20-lmtp.conf
+       mail_fsync = never
+       protocol lda {
+         mail_fsync = optimized
+       }
+       protocol lmtp {
+         mail_fsync = optimized
+       }
       
 **fail2ban**    
 
