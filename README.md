@@ -121,8 +121,7 @@ Example
     -e ALIASES=OU=aliases,DC=hlmt,DC=com \
     -e MY_NETWORKS="192.1.0.0\/24" \
     -e TZ="Asia/Taipei" \
-    -e ENABLE_QUOTA="true" \
-    --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
+    --restart always -d --net=host inmethod/centos-7_postfix_amavisd_active-directory
     
 White and Black list
 ----
