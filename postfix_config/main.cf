@@ -690,6 +690,7 @@ smtpd_recipient_restrictions =
  reject_non_fqdn_recipient,
  reject_unknown_sender_domain,
  reject_unknown_recipient_domain,
+ reject_unverified_recipient,
  reject_unauth_destination,
  reject_rbl_client zen.spamhaus.org,
  reject_rbl_client b.barracudacentral.org,
@@ -797,7 +798,7 @@ minimal_backoff_time = 300s
 
 # lmtp sieve vacation
 #dovecot_destination_recipient_limit = 1
-#virtual_transport = lmtp:unix:private/dovecot-lmtp
+#virtual_transport = lmtp:inet:127.0.0.1:2424
 
 smtpd_restriction_classes = restricted local_only local_only2
 restricted = check_sender_access ldap://etc/postfix/ldap-granted.cf,reject
