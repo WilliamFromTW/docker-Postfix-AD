@@ -51,11 +51,11 @@ Start Steps
     <SEARCH_BASE> : active directory ldap search base
     <BIND_DN> : active directory ldap bind dn
     <BIND_PW> : active directory ldap bind password
-    <ALIASES> : active directory ldap aliase
-    <EMAIL_DOMAIN_NAME> :  email domain name
-    <MAIL_HOST_NAME> :  mail host name
-    <PERMIT_NETWORKS> :  permit network (intranet)
-    <TZ>: time zone ( reference /usr/share/zoneinfo/ )        
+    <ALIASES> : active directory ldap aliase (optional)
+    <EMAIL_DOMAIN_NAME> :  mail domain name
+    <MAIL_HOST_NAME> :  mail server host name
+    <PERMIT_NETWORKS> :  permit network (optional)
+    <TZ>: time zone ( optional , default is Asia/Taipei , reference /usr/share/zoneinfo/ )        
 
 **docker command**
 
@@ -83,16 +83,11 @@ Example
     <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com" for whole zone
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
-    <ALIASES> : OU=aliases,DC=test,DC=com
   
 **Mail server(docker)**    
 
     <EMAIL_DOMAIN_NAME> : test.com 
     <MAIL_HOST_NAME> : mail.test.com
-    
-**permit networks**    
-
-    <PERMIT_NETWORKS> : 192.1.0.0\/24    
 
 **TimeZone**
 
@@ -118,8 +113,6 @@ Example
     -e SEARCH_BASE="cn=Users,dc=test,dc=com" \
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
-    -e ALIASES=OU=aliases,DC=hlmt,DC=com \
-    -e MY_NETWORKS="192.1.0.0\/24" \
     -e TZ="Asia/Taipei" \
     --restart always -d --net=host inmethod/centos-7_postfix_amavisd_active-directory
     
@@ -149,7 +142,7 @@ Enable lmtp sieve( filter and vacation)
 * Modify main.cf    
     
     dovecot_destination_recipient_limit = 1    
-    virtual_transport = lmtp:unix:private/dovecot-lmtp    
+    virtual_transport = lmtp:inet:127.0.0.1:2424    
     
 * Modify config.inc.php in roundcubemail    
     $config['plugins'] = array(    
@@ -202,6 +195,8 @@ Trouble Shotting
     telnet localhost 143 (dovecot)
     telnet localhost 25(postfix)
     telnet localhost 8891(dkim service)
+    telnet localhost 12340 (quota)
+    telnet localhost 2424 (lmtp)
     3. any service above is not working
     more /etc/supervisord.conf and find the launch command of the stoped service
     execute command to see error messages .
@@ -209,10 +204,10 @@ Trouble Shotting
 **Performance Tunning**
 
     1. /etc/dovecot/conf.d/10-auth.conf
-      auth_cache_size = 512M    
+      auth_cache_size = 256M    
       auth_cache_verify_password_with_worker = yes
     2. /etc/dovecot/conf.d/10-master.conf
-      default_vsz_limit = 512M
+      default_vsz_limit = 256M
       service_count = 0
     3. /etc/amavisd/amavisd.conf
       $max_servers = 15;  

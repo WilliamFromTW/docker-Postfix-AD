@@ -75,11 +75,16 @@ fi
 
 if [ -n "${ALIASES}" ]; then
  sed -i "s/ALIASES/${ALIASES}/g" /etc/postfix/ldap-aliases.cf
+else
+ sed -i "s/\,ldap\:\/etc\/postfix\/ldap-aliases\.cf/ /g" /etc/postfix/main.cf
 fi
 
 if [ -n "${MY_NETWORKS}" ]; then
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/amavisd/amavisd.conf
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
+else
+ sed -i "s/MY_NETWORKS/ /g" /etc/amavisd/amavisd.conf
+ sed -i "s/\,MY_NETWORKS/ /g" /etc/postfix/main.cf
 fi
 
 if [[ "${ENABLE_QUOTA}" == "true" ]]; then
