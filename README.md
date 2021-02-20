@@ -238,5 +238,5 @@ Trouble Shotting
 
 **rip=::1, lip=::1, secured, session problem**    
 
-     * i noticed  it occurred offen , i don't known why , so i suggest listen to ipv4 only , add "address" restrict sutiable ip(ipv4) interface in /etc/dovecot/conf.d/ 10-master.conf    
+     * this problem occurred offen , i don't known why , suggest imap and pop3 by listening ipv4 only , add "address" for ip(ipv4) interface in /etc/dovecot/conf.d/ 10-master.conf    
 
