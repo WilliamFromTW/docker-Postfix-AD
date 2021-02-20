@@ -129,7 +129,7 @@ White and Black list
 
 Enable DKIM 
 ----    
-* add the following settings to /etc/postfix/main.cf    
+* uncomment parameter in /etc/postfix/main.cf    
     
     smtpd_milters = inet:127.0.0.1:8891    
     non_smtpd_milters = $smtpd_milters    
@@ -139,7 +139,7 @@ Enable DKIM
 
 Enable lmtp sieve( filter and vacation)  
 ----    
-* Modify main.cf    
+* uncomment parameter in /etc/postfix/main.cf    
     
     dovecot_destination_recipient_limit = 1    
     virtual_transport = lmtp:inet:127.0.0.1:2424    
@@ -235,3 +235,8 @@ Trouble Shotting
 **quota**    
 
      * modify /etc/dovecot/conf.d/90-quota.cf to change quota limit    
+
+**rip=::1, lip=::1, secured, session problem**    
+
+     * i noticed  it occurred offen , i don't known why , so i suggest listen to ipv4 only , add "address" restrict sutiable ip(ipv4) interface in /etc/dovecot/conf.d/ 10-master.conf    
+

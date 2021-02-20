@@ -2,8 +2,8 @@ FROM centos:7
 RUN yum -y install epel-release
 RUN yum -y update 
 RUN yum -y upgrade
-RUN yum -y install fail2ban dovecot-pigeonhole ntp opendkim bind-utils net-tools postfix cyrus-sasl cyrus-sasl-plain cyrus-sasl-md5 opendkim clamav clamav-devel clamav-scanner-systemd clamav-update clamav-data clamav-server clamav-server-systemd clamav-scanner amavisd-new dovecot supervisor httpd mod-ssl telnet rsyslog vi vim wget rsync 
-EXPOSE 25 110 143 465 587 993 995 4190
+RUN yum -y install dovecot-pigeonhole ntp opendkim bind-utils net-tools postfix cyrus-sasl cyrus-sasl-plain cyrus-sasl-md5 opendkim clamav clamav-devel clamav-scanner-systemd clamav-update clamav-data clamav-server clamav-server-systemd clamav-scanner amavisd-new dovecot supervisor httpd mod-ssl telnet rsyslog vi vim wget rsync 
+EXPOSE 25 143 465 587 993 995 4190
 VOLUME ["/etc/postfix","/etc/dovecot/","/etc/letsencrypt","/home/vmail","/var/log"]
 COPY rsyslog.conf /etc/rsyslog.conf
 COPY listen.conf /etc/rsyslog.d/listen.conf
