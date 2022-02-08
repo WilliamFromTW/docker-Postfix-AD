@@ -680,7 +680,6 @@ readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
 smtpd_recipient_restrictions =
  check_sender_access pcre:/etc/postfix/sender_access,
  check_client_access pcre:/etc/postfix/client_access,
- check_recipient_access ldap:/etc/postfix/ldap-restricted.cf,
  check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
  check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
  QUOTA_MAIN ,
@@ -737,9 +736,6 @@ smtpd_helo_restrictions =
  check_helo_access hash:/etc/postfix/helo_check,
  permit
 ##############################################################
-content_filter=amavisfeed:[127.0.0.1]:10024
-amavisfeed_destination_recipient_limit = 1
-##############################################################
 virtual_mailbox_domains = /etc/postfix/domains
 virtual_mailbox_base = /home/vmail/
 virtual_mailbox_maps = ldap:/etc/postfix/ldap-users.cf
@@ -780,28 +776,39 @@ smtp_tls_mandatory_protocols = !SSLv2 !SSLv3
 lmtp_tls_protocols = !SSLv2 !SSLv3
 lmtp_tls_mandatory_protocols = !SSLv2 !SSLv3
 
-#
-# performance
-#
-smtpd_error_sleep_time = 0
-default_process_limit = 150
-qmgr_message_active_limit = 40000
-qmgr_message_recipient_limit = 40000
-default_destination_concurrency_limit=100
-default_destination_recipient_limit=100
-default_process_limit=200
-smtp_mx_session_limit=100
-smtpd_client_connection_count_limit=100
-smtp_destination_concurrency_limit=100
-maximal_backoff_time = 1000s
-minimal_backoff_time = 300s
+##
+## 效能調教
+##
+#default_process_limit = 150
+#qmgr_message_active_limit = 40000
+#qmgr_message_recipient_limit = 40000
+#default_destination_concurrency_limit=100
+#default_destination_recipient_limit=100
+#default_process_limit=200
+#smtp_mx_session_limit=100
+#smtp_destination_concurrency_limit=100
+#maximal_backoff_time = 1000s
+#minimal_backoff_time = 300s
+
+##
+## 阻擋惡意連線
+## 
+smtpd_error_sleep_time = 2s
+smtpd_soft_error_limit = 10
+smtpd_hard_error_limit = 20
+
+##
+## 用戶端每60秒,最多連線30次, 且同時只能20個連線
+##
+client_connection_rate_time_unit = 60s
+smtpd_client_connection_rate_limit=30
+smtpd_client_connection_count_limit=20
 
 # lmtp sieve vacation
 #dovecot_destination_recipient_limit = 1
 #virtual_transport = lmtp:inet:127.0.0.1:2424
 
-smtpd_restriction_classes = restricted local_only local_only2
-restricted = check_sender_access ldap://etc/postfix/ldap-granted.cf,reject
+smtpd_restriction_classes = local_only local_only2
 local_only = check_recipient_access hash:/etc/postfix/local_only_domains, reject
 local_only2 = check_sender_access hash:/etc/postfix/local_only2_domains, reject
 
