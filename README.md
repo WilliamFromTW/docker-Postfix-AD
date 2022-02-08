@@ -118,11 +118,6 @@ Example
     
 White and Black list
 ----
-**First priority amavisd**    
-  modify /etc/postfix/amavisd_whitelist    
-  modify /etc/postfix/amavisd_whitelist_ip    
-  modify /etc/postfix/amavisd_blacklist    
-
 **Sencond priority postfix sender access**    
   modify /etc/postfix/sender_access and use postmap to build hash file    
 
@@ -191,7 +186,6 @@ Trouble Shotting
      1. login container 
     docker exec -it <container name> bash
      2. testing service
-    telnet localhost 10024 (amavisd)
     telnet localhost 143 (dovecot)
     telnet localhost 25(postfix)
     telnet localhost 8891(dkim service)
@@ -209,9 +203,7 @@ Trouble Shotting
     2. /etc/dovecot/conf.d/10-master.conf
       default_vsz_limit = 256M
       service_count = 0
-    3. /etc/amavisd/amavisd.conf
-      $max_servers = 15;  
-    4. /etc/dovecot/dovecot.conf , 15-lda.conf , 20-lmtp.conf
+    3. /etc/dovecot/dovecot.conf , 15-lda.conf , 20-lmtp.conf
        mail_fsync = never
        protocol lda {
          mail_fsync = optimized
@@ -223,14 +215,7 @@ Trouble Shotting
 **fail2ban**    
 
     * add --net=host in docker launch command to get real remote ip from log(strong recommended)      
-      
-**amavisd**     
-
-     * command "amavisd-release" can restore quarantine file back  
-	 
-     * modify /etc/amavisd/amavisd.conf     
-	 change "$final_spam_destiny" from D_DISCARD to D_PASS if you don't want to block spam    
-	 
+       
       
 **quota**    
 
