@@ -1,5 +1,8 @@
 Docker-Postfix-MailServer
 =========================
+Github
+----------
+https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd    
 
 Feature
 ----------
@@ -126,9 +129,10 @@ Rspamd spam filter WEB UI
 *  change login password      
     
 	default password : kafeiou.pw    
-	command(container) to generate new password     
-	  rspamadm pw --encrypt -p <new password>      
-	change new password in /etc/rspamd/local.d/worker-controller.inc      
+	command(container) to generate new crypt password     
+	>  rspamadm pw --encrypt -p \<new password\>      
+	
+	change new crypt password in /etc/rspamd/local.d/worker-controller.inc      
 
 Enable DKIM 
 ----    
