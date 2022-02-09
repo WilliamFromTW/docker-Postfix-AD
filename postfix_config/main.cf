@@ -800,7 +800,7 @@ smtpd_hard_error_limit = 20
 ##
 ## 用戶端每60秒,最多連線30次, 且同時只能20個連線
 ##
-client_connection_rate_time_unit = 60s
+anvil_rate_time_unit=60s
 smtpd_client_connection_rate_limit=30
 smtpd_client_connection_count_limit=20
 
@@ -812,8 +812,9 @@ smtpd_restriction_classes = local_only local_only2
 local_only = check_recipient_access hash:/etc/postfix/local_only_domains, reject
 local_only2 = check_sender_access hash:/etc/postfix/local_only2_domains, reject
 
-# dkim 
-#smtpd_milters = inet:127.0.0.1:8891
-#non_smtpd_milters = $smtpd_milters
-#milter_default_action = accept
+smtpd_milters = inet:127.0.0.1:11332
+# add dkim 
+#smtpd_milters = inet:127.0.0.1:8891,inet:127.0.0.1:11332
+non_smtpd_milters = $smtpd_milters
+milter_default_action = accept
 

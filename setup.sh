@@ -4,7 +4,6 @@ if [ -n "${DOMAIN_NAME}" ]; then
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/main.cf
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/local-host-names
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/helo_check 
- sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/amavisd/amavisd.conf
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/domains
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/local_only_domains
  sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/postfix/local_only2_domains
@@ -17,7 +16,6 @@ fi
 if [ -n "${HOST_NAME}" ]; then
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/postfix/main.cf
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/postfix/local-host-names
- sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/amavisd/amavisd.conf
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/dovecot/conf.d/10-ssl.conf
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/opendkim/TrustedHosts
 
@@ -72,10 +70,8 @@ else
 fi
 
 if [ -n "${MY_NETWORKS}" ]; then
- sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/amavisd/amavisd.conf
  sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
 else
- sed -i "s/MY_NETWORKS/ /g" /etc/amavisd/amavisd.conf
  sed -i "s/\,MY_NETWORKS/ /g" /etc/postfix/main.cf
 fi
 
