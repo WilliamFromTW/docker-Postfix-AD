@@ -1,4 +1,4 @@
-Docker-Postfix-MailServer
+Docker-Postfix-AD
 =========================
 Github
 ----------
@@ -133,6 +133,11 @@ Rspamd spam filter WEB UI
 	>  rspamadm pw --encrypt -p \<new password\>      
 	
 	change new crypt password in /etc/rspamd/local.d/worker-controller.inc      
+
+*  whitelist and blacklist    
+
+    login web to edit file list in tab Configuration, or manual edit /etc/rspamd/override.d in container    
+	
 
 Enable DKIM 
 ----    
