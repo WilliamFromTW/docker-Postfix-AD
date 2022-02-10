@@ -1,14 +1,18 @@
 Docker-Postfix-MailServer
 =========================
+Github
+----------
+https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd    
 
 Feature
 ----------
-* Login account can diferent with account email. e.g. account: 520001 , email: william@test.com
+* Authentication account can diferent with email. e.g. account: 520001 , email: william@kafeiou.pw    
 * postfix mail server    
 * User Account backend with Microsoft Active Directory(2008R2,2012R2,2016)    
 * OpenDKIM    
-* managesieve    
-* user email quota (default 20G)
+* Rspamd(spam filter)    
+* Clamav(antivirus)    
+* Quota (default 20G)
 
 Support
 ----------
@@ -23,27 +27,21 @@ port 995(SSL)
 * imap    
 port 143(TLS),993(TLS)    
 
-* amavisd+clamav    
-
-* Microsoft AD(only one domain)    
-
 
 Prerequisites
 ----    
-* Make let\'sencrypt ready in your docker host.     
-e.g. mail.test.com(lets encrypt) , must the same with \<MAIL_HOST_NAME\>                
-Mapping host's /etc/letsencrypt to this docker images       
+* Make let\'sencrypt ready in your docker host(not container).     
+Mapping host's /etc/letsencrypt to container        
 
-
-Start Steps
+Steps
 -----------
-
 **Create Volume**
 
     docker volume create postfixldap_vmail    
     docker volume create postfixldap_postfix    
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
+    docker volume create postfixldap_rspamd    
 
 **parameters**
 
@@ -51,16 +49,19 @@ Start Steps
     <SEARCH_BASE> : active directory ldap search base
     <BIND_DN> : active directory ldap bind dn
     <BIND_PW> : active directory ldap bind password
-    <ALIASES> : active directory ldap aliase (optional)
     <EMAIL_DOMAIN_NAME> :  mail domain name
     <MAIL_HOST_NAME> :  mail server host name
     <PERMIT_NETWORKS> :  permit network (optional)
-    <TZ>: time zone ( optional , default is Asia/Taipei , reference /usr/share/zoneinfo/ )        
+    <ALIASES> : active directory ldap aliase (optional)
+    <TZ>: time zone default is Asia/Taipei (optional)        
 
 **docker command**
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
-    -v postfixldap_vmail:/home/vmail -v postfixldap_postfix:/etc/postfix  -v postfixldap_dovecot:/etc/dovecot \
+    -v postfixldap_vmail:/home/vmail 
+	-v postfixldap_postfix:/etc/postfix  
+	-v postfixldap_dovecot:/etc/dovecot 
+	-v postfixldap_rspamd:/etc/rspamd \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
     -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
@@ -73,14 +74,14 @@ Start Steps
     -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
     -e TZ="<TZ>" \
     -e ENABLE_QUOTA="true" \
-    --restart always -d inmethod/centos-7_postfix_amavisd_active-directory
+    --restart always -d inmethod/docker-postfix-ad:tag
 
 Example
 -----
 **Microsfot AD**    
 
     <AD_HOST_IP> : 192.1.0.227
-    <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com" for whole zone
+    <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com"
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
   
@@ -99,14 +100,16 @@ Example
     docker volume create postfixldap_postfix    
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
+    docker volume create postfixldap_rspamd    
     
     docker run --name postfixldap \
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
     -v postfixldap_dovecot:/etc/dovecot \
+	-v postfixldap_rspamd:/etc/rspamd \
     -v postfixldap_log:/var/log \
-    -p 25:25 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 \
+    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
     -e DOMAIN_NAME="test.com" \
     -e HOST_NAME="mail.test.com" \
     -e HOST_IP="192.1.0.227" \
@@ -114,13 +117,22 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/centos-7_postfix_amavisd_active-directory
+    --restart always -d --net=host inmethod/docker-postfix-ad:0.1
     
-White and Black list
-----
-**Sencond priority postfix sender access**    
-  modify /etc/postfix/sender_access and use postmap to build hash file    
 
+Rspamd spam filter WEB UI     
+--    
+*  ACCESS WEB UI    
+    
+   use httpd reverse proxy to access localhost:11334    
+
+*  change login password      
+    
+	default password : kafeiou.pw    
+	command(container) to generate new crypt password     
+	>  rspamadm pw --encrypt -p \<new password\>      
+	
+	change new crypt password in /etc/rspamd/local.d/worker-controller.inc      
 
 Enable DKIM 
 ----    
@@ -130,7 +142,7 @@ Enable DKIM
     non_smtpd_milters = $smtpd_milters    
     milter_default_action = accept    
 
-* add the description of /etc/opendkim/keys/default.txt to DNS TXT record    
+* add /etc/opendkim/keys/default.txt content to DNS TXT record    
 
 Enable lmtp sieve( filter and vacation)  
 ----    
@@ -175,9 +187,6 @@ Active Directory Notice
 * local_only    
     Write "local_only" attribute "description" in user or group to restrict the use in local domain only    
 
-* restricted and granted     
-    Write "restricted" attribute "description" in user or group that can only received from user that write "granted" in attribute "description"
-
 
 Trouble Shotting
 ----
@@ -191,6 +200,7 @@ Trouble Shotting
     telnet localhost 8891(dkim service)
     telnet localhost 12340 (quota)
     telnet localhost 2424 (lmtp)
+    telnet localhost 11332 (rspamd)
     3. any service above is not working
     more /etc/supervisord.conf and find the launch command of the stoped service
     execute command to see error messages .
@@ -215,8 +225,7 @@ Trouble Shotting
 **fail2ban**    
 
     * add --net=host in docker launch command to get real remote ip from log(strong recommended)      
-       
-      
+             
 **quota**    
 
      * modify /etc/dovecot/conf.d/90-quota.cf to change quota limit    
