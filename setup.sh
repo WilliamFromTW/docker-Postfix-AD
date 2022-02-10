@@ -112,5 +112,5 @@ else
   echo "0 1 * * * root /usr/sbin/ntpdate -s ${HOST_IP}" >> /etc/crontab
   /usr/bin/crontab /etc/crontab
 fi
-  
+chown -R _rspamd:_rspamd /etc/rspamd/override.d  
 /usr/bin/supervisord -c /etc/supervisord.conf
