@@ -2,7 +2,7 @@ server_host = HOST_IP
 search_base = SEARCH_BASE
 version = 3
 query_filter = (&(objectclass=*)(mail=%s))
-result_attribute = mail  #Account from DC
+result_attribute = samaccountname  #Account from DC
 result_format = %s/Maildir/
 bind = yes
 bind_dn = BIND_DN
