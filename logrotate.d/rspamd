@@ -1,0 +1,12 @@
+/var/log/rspamd/*log {
+    daily
+    rotate 10
+    missingok
+    notifempty
+    compress
+    sharedscripts
+    postrotate
+        export `pkill rspamd;/usr/bin/rspamd -u _rspamd -g _rspamd -c /etc/rspamd/rspamd.conf  -f`;
+    endscript
+}
+
