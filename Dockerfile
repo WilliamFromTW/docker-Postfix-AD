@@ -18,6 +18,7 @@ COPY rspamd/  /etc/rspamd/
 COPY clamd/clamd.d/   /etc/clamd.d/
 COPY setup.sh /setup.sh
 COPY start_dovecot.sh /start_dovecot.sh
+RUN rm -rf /etc/logrotate.d/*
 RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem
 RUN unbound-control-setup
 RUN chown -R _rspamd:_rspamd /etc/rspamd/override.d
