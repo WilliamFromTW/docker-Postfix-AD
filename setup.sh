@@ -94,6 +94,8 @@ fi
 if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
   /usr/bin/cp default.* /etc/opendkim/keys
+  /usr/bin/mkdir -p  /var/lib/rspamd/dkim
+  /usr/bin/cp default.private /var/lib/rspamd/dkim/${DOMAIN_NAME}.dkim.key
 fi
 
 /usr/bin/chown -R vmail:vmail /home/vmail
@@ -113,4 +115,5 @@ else
   /usr/bin/crontab /etc/crontab
 fi
 chown -R _rspamd:_rspamd /etc/rspamd/override.d  
+chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/bin/supervisord -c /etc/supervisord.conf
