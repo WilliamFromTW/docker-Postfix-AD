@@ -6,7 +6,7 @@ https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd
 
 Feature
 ----------
-* Authentication account can diferent with email. e.g. account: 520001 , email: william@kafeiou.pw    
+* Authentication account can diferent with email. e.g. account: 520001 , email: william@smile.taipei    
 * postfix mail server    
 * User Account backend with Microsoft Active Directory(2008R2,2012R2,2016)    
 * OpenDKIM    
