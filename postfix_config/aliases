@@ -1,0 +1,12 @@
+#
+#  postmap /etc/postfix/aliases 
+#  postfix reload
+#
+
+mailer-daemon  postmaster
+postmaster     root
+
+#### example ####
+# xxx@test.com   1@test.com, 2@test2.com.tw
+################
+

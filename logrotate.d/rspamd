@@ -6,7 +6,7 @@
     compress
     sharedscripts
     postrotate
-        export `pkill rspamd;/usr/bin/rspamd -u _rspamd -g _rspamd -c /etc/rspamd/rspamd.conf  -f`;
+        pkill rspamd;/usr/bin/rspamd -u _rspamd -g _rspamd -c /etc/rspamd/rspamd.conf  -f &
     endscript
 }
 

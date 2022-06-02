@@ -384,7 +384,7 @@ mynetworks = 127.0.0.0/8,MY_NETWORKS
 # "postfix reload" to eliminate the delay.
 #
 #alias_maps = dbm:/etc/aliases
-alias_maps = hash:/etc/aliases
+#alias_maps = hash:/etc/aliases
 #alias_maps = hash:/etc/aliases, nis:mail.aliases
 #alias_maps = netinfo:/aliases
 
@@ -395,7 +395,7 @@ alias_maps = hash:/etc/aliases
 #
 #alias_database = dbm:/etc/aliases
 #alias_database = dbm:/etc/mail/aliases
-alias_database = hash:/etc/aliases
+#alias_database = hash:/etc/aliases
 #alias_database = hash:/etc/aliases, hash:/opt/majordomo/aliases
 
 # ADDRESS EXTENSIONS (e.g., user+foo)
@@ -741,7 +741,7 @@ virtual_mailbox_base = /home/vmail/
 virtual_mailbox_maps = ldap:/etc/postfix/ldap-users.cf
 virtual_uid_maps = static:1001
 virtual_gid_maps = static:1001
-virtual_alias_maps = hash:/etc/aliases,ldap:/etc/postfix/ldap-aliases.cf
+virtual_alias_maps = hash:/etc/postfix/aliases,ldap:/etc/postfix/ldap-aliases.cf
 ##############################################################
 recipient_bcc_maps = hash:/etc/postfix/recipient_bcc
 sender_bcc_maps = hash:/etc/postfix/sender_bcc
