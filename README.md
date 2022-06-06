@@ -63,7 +63,7 @@ Steps
 	-v postfixldap_dovecot:/etc/dovecot 
 	-v postfixldap_rspamd:/etc/rspamd \
     -v postfixldap_log:/var/log \
-    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
+    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
     -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
     -e HOST_NAME="<MAIL_HOST_NAME>"  \
     -e HOST_IP="<AD_HOST_IP>"  \
@@ -109,7 +109,7 @@ Example
     -v postfixldap_dovecot:/etc/dovecot \
 	-v postfixldap_rspamd:/etc/rspamd \
     -v postfixldap_log:/var/log \
-    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 \
+    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
     -e DOMAIN_NAME="test.com" \
     -e HOST_NAME="mail.test.com" \
     -e HOST_IP="192.1.0.227" \
@@ -205,7 +205,7 @@ Trouble Shotting
     telnet localhost 8891(dkim service)
     telnet localhost 12340 (quota)
     telnet localhost 2424 (lmtp)
-    telnet localhost 11332 (rspamd)
+    telnet localhost 11334 (rspamd)
     3. any service above is not working
     more /etc/supervisord.conf and find the launch command of the stoped service
     execute command to see error messages .
