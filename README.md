@@ -117,7 +117,7 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:0.1
+    --restart always -d --net=host inmethod/docker-postfix-ad:1.9
     
 
 Rspamd spam filter WEB UI     
@@ -215,6 +215,8 @@ Trouble Shotting
     1. /etc/dovecot/conf.d/10-auth.conf
       auth_cache_size = 256M    
       auth_cache_verify_password_with_worker = yes
+      auth_cache_ttl = xxx
+      auth_cache_negative_ttl = xxx
     2. /etc/dovecot/conf.d/10-master.conf
       default_vsz_limit = 256M
       service_count = 0
@@ -238,4 +240,16 @@ Trouble Shotting
 **rip=::1, lip=::1, secured, session problem**    
 
      * this problem occurred offen , i don't known why , suggest imap and pop3 by listening ipv4 only , add "address" for ip(ipv4) interface in /etc/dovecot/conf.d/ 10-master.conf    
+
+
+**multiple domain**    
+
+check the following files    
+postfix    
+1.main.cf(ldap file)    
+2.helo_check  
+3.domain    
+
+dovecot     
+auth-ldap.conf.ext (add mutiple userdb, passdb )    
 
