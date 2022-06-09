@@ -30,7 +30,6 @@ RUN usermod -aG clamscan _rspamd
 RUN usermod -aG virusgroup _rspamd
 RUN chmod +x /start_dovecot.sh;chmod +x /setup.sh;
 RUN groupadd vmail -g 1001;useradd vmail -u 1001 -g 1001
-RUN /usr/sbin/postmap /etc/postfix/aliases
 RUN mkdir -p /etc/dovecot/sieve/global
 COPY supervisord.conf /etc
 CMD /setup.sh

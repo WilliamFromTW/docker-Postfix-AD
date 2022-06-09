@@ -116,4 +116,6 @@ else
 fi
 chown -R _rspamd:_rspamd /etc/rspamd/override.d  
 chown -R _rspamd:_rspamd /var/lib/rspamd
+/usr/sbin/postmap /etc/postfix/aliases
+/usr/bin/newaliases
 /usr/bin/supervisord -c /etc/supervisord.conf
