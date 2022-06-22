@@ -16,7 +16,7 @@ smtp      inet  n       -       n       -       -       smtpd
 #  -o milter_macro_daemon_name=ORIGINATING
 smtps     inet  n       -       n       -       -       smtpd
   -o smtpd_tls_wrappermode=yes
-  -o smtpd_sasl_auth_enable=yes
+#  -o smtpd_sasl_auth_enable=yes
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
   -o milter_macro_daemon_name=ORIGINATING
 #628      inet  n       -       n       -       -       qmqpd
@@ -108,6 +108,7 @@ submission inet n       -       n       -       -       smtpd
     -o smtpd_sasl_auth_enable=yes
     -o smtpd_sasl_type=dovecot
     -o smtpd_sasl_path=private/auth
+    -o smtpd_sasl_security_options=noanonymous
     -o smtpd_client_restrictions=permit_mynetworks,permit_sasl_authenticated,reject
 # Use dovecot's `deliver` program as LDA.
 dovecot unix    -       n       n       -       -      pipe

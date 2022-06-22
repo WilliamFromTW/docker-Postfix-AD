@@ -1,7 +1,7 @@
 FROM centos:centos7.9.2009
 RUN yum -y install epel-release
-RUN yum -y update 
-RUN yum -y upgrade
+RUN yum -y  update 
+RUN yum -y  upgrade
 RUN curl https://rspamd.com/rpm-stable/centos-7/rspamd.repo > /etc/yum.repos.d/rspamd.repo # For Centos-7
 RUN rpm --import https://rspamd.com/rpm-stable/gpg.key
 RUN yum update -y

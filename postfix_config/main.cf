@@ -722,13 +722,13 @@ disable_vrfy_command = yes
 strict_rfc821_envelopes = yes
 bounce_queue_lifetime = 1d
 ###############################################################
-smtpd_sasl_auth_enable = yes
+smtpd_sasl_auth_enable = no
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 #smtpd_sasl_security_options = noplaintext
 #smtpd_sasl_tls_security_options = noplaintext
 #smtpd_sasl_security_options = noanonymous
-broken_sasl_auth_clients = yes
+#broken_sasl_auth_clients = yes
 smtpd_sasl_authenticated_header = yes
 #smtpd_sasl_local_domain =
 ###############################################################
