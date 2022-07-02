@@ -114,6 +114,7 @@ else
   echo "0 1 * * * root /usr/sbin/ntpdate -s ${HOST_IP}" >> /etc/crontab
   /usr/bin/crontab /etc/crontab
 fi
+chown -R _rspamd:_rspamd /etc/rspamd/local.d
 chown -R _rspamd:_rspamd /etc/rspamd/override.d  
 chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/sbin/postmap /etc/postfix/aliases
