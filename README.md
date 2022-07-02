@@ -149,29 +149,7 @@ Enable DKIM
 
 * add /etc/opendkim/keys/default.txt content to DNS TXT record    
 
-Enable lmtp sieve( filter and vacation)  
-----    
-* uncomment parameter in /etc/postfix/main.cf    
-    
-    dovecot_destination_recipient_limit = 1    
-    virtual_transport = lmtp:inet:127.0.0.1:2424    
-    
-* Modify config.inc.php in roundcubemail    
-    $config['plugins'] = array(    
-      'archive',    
-      'zipdownload',    
-      'managesieve',    
-    );
-  
-    * for roundcube and mail are the same host    
-      $config['managesieve_host'] = 'localhost';    
-    * for roundcube and mail are the different host    
-      $config['managesieve_port'] = 4190;    
-      $config['managesieve_host'] = 'tls://\<mail server name\>';    
-    * general    
-    $config['managesieve_default'] = '/etc/dovecot/sieve/global';    
-    $config['managesieve_vacation'] = 1;    
-    $config['managesieve_vacation_interval'] = 1;    
+* getOpenDKIM.sh can help to generate multiple dkim files    
     
 Enable Quota    
 --    
@@ -204,7 +182,6 @@ Trouble Shotting
     telnet localhost 25(postfix)
     telnet localhost 8891(dkim service)
     telnet localhost 12340 (quota)
-    telnet localhost 2424 (lmtp)
     telnet localhost 11334 (rspamd)
     3. any service above is not working
     more /etc/supervisord.conf and find the launch command of the stoped service
@@ -244,7 +221,7 @@ Trouble Shotting
 
 **multiple domain**    
 
-check the following files    
+manual check the following files to enable multidomain   
 postfix    
 1.main.cf(ldap file)    
 2.helo_check  
