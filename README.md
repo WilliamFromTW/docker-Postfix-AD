@@ -13,6 +13,7 @@ Feature
 * Rspamd(spam filter)    
 * Clamav(antivirus)    
 * Quota (default 20G)
+* base os Rocky Linux 8.6    
 
 Support
 ----------
@@ -80,7 +81,7 @@ Example
 -----
 **Microsfot AD**    
 
-    <AD_HOST_IP> : 192.1.0.227
+    <HOST_IP> : 192.1.0.227
     <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com"
     <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
     <BIND_PW> : password
@@ -117,7 +118,7 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:2.4
+    --restart always -d --net=host inmethod/docker-postfix-ad:3.0
     
 
 Rspamd spam filter WEB UI     
@@ -230,3 +231,6 @@ postfix
 dovecot     
 auth-ldap.conf.ext (add mutiple userdb, passdb )    
 
+**upgrade from 2.4 to 3.0 **   
+
+create new volume excloude postfixldap_rspamd , postfixldap_vmail   
