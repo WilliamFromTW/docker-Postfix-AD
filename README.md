@@ -222,15 +222,16 @@ Trouble Shotting
 
 **multiple domain**    
 
-manual check the following files to enable multidomain   
-postfix    
-1.main.cf(ldap file)    
+Check the following files     
+
+/etc/postfix    
+1.main.cf(ldap parameter)    
 2.helo_check  
 3.domain    
 
-dovecot     
-auth-ldap.conf.ext (add mutiple userdb, passdb )    
+/etc/dovecot     
+1.auth-ldap.conf.ext (add mutiple userdb, passdb )    
+    
+**upgrade from 2.4 to 3.0**       
 
-**upgrade from 2.4 to 3.0 **   
-
-create new volume excloude postfixldap_rspamd , postfixldap_vmail   
+create new volume exclude postfixldap_rspamd , postfixldap_vmail     
