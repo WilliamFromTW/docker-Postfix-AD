@@ -45,7 +45,7 @@ Steps
 
 **parameters**
 
-    <AD_HOST_IP> : active directory ip
+    <HOST_IP> : active directory ip
     <SEARCH_BASE> : active directory ldap search base
     <BIND_DN> : active directory ldap bind dn
     <BIND_PW> : active directory ldap bind password

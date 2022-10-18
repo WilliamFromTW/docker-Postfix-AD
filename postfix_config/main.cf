@@ -116,7 +116,7 @@ inet_interfaces = all
 #inet_interfaces = localhost
 
 # Enable IPv4, and IPv6 if supported
-inet_protocols = all
+#inet_protocols = all
 
 # The proxy_interfaces parameter specifies the network interface
 # addresses that this mail system receives mail on by way of a
@@ -773,12 +773,19 @@ smtp_tls_note_starttls_offer = yes
 #
 # Disable SSLv2, SSLv3
 #
-smtpd_tls_protocols = !SSLv2 !SSLv3
-smtpd_tls_mandatory_protocols = !SSLv2 !SSLv3
-smtp_tls_protocols = !SSLv2 !SSLv3
-smtp_tls_mandatory_protocols = !SSLv2 !SSLv3
-lmtp_tls_protocols = !SSLv2 !SSLv3
-lmtp_tls_mandatory_protocols = !SSLv2 !SSLv3
+##smtpd_tls_protocols = !SSLv2 !SSLv3
+##smtpd_tls_mandatory_protocols = !SSLv2 !SSLv3
+##smtp_tls_protocols = !SSLv2 !SSLv3
+##smtp_tls_mandatory_protocols = !SSLv2 !SSLv3
+##lmtp_tls_protocols = !SSLv2 !SSLv3
+##lmtp_tls_mandatory_protocols = !SSLv2 !SSLv3
+
+# Disable SSLv2, SSLv3, TLSv1, TLSv1.1
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+
 
 ##
 ## 效能調教
@@ -817,4 +824,8 @@ smtpd_milters = inet:127.0.0.1:11332
 #smtpd_milters = inet:127.0.0.1:8891,inet:127.0.0.1:11332
 non_smtpd_milters = $smtpd_milters
 milter_default_action = accept
+
+#backwards-compatible default setting 
+append_dot_mydomain = yes
+compatibility_level = 2
 
