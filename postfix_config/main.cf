@@ -691,20 +691,16 @@ smtpd_recipient_restrictions =
  reject_unknown_recipient_domain,
  reject_unverified_recipient,
  reject_unauth_destination,
- reject_rbl_client zen.spamhaus.org,
  reject_rbl_client b.barracudacentral.org,
- reject_rbl_client bl.spamcop.net,
- reject_rbl_client cbl.abuseat.org
+ reject_rbl_client bl.spamcop.net
 
 smtpd_client_restrictions =
  check_sender_access pcre:/etc/postfix/sender_access,
  check_client_access pcre:/etc/postfix/client_access,
  permit_sasl_authenticated,
  permit_mynetworks,
- reject_rbl_client zen.spamhaus.org,
  reject_rbl_client b.barracudacentral.org,
- reject_rbl_client bl.spamcop.net,
- reject_rbl_client cbl.abuseat.org
+ reject_rbl_client bl.spamcop.net
 
 smtpd_sender_restrictions =
  check_sender_access pcre:/etc/postfix/sender_access,
