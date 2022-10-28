@@ -56,10 +56,11 @@ Steps
     <ALIASES> : active directory ldap aliase (optional)
     <TZ>: time zone default is Asia/Taipei       
 
-** Container StartUp script generator **      
-you can use this script generator    
-[Link to generator](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html "title" target="_blank")    
-or  reference the following  docker command    
+**Container StartUp script generator**    
+
+Use script generator    
+https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html    
+or reference the following  docker command    
 
 **docker command**
 
