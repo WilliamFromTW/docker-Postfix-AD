@@ -9,85 +9,143 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
     <title>postfix mail server + rspamd  + Active Directory</title>
+    <script type="text/javascript">
+	    function genStartUpCommand()
+	    {
+	    	var inputADIP = ( $("#inputADIP").val());
+	    	var inputSearchBase =  ( $("#inputSearchBase").val());
+	    	var inputAliases =  ( $("#inputAliases").val());
+	    	var inputBindDN =  ( $("#inputBindDN").val());
+	    	var inputDomain =  ( $("#inputDomain").val());
+	    	var inputMailServerName =  ( $("#inputMailServerName").val());
+	    	var inputPermitNetwork =  ( $("#inputPermitNetwork").val());
+	    	var inputTimeZone =  ( $("#inputTimeZone").val());
+	    	var inputContainerName =  ( $("#inputContainerName").val());
+	    	var inputContainer =  ( $("#inputContainer").val());
+	    	
+	    	var optionalValue = "";
+	    	if (inputAliases === null || inputAliases.trim() === "" )
+	    		;
+	    	else
+	    		optionalValue += " -e ALIASES=\""+inputAliases+"\" \\\n";
+
+	    	if (inputPermitNetwork === null || inputPermitNetwork.trim() === "" )
+	    		;
+	    	else{
+	    		optionalValue +=  " -e MY_NETWORKS=\""+inputPermitNetwork.replace("/","\\/")+"\" \\\n";
+	    	}
+	    	
+           var podmancmd = "podman run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v postfixldap_vmail:/home/vmail \\\n -v postfixldap_postfix:/etc/postfix \\\n -v postfixldap_dovecot:/etc/dovecot \\\n -v postfixldap_rspamd:/etc/rspamd \\\n -v postfixldap_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"your BIND_DN password\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n docker.io/inmethod/docker-postfix-ad:3.1\n";
+           var dockercmd = "docker  run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v postfixldap_vmail:/home/vmail \\\n -v postfixldap_postfix:/etc/postfix \\\n -v postfixldap_dovecot:/etc/dovecot \\\n -v postfixldap_rspamd:/etc/rspamd \\\n -v postfixldap_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"your BIND_DN password\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n inmethod/docker-postfix-ad:3.1\n";
+
+	        alert( inputContainer );
+	        if( inputContainer==="1" )
+		    	$( ".genResult" ).empty().append( "<pre>"+dockercmd+"</pre>" );
+	        else
+	    	  $( ".genResult" ).empty().append( "<pre>"+podmancmd+"</pre>" );
+	    	return false;
+	    }
+	 </script>
+	 <script
+  src="https://code.jquery.com/jquery-3.1.1.slim.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js" ></script>
+
   </head>
   <body>
-    <h1 align='center'> Container launch cmd generator</h1>
-    <h2 align='center'>(docker-postfix-ad) </h2>
-    <!-- Optional JavaScript; choose one of the two! -->
+    <h1 align='center'> Container StartUp Scripts Generator</h1>
+    <h2 align='center'><a href='https://github.com/WilliamFromTW/docker-Postfix-AD'  target=_blank>docker-postfix-AD </a> </h2>
 
-    <!-- Option 1: Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
-    <!-- Option 2: Separate Popper and Bootstrap JS -->
-    <!--
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-    -->
     <br>
-    <form class="row g-3">
+    
+  
+
+    <form class="row g-3" id="form1"   onSubmit="return genStartUpCommand()">
+    <div class="row">
+  <label for="inputContainerName" class="col-sm-3 col-form-label col-form-label-lg">Container Name</label>
+  <div class="col-sm-2">
+    <input type="text" class="form-control form-control-lg" id="inputContainerName" placeholder="mailserver"  value="mailserver"   required>
+  </div>
+  </div>
+    <div class="row">
+  <label for="inputContainer" class="col-sm-3 col-form-label col-form-label-lg">Container</label>
+  <div class="col-sm-1">
+  <select class="form-select  form-control form-control-lg" aria-label=".form-select-sm example" id="inputContainer">
+  <option value="1">docker</option>
+  <option value="2">podman</option>
+</select>  
+  </div>
+  </div>
+
+</div>
     <div class="row">
   <label for="inputADIP" class="col-sm-3 col-form-label col-form-label-lg">AD  IP</label>
   <div class="col-sm-3">
-    <input type="text" class="form-control form-control-lg" id="inputADIP" placeholder="10.192.130.227" required>
+    <input type="text" class="form-control form-control-lg" id="inputADIP" placeholder="192.168.1.1"  required>
   </div>
 </div>
  <div class="row">
    <label for="inputSearchBase" class="col-sm-3 col-form-label col-form-label-lg">AD Search Base</label>
    <div class="col-sm-6">
-     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="CN=Users,DC=test,DC=com" required>
+     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="OU=mygroup,DC=test,DC=com"  required >
   </div>
 </div>
 <div class="row">
-  <label for="inputAliases" class="col-sm-3 col-form-label col-form-label-lg">AD Aliases</label>
+  <label for="inputAliases" class="col-sm-3 col-form-label col-form-label-lg">AD Aliases(optional)</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com"  required>
+    <input type="text" class="form-control form-control-lg" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com"   >
  </div>
 </div>
 <div class="row">
   <label for="inputBindDN" class="col-sm-3 col-form-label col-form-label-lg">AD Bind DN</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com" required>
+    <input type="text" class="form-control form-control-lg" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com"  required>
  </div>
 </div>
 
 
 
-<div class="row">
-  <label for="inputPermitNetwork" class="col-sm-3 col-form-label col-form-label-lg">Permit trusted networks</label>
+<div class="row" >
+  <label for="inputPermitNetwork" class="col-sm-3 col-form-label col-form-label-lg">Permit trusted networks(optional)</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputPermitNetwork" placeholder="10.192.130.0/24" required>
+    <input type="text" class="form-control form-control-lg" id="inputPermitNetwork" placeholder="192.168.1.0/24"   >
  </div>
 </div>
 
 <div class="row">
   <label for="inputDomain" class="col-sm-3 col-form-label col-form-label-lg">Email Domain</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="test.com" required>
+    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="test.com"   required>
  </div>
 </div>
 
 <div class="row">
   <label for="inputMailServerName" class="col-sm-3 col-form-label col-form-label-lg">Email Server Name</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="mail.test.com" required>
+    <input type="text" class="form-control form-control-lg" id="inputMailServerName" placeholder="mail.test.com"  required>
  </div>
 </div>
 
 <div class="row">
   <label for="inputTimeZone" class="col-sm-3 col-form-label col-form-label-lg">Time Zone</label>
   <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputTimeZone" placeholder="Asia/Taipei" required>
+    <input type="text" class="form-control form-control-lg" id="inputTimeZone" placeholder="Asia/Taipei"  required>
  </div>
 </div>
 <div class="row">
-  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</label>  
+  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg"><a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones' target=_blank>https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a></label>  
 </div>
 <br>
-
+<br>
 
   <div class="col-12  ">
-    <button type="submit" class="btn btn-primary">Gen</button>
+ 
+     <button class="btn btn-primary" type="submit">Gen</button>
   </div>
 </form>
+<hr>
+<div class="genResult">
+</div>
   </body>
 </html>
