@@ -54,7 +54,7 @@ Steps
     <MAIL_HOST_NAME> :  mail server host name
     <PERMIT_NETWORKS> :  permit network (optional)
     <ALIASES> : active directory ldap aliase (optional)
-    <TZ>: time zone default is Asia/Taipei (optional)        
+    <TZ>: time zone default is Asia/Taipei       
 
 **docker command**
 

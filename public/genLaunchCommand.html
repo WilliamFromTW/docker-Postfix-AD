@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>postfix mail server + rspamd  + Active Directory</title>
+  </head>
+  <body>
+    <h1 align='center'> Container launch cmd generator</h1>
+    <h2 align='center'>(docker-postfix-ad) </h2>
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    -->
+    <br>
+    <form class="row g-3">
+    <div class="row">
+  <label for="inputADIP" class="col-sm-3 col-form-label col-form-label-lg">AD  IP</label>
+  <div class="col-sm-3">
+    <input type="text" class="form-control form-control-lg" id="inputADIP" placeholder="10.192.130.227" required>
+  </div>
+</div>
+ <div class="row">
+   <label for="inputSearchBase" class="col-sm-3 col-form-label col-form-label-lg">AD Search Base</label>
+   <div class="col-sm-6">
+     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="CN=Users,DC=test,DC=com" required>
+  </div>
+</div>
+<div class="row">
+  <label for="inputAliases" class="col-sm-3 col-form-label col-form-label-lg">AD Aliases</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com"  required>
+ </div>
+</div>
+<div class="row">
+  <label for="inputBindDN" class="col-sm-3 col-form-label col-form-label-lg">AD Bind DN</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com" required>
+ </div>
+</div>
+
+
+
+<div class="row">
+  <label for="inputPermitNetwork" class="col-sm-3 col-form-label col-form-label-lg">Permit trusted networks</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputPermitNetwork" placeholder="10.192.130.0/24" required>
+ </div>
+</div>
+
+<div class="row">
+  <label for="inputDomain" class="col-sm-3 col-form-label col-form-label-lg">Email Domain</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="test.com" required>
+ </div>
+</div>
+
+<div class="row">
+  <label for="inputMailServerName" class="col-sm-3 col-form-label col-form-label-lg">Email Server Name</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="mail.test.com" required>
+ </div>
+</div>
+
+<div class="row">
+  <label for="inputTimeZone" class="col-sm-3 col-form-label col-form-label-lg">Time Zone</label>
+  <div class="col-sm-6">
+    <input type="text" class="form-control form-control-lg" id="inputTimeZone" placeholder="Asia/Taipei" required>
+ </div>
+</div>
+<div class="row">
+  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</label>  
+</div>
+<br>
+
+
+  <div class="col-12  ">
+    <button type="submit" class="btn btn-primary">Gen</button>
+  </div>
+</form>
+  </body>
+</html>
