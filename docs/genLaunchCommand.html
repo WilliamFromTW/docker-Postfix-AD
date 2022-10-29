@@ -56,13 +56,15 @@
 
   </head>
   <body>
+ 
     <h1 align='center'> Container StartUp Scripts Generator</h1>
     <h2 align='center'><a href='https://github.com/WilliamFromTW/docker-Postfix-AD'  target=_blank>docker-postfix-AD </a> </h2>
+<br/>
+<br/>
 
 
-    <br>
     
-  
+  <div class="container">
 
     <form class="row g-3" id="form1"   onSubmit="return genStartUpCommand()">
     <div class="row">
@@ -73,7 +75,7 @@
   </div>
     <div class="row">
   <label for="inputContainer" class="col-sm-3 col-form-label col-form-label-lg">Container</label>
-  <div class="col-sm-1">
+  <div class="col-sm-2">
   <select class="form-select  form-control form-control-lg" aria-label=".form-select-sm example" id="inputContainer">
   <option value="1">docker</option>
   <option value="2">podman</option>
@@ -81,7 +83,7 @@
   </div>
   </div>
 
-</div>
+
     <div class="row">
   <label for="inputADIP" class="col-sm-3 col-form-label col-form-label-lg">AD  IP</label>
   <div class="col-sm-3">
@@ -91,7 +93,7 @@
  <div class="row">
    <label for="inputSearchBase" class="col-sm-3 col-form-label col-form-label-lg">AD Search Base</label>
    <div class="col-sm-6">
-     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="OU=mygroup,DC=test,DC=com"  required >
+     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="DC=test,DC=com"  required >
   </div>
 </div>
 <div class="row">
@@ -139,8 +141,6 @@
 <div class="row">
   <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg"><a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones' target=_blank>Click Here to get Time Zones</a></label>  
 </div>
-<br>
-<br>
 
   <div class="col-12  ">
  
@@ -148,7 +148,8 @@
   </div>
 </form>
 <hr>
-<div class="genResult">
+<div class="genResult"></div>
 </div>
+
   </body>
 </html>
