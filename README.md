@@ -134,7 +134,7 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:3.1
+    --restart always -d --net=host inmethod/docker-postfix-ad:3.2
     
 
 Rspamd spam filter WEB UI     
