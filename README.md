@@ -241,13 +241,17 @@ Trouble Shotting
 Check the following files     
 
 /etc/postfix    
-1.main.cf(ldap parameter)    
-2.helo_check  
-3.domain    
+
+1. main.cf(ldap parameter)    
+2. helo_check  
+3. domain    
 
 /etc/dovecot     
-1.auth-ldap.conf.ext (add mutiple userdb, passdb )    
+
+1. auth-ldap.conf.ext (add mutiple userdb, passdb )    
     
 **upgrade from 2.4 to 3.x**       
 
-create new volume exclude old postfixldap_rspamd , postfixldap_vmail , then startup new images          
+1. backup old volume (postfix,dovecot,vmail,rspamd)    
+2. create new volume and startup with new images          
+3. override new settings(vmail can override when new voluem create)    
