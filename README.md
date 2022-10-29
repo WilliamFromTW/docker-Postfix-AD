@@ -6,14 +6,14 @@ https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd
 
 Feature
 ----------
-* Authentication account can diferent with email. e.g. account: 520001 , email: william@smile.taipei    
+* Authentication account can be diferent with email. e.g. account: 520001 , email: william@smile.taipei    
 * postfix mail server    
 * User Account backend with Microsoft Active Directory(2008R2,2012R2,2016)    
 * OpenDKIM    
 * Rspamd(spam filter)    
 * Clamav(antivirus)    
 * Quota (default 20G)
-* base os Rocky Linux 8.6    
+* Base on Rocky Linux 8.6    
 
 Support
 ----------
@@ -43,6 +43,7 @@ Steps
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
     docker volume create postfixldap_rspamd    
+    docker volume create postfixldap_opendkim    
 
 **parameters**
 
@@ -66,9 +67,10 @@ or reference the following  docker command
 
     docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
     -v postfixldap_vmail:/home/vmail 
-	-v postfixldap_postfix:/etc/postfix  
-	-v postfixldap_dovecot:/etc/dovecot 
-	-v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_postfix:/etc/postfix  
+    -v postfixldap_dovecot:/etc/dovecot 
+    -v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_opendkim:/etc/opendkim \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
     -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
@@ -108,13 +110,15 @@ Example
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
     docker volume create postfixldap_rspamd    
+    docker volume create postfixldap_opendkim    
     
     docker run --name postfixldap \
     -v /etc/letsencrypt:/etc/letsencrypt \
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
     -v postfixldap_dovecot:/etc/dovecot \
-	-v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_opendkim:/etc/opendkim \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
     -e DOMAIN_NAME="test.com" \
@@ -124,7 +128,7 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:3.0
+    --restart always -d --net=host inmethod/docker-postfix-ad:3.1
     
 
 Rspamd spam filter WEB UI     
@@ -156,7 +160,7 @@ Enable DKIM
 
 * add /etc/opendkim/keys/default.txt content to DNS TXT record    
 
-* getOpenDKIM.sh can help to generate multiple dkim files    
+* Modify setting "domains" in /getOpenDKIM.sh , and generate multiple dkim files    
     
 Enable Quota    
 --    
@@ -238,6 +242,6 @@ Check the following files
 /etc/dovecot     
 1.auth-ldap.conf.ext (add mutiple userdb, passdb )    
     
-**upgrade from 2.4 to 3.0**       
+**upgrade from 2.4 to 3.x**       
 
-create new volume exclude postfixldap_rspamd , postfixldap_vmail     
+create new volume exclude old postfixldap_rspamd , postfixldap_vmail , then startup new images          
