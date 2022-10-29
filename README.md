@@ -4,6 +4,12 @@ Github
 ----------
 https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd    
 
+Build Container Images
+---------
+git clone https://github.com/WilliamFromTW/docker-Postfix-AD.git    
+cd docker-Postfix-AD    
+docker  build -t name:tag  --no-cache  .    
+
 Feature
 ----------
 * Authentication account can be diferent with email. e.g. account: 520001 , email: william@smile.taipei    
