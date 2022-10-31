@@ -253,5 +253,5 @@ Check the following files
 **upgrade from 2.4 to 3.x**       
 
 1. backup old volume (postfix,dovecot,vmail,rspamd)    
-2. create new volume and startup with new images          
-3. override new settings(vmail can override when new voluem create)    
+2. create new volume and startup with new images(old vmail volume can use directly when new voluem create)          
+3. merge ohter old settings    
