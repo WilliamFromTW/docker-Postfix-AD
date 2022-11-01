@@ -36,8 +36,8 @@
 	    	}
 	    		    	
 
-           var podmancmd = "podman volume create "+inputContainerName+"_vmail\npodman volume create "+inputContainerName+"_postfix\npodman volume create "+inputContainerName+"_dovecot\npodman volume create "+inputContainerName+"_log\npodman volume create "+inputContainerName+"_opendkim\npodman volume create "+inputContainerName+"_rspamd\npodman run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd:/etc/rspamd \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"your BIND_DN password\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n docker.io/inmethod/docker-postfix-ad:3.2\n";
-           var dockercmd = "docker volume create "+inputContainerName+"_vmail\ndocker volume create "+inputContainerName+"_postfix\ndocker volume create "+inputContainerName+"_dovecot\ndocker volume create "+inputContainerName+"_log\ndocker volume create "+inputContainerName+"_opendkim\ndocker volume create "+inputContainerName+"_rspamd\ndocker run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd:/etc/rspamd \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"your BIND_DN password\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n inmethod/docker-postfix-ad:3.2\n";
+           var podmancmd = "podman volume create "+inputContainerName+"_vmail\npodman volume create "+inputContainerName+"_postfix\npodman volume create "+inputContainerName+"_dovecot\npodman volume create "+inputContainerName+"_log\npodman volume create "+inputContainerName+"_opendkim\npodman volume create "+inputContainerName+"_rspamd_conf\npodman volume create "+inputContainerName+"_rspamd_var\npodman run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd_conf:/etc/rspamd\\\n -v "+inputContainerName+"_rspamd_var:/var/lib/rspamd  \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"<font color='red'>your BIND_DN password</font>\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n docker.io/inmethod/docker-postfix-ad:3.3\n";
+           var dockercmd = "docker volume create "+inputContainerName+"_vmail\ndocker volume create "+inputContainerName+"_postfix\ndocker volume create "+inputContainerName+"_dovecot\ndocker volume create "+inputContainerName+"_log\ndocker volume create "+inputContainerName+"_opendkim\ndocker volume create "+inputContainerName+"_rspamd_conf\ndocker volume create "+inputContainerName+"_rspamd_var\ndocker run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd_conf:/etc/rspamd\\\n -v "+inputContainerName+"_rspamd_var:/var/lib/rspamd \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"<font color='red'>your BIND_DN password</font>\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n inmethod/docker-postfix-ad:3.3\n";
 
 //	        alert( inputContainer );
 	        if( inputContainer==="1" ){
@@ -56,13 +56,15 @@
 
   </head>
   <body>
+ 
     <h1 align='center'> Container StartUp Scripts Generator</h1>
     <h2 align='center'><a href='https://github.com/WilliamFromTW/docker-Postfix-AD'  target=_blank>docker-postfix-AD </a> </h2>
+<br/>
+<br/>
 
 
-    <br>
     
-  
+  <div class="container">
 
     <form class="row g-3" id="form1"   onSubmit="return genStartUpCommand()">
     <div class="row">
@@ -73,7 +75,7 @@
   </div>
     <div class="row">
   <label for="inputContainer" class="col-sm-3 col-form-label col-form-label-lg">Container</label>
-  <div class="col-sm-1">
+  <div class="col-sm-2">
   <select class="form-select  form-control form-control-lg" aria-label=".form-select-sm example" id="inputContainer">
   <option value="1">docker</option>
   <option value="2">podman</option>
@@ -81,7 +83,7 @@
   </div>
   </div>
 
-</div>
+
     <div class="row">
   <label for="inputADIP" class="col-sm-3 col-form-label col-form-label-lg">AD  IP</label>
   <div class="col-sm-3">
@@ -91,7 +93,7 @@
  <div class="row">
    <label for="inputSearchBase" class="col-sm-3 col-form-label col-form-label-lg">AD Search Base</label>
    <div class="col-sm-6">
-     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="OU=mygroup,DC=test,DC=com"  required >
+     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="DC=test,DC=com"  required >
   </div>
 </div>
 <div class="row">
@@ -137,10 +139,8 @@
  </div>
 </div>
 <div class="row">
-  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg"><a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones' target=_blank>https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a></label>  
+  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg"><a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones' target=_blank>Click Here to get Time Zones</a></label>  
 </div>
-<br>
-<br>
 
   <div class="col-12  ">
  
@@ -148,7 +148,8 @@
   </div>
 </form>
 <hr>
-<div class="genResult">
+<div class="genResult"></div>
 </div>
+
   </body>
 </html>

@@ -48,7 +48,8 @@ Steps
     docker volume create postfixldap_postfix    
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
-    docker volume create postfixldap_rspamd    
+    docker volume create postfixldap_rspamd_conf    
+    docker volume create postfixldap_rspamd_var    
     docker volume create postfixldap_opendkim    
 
 **parameters**
@@ -75,7 +76,8 @@ or reference the following  docker command
     -v postfixldap_vmail:/home/vmail 
     -v postfixldap_postfix:/etc/postfix  
     -v postfixldap_dovecot:/etc/dovecot 
-    -v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_rspamd_conf:/etc/rspamd \
+    -v postfixldap_rspamd_var:/var/lib/rspamd \
     -v postfixldap_opendkim:/etc/opendkim \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
@@ -115,7 +117,8 @@ Example
     docker volume create postfixldap_postfix    
     docker volume create postfixldap_dovecot    
     docker volume create postfixldap_log    
-    docker volume create postfixldap_rspamd    
+    docker volume create postfixldap_rspamd_conf    
+    docker volume create postfixldap_rspamd_var    
     docker volume create postfixldap_opendkim    
     
     docker run --name postfixldap \
@@ -123,7 +126,8 @@ Example
     -v postfixldap_vmail:/home/vmail \
     -v postfixldap_postfix:/etc/postfix \
     -v postfixldap_dovecot:/etc/dovecot \
-    -v postfixldap_rspamd:/etc/rspamd \
+    -v postfixldap_rspamd_conf:/etc/rspamd \
+    -v postfixldap_rspamd_var:/var/lib/rspamd \
     -v postfixldap_opendkim:/etc/opendkim \
     -v postfixldap_log:/var/log \
     -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
@@ -134,7 +138,7 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:3.2
+    --restart always -d --net=host inmethod/docker-postfix-ad:3.3
     
 
 Rspamd spam filter WEB UI     
@@ -253,5 +257,5 @@ Check the following files
 **upgrade from 2.4 to 3.x**       
 
 1. backup old volume (postfix,dovecot,vmail,rspamd)    
-2. create new volume and startup with new images          
-3. override new settings(vmail can override when new voluem create)    
+2. create new volume and startup with new images(old vmail volume can use directly when new voluem create)          
+3. merge ohter old settings    
