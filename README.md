@@ -259,3 +259,9 @@ Check the following files
 1. backup old volume (postfix,dovecot,vmail,rspamd)    
 2. create new volume and startup with new images(old vmail volume can use directly when new voluem create)          
 3. merge ohter old settings    
+    
+**Free Domain Controller**    
+You can use free active directory server (Turnkey Domain Controller) instead of Microsoft AD    
+https://www.turnkeylinux.org/domain-controller     
+https://www.youtube.com/watch?v=PMUUuXmtFc8    
+
