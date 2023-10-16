@@ -1,4 +1,4 @@
-FROM rockylinux:8.6
+FROM rockylinux:8.8
 RUN dnf -y install epel-release
 RUN dnf config-manager --set-enabled powertools
 RUN dnf -y  update 

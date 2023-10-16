@@ -680,11 +680,11 @@ readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
 smtpd_recipient_restrictions =
  check_sender_access pcre:/etc/postfix/sender_access,
  check_client_access pcre:/etc/postfix/client_access,
- check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
- check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
  QUOTA_MAIN ,
  permit_mynetworks,
  permit_sasl_authenticated,
+ check_sender_access ldap:/etc/postfix/ldap-local_only.cf,
+ check_recipient_access ldap:/etc/postfix/ldap-local_only2.cf,
  reject_non_fqdn_hostname,
  reject_non_fqdn_recipient,
  reject_unknown_sender_domain,

@@ -1,0 +1,5 @@
+for i in $(docker exec -u www-data -it nextcloud2 php occ ldap:show-remnants | awk -F'| ' '{print $2}'); do
+  echo " docker exec -u www-data -it nextcloud2 php occ user:delete $i "
+ 
+#  docker exec -u www-data -it nextcloud2 php occ user:delete $i ;
+done

@@ -98,7 +98,7 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/bin/cp default.private /var/lib/rspamd/dkim/${DOMAIN_NAME}.dkim.key
 fi
 
-/usr/bin/chown -R vmail:vmail /home/vmail
+/usr/bin/chown -R vmail:vmail /home/vmail&
 chown -R opendkim:opendkim /etc/opendkim
 postmap /etc/postfix/local_only_domains
 postmap /etc/postfix/local_only2_domains
