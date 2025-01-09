@@ -98,6 +98,10 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/bin/cp default.private /var/lib/rspamd/dkim/${DOMAIN_NAME}.dkim.key
 fi
 
+if [ ! -f "/etc/dovecot/dh.pem ];  then
+  /usr/bin/openssl dhparam 4096 > /etc/dovecot/dh.pem
+fi
+
 /usr/bin/chown -R vmail:vmail /home/vmail&
 chown -R opendkim:opendkim /etc/opendkim
 postmap /etc/postfix/local_only_domains
