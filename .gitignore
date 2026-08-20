@@ -10,3 +10,5 @@ records/
 *.log
 *.csv
 openspec/
+.agent/
+.agents/
