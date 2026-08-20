@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-TW">
+<html lang="en">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -8,7 +8,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
-    <title>Postfix Mail Server + Rspamd + Active Directory 配置產生器</title>
+    <title data-i18n="docTitle">Postfix Mail Server + Rspamd + Active Directory Config Generator</title>
     <style>
       pre {
         background-color: #f8f9fa;
@@ -23,14 +23,35 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .lang-switcher-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
     </style>
   </head>
   <body class="bg-light pb-5">
  
     <div class="container mt-4">
+      <!-- Header & Language Switcher -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div></div>
+        <div class="lang-switcher-container">
+          <label for="selectLang" class="form-label mb-0 fw-bold text-secondary">🌐 Language:</label>
+          <select id="selectLang" class="form-select form-select-sm w-auto shadow-sm" onchange="changeLanguage(this.value)">
+            <option value="en" selected>English</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="vi">Tiếng Việt</option>
+          </select>
+        </div>
+      </div>
+
       <div class="text-center mb-4">
-        <h1 class="h2">Container StartUp Scripts & Compose Generator</h1>
+        <h1 class="h2" data-i18n="mainHeading">Container StartUp Scripts & Compose Generator</h1>
         <h2 class="h5 text-muted"><a href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank" class="text-decoration-none">docker-Postfix-AD (GitHub)</a></h2>
       </div>
 
@@ -39,12 +60,12 @@
           <form class="row g-3" id="form1" onSubmit="return genAllConfigs()">
             
             <div class="col-md-6">
-              <label for="inputContainerName" class="form-label font-weight-bold">Container Name (容器名稱)</label>
+              <label for="inputContainerName" class="form-label font-weight-bold" data-i18n="containerName">Container Name</label>
               <input type="text" class="form-control" id="inputContainerName" placeholder="mailserver" value="mailserver" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputImageTag" class="form-label font-weight-bold">Docker Image (映像檔名稱與版本)</label>
+              <label for="inputImageTag" class="form-label font-weight-bold" data-i18n="imageTag">Docker Image Version</label>
               <div class="input-group">
                 <span class="input-group-text bg-light text-muted">inmethod/docker-postfix-ad:</span>
                 <input type="text" class="form-control" id="inputImageTag" placeholder="4.0b1" value="4.0b1" required>
@@ -52,62 +73,62 @@
             </div>
 
             <div class="col-md-6">
-              <label for="inputADIP" class="form-label font-weight-bold">AD IP (Active Directory 伺服器 IP)</label>
-              <input type="text" class="form-control" id="inputADIP" placeholder="192.168.1.1" required>
+              <label for="inputADIP" class="form-label font-weight-bold" data-i18n="adIp">AD IP (Active Directory Server IP)</label>
+              <input type="text" class="form-control" id="inputADIP" data-i18n-placeholder="placeholderAdIp" placeholder="192.168.1.1" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputSearchBase" class="form-label font-weight-bold">AD Search Base</label>
-              <input type="text" class="form-control" id="inputSearchBase" placeholder="DC=test,DC=com" required>
+              <label for="inputSearchBase" class="form-label font-weight-bold" data-i18n="searchBase">AD Search Base</label>
+              <input type="text" class="form-control" id="inputSearchBase" data-i18n-placeholder="placeholderSearchBase" placeholder="DC=test,DC=com" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputBindDN" class="form-label font-weight-bold">AD Bind DN</label>
-              <input type="text" class="form-control" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com" required>
+              <label for="inputBindDN" class="form-label font-weight-bold" data-i18n="bindDn">AD Bind DN</label>
+              <input type="text" class="form-control" id="inputBindDN" data-i18n-placeholder="placeholderBindDn" placeholder="CN=ldap,CN=Users,DC=test,DC=com" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputAliases" class="form-label">AD Aliases (選填)</label>
-              <input type="text" class="form-control" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com">
+              <label for="inputAliases" class="form-label" data-i18n="aliases">AD Aliases (optional)</label>
+              <input type="text" class="form-control" id="inputAliases" data-i18n-placeholder="placeholderAliases" placeholder="OU=aliases,DC=test,DC=com">
             </div>
 
             <div class="col-md-6">
-              <label for="inputDomain" class="form-label font-weight-bold">Email Domain (郵件網域名稱)</label>
-              <input type="text" class="form-control" id="inputDomain" placeholder="test.com" required>
+              <label for="inputDomain" class="form-label font-weight-bold" data-i18n="domain">Email Domain</label>
+              <input type="text" class="form-control" id="inputDomain" data-i18n-placeholder="placeholderDomain" placeholder="test.com" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputMailServerName" class="form-label font-weight-bold">Email Server Name (郵件主機 FQDN)</label>
-              <input type="text" class="form-control" id="inputMailServerName" placeholder="mail.test.com" required>
+              <label for="inputMailServerName" class="form-label font-weight-bold" data-i18n="mailServerName">Email Server Name (FQDN)</label>
+              <input type="text" class="form-control" id="inputMailServerName" data-i18n-placeholder="placeholderMailServer" placeholder="mail.test.com" required>
             </div>
 
             <div class="col-md-6">
-              <label for="inputSpamEmail" class="form-label">SPAM_EMAIL (垃圾郵件信箱，選填)</label>
-              <input type="email" class="form-control" id="inputSpamEmail" placeholder="spam@test.com">
+              <label for="inputSpamEmail" class="form-label" data-i18n="spamEmail">SPAM_EMAIL (optional)</label>
+              <input type="email" class="form-control" id="inputSpamEmail" data-i18n-placeholder="placeholderSpam" placeholder="spam@test.com">
             </div>
 
             <div class="col-md-6">
-              <label for="inputPermitNetwork" class="form-label">Permit Trusted Networks (信任網段，選填)</label>
-              <input type="text" class="form-control" id="inputPermitNetwork" placeholder="192.168.1.0/24">
+              <label for="inputPermitNetwork" class="form-label" data-i18n="permitNetwork">Permit Trusted Networks (optional)</label>
+              <input type="text" class="form-control" id="inputPermitNetwork" data-i18n-placeholder="placeholderPermitNetwork" placeholder="192.168.1.0/24">
             </div>
 
             <div class="col-md-6">
-              <label for="inputTimeZone" class="form-label font-weight-bold">Time Zone (時區)</label>
+              <label for="inputTimeZone" class="form-label font-weight-bold" data-i18n="timeZone">Time Zone</label>
               <input type="text" class="form-control" id="inputTimeZone" placeholder="Asia/Taipei" value="Asia/Taipei" required>
-              <div class="form-text"><a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">查看時區列表 (List of Time Zones)</a></div>
+              <div class="form-text"><a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" data-i18n="tzLink">List of Time Zones</a></div>
             </div>
 
             <div class="col-md-6 d-flex align-items-center">
               <div class="form-check mt-3">
                 <input class="form-check-input" type="checkbox" id="inputEnableQuota" checked>
-                <label class="form-check-label" for="inputEnableQuota">
-                  啟用 Quota 信箱配額限制 (ENABLE_QUOTA)
+                <label class="form-check-label" for="inputEnableQuota" data-i18n="enableQuota">
+                  Enable Mailbox Quota Limit (ENABLE_QUOTA)
                 </label>
               </div>
             </div>
 
             <div class="col-12 mt-4 text-center">
-              <button class="btn btn-primary btn-lg px-5" type="submit">🚀 產生設定 (Generate)</button>
+              <button class="btn btn-primary btn-lg px-5" type="submit" data-i18n="btnGen">🚀 Generate Configs</button>
             </div>
           </form>
         </div>
@@ -116,15 +137,15 @@
       <div class="resultCard card shadow-sm d-none">
         <div class="card-header bg-white py-3 card-header-flex">
           <div class="d-flex align-items-center gap-2">
-            <label for="outputFormat" class="form-label mb-0 fw-bold">輸出格式：</label>
+            <label for="outputFormat" class="form-label mb-0 fw-bold" data-i18n="outputFormat">Output Format:</label>
             <select class="form-select w-auto" id="outputFormat" onchange="renderSelectedOutput()">
-              <option value="compose" selected>🐳 Docker Compose (YAML)</option>
-              <option value="docker">📦 Docker Run 指令</option>
-              <option value="podman">🦭 Podman Run 指令</option>
+              <option value="compose" data-i18n="optCompose" selected>🐳 Docker Compose (YAML)</option>
+              <option value="docker" data-i18n="optDocker">📦 Docker Run Command</option>
+              <option value="podman" data-i18n="optPodman">🦭 Podman Run Command</option>
             </select>
           </div>
-          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopy" onclick="copyCurrentOutput()">
-            📋 複製到剪貼簿
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopy" onclick="copyCurrentOutput()" data-i18n="btnCopy">
+            📋 Copy to Clipboard
           </button>
         </div>
         <div class="card-body">
@@ -136,13 +157,197 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript">
+      var translations = {
+        en: {
+          docTitle: "Postfix Mail Server + Rspamd + Active Directory Config Generator",
+          mainHeading: "Container StartUp Scripts & Compose Generator",
+          containerName: "Container Name",
+          imageTag: "Docker Image Version",
+          adIp: "AD IP (Active Directory Server IP)",
+          searchBase: "AD Search Base",
+          bindDn: "AD Bind DN",
+          aliases: "AD Aliases (optional)",
+          domain: "Email Domain",
+          mailServerName: "Email Server Name (FQDN)",
+          spamEmail: "SPAM_EMAIL (optional)",
+          permitNetwork: "Permit Trusted Networks (optional)",
+          timeZone: "Time Zone",
+          tzLink: "List of Time Zones",
+          enableQuota: "Enable Mailbox Quota Limit (ENABLE_QUOTA)",
+          btnGen: "🚀 Generate Configs",
+          outputFormat: "Output Format:",
+          optCompose: "🐳 Docker Compose (YAML)",
+          optDocker: "📦 Docker Run Command",
+          optPodman: "🦭 Podman Run Command",
+          btnCopy: "📋 Copy to Clipboard",
+          copied: "✅ Copied!",
+          copyFail: "Copy failed, please copy manually.",
+          commentVolumes: "# Create named persistent volumes",
+          commentRun: "# Start container",
+          placeholderAdIp: "192.168.1.1",
+          placeholderSearchBase: "DC=test,DC=com",
+          placeholderBindDn: "CN=ldap,CN=Users,DC=test,DC=com",
+          placeholderAliases: "OU=aliases,DC=test,DC=com",
+          placeholderDomain: "test.com",
+          placeholderMailServer: "mail.test.com",
+          placeholderSpam: "spam@test.com",
+          placeholderPermitNetwork: "192.168.1.0/24"
+        },
+        "zh-TW": {
+          docTitle: "Postfix 郵件伺服器 + Rspamd + Active Directory 設定產生器",
+          mainHeading: "容器啟動腳本與 Compose 設定產生器",
+          containerName: "容器名稱 (Container Name)",
+          imageTag: "Docker 映像檔版本 (Image Tag)",
+          adIp: "AD 伺服器 IP (Active Directory IP)",
+          searchBase: "AD 搜尋基底 (Search Base)",
+          bindDn: "AD 綁定帳號 DN (Bind DN)",
+          aliases: "AD 別名群組 (Aliases，選填)",
+          domain: "電子郵件網域 (Email Domain)",
+          mailServerName: "郵件主機完整名稱 (Server FQDN)",
+          spamEmail: "垃圾郵件信箱 (SPAM_EMAIL，選填)",
+          permitNetwork: "信任網段 (Permit Networks，選填)",
+          timeZone: "時區 (Time Zone)",
+          tzLink: "查看時區列表 (List of Time Zones)",
+          enableQuota: "啟用信箱配額限制 (ENABLE_QUOTA)",
+          btnGen: "🚀 產生設定 (Generate)",
+          outputFormat: "輸出格式：",
+          optCompose: "🐳 Docker Compose (YAML)",
+          optDocker: "📦 Docker Run 指令",
+          optPodman: "🦭 Podman Run 指令",
+          btnCopy: "📋 複製到剪貼簿",
+          copied: "✅ 已複製！",
+          copyFail: "複製失敗，請手動複製。",
+          commentVolumes: "# 建立具名持久化 Volumes",
+          commentRun: "# 啟動容器",
+          placeholderAdIp: "192.168.1.1",
+          placeholderSearchBase: "DC=test,DC=com",
+          placeholderBindDn: "CN=ldap,CN=Users,DC=test,DC=com",
+          placeholderAliases: "OU=aliases,DC=test,DC=com",
+          placeholderDomain: "test.com",
+          placeholderMailServer: "mail.test.com",
+          placeholderSpam: "spam@test.com",
+          placeholderPermitNetwork: "192.168.1.0/24"
+        },
+        "zh-CN": {
+          docTitle: "Postfix 邮件服务器 + Rspamd + Active Directory 配置生成器",
+          mainHeading: "容器启动脚本与 Compose 配置生成器",
+          containerName: "容器名称 (Container Name)",
+          imageTag: "Docker 镜像版本 (Image Tag)",
+          adIp: "AD 服务器 IP (Active Directory IP)",
+          searchBase: "AD 搜索基准 (Search Base)",
+          bindDn: "AD 绑定账号 DN (Bind DN)",
+          aliases: "AD 别名组 (Aliases，选填)",
+          domain: "电子邮件域名 (Email Domain)",
+          mailServerName: "邮件主机完整名称 (Server FQDN)",
+          spamEmail: "垃圾邮件邮箱 (SPAM_EMAIL，选填)",
+          permitNetwork: "信任网络网段 (Permit Networks，选填)",
+          timeZone: "时区 (Time Zone)",
+          tzLink: "查看时区列表 (List of Time Zones)",
+          enableQuota: "启用邮箱配额限制 (ENABLE_QUOTA)",
+          btnGen: "🚀 生成配置 (Generate)",
+          outputFormat: "输出格式：",
+          optCompose: "🐳 Docker Compose (YAML)",
+          optDocker: "📦 Docker Run 命令",
+          optPodman: "🦭 Podman Run 命令",
+          btnCopy: "📋 复制到剪贴板",
+          copied: "✅ 已复制！",
+          copyFail: "复制失败，请手动复制。",
+          commentVolumes: "# 创建命名持久化 Volumes",
+          commentRun: "# 启动容器",
+          placeholderAdIp: "192.168.1.1",
+          placeholderSearchBase: "DC=test,DC=com",
+          placeholderBindDn: "CN=ldap,CN=Users,DC=test,DC=com",
+          placeholderAliases: "OU=aliases,DC=test,DC=com",
+          placeholderDomain: "test.com",
+          placeholderMailServer: "mail.test.com",
+          placeholderSpam: "spam@test.com",
+          placeholderPermitNetwork: "192.168.1.0/24"
+        },
+        vi: {
+          docTitle: "Công cụ tạo cấu hình Postfix + Rspamd + Active Directory",
+          mainHeading: "Công cụ tạo cấu hình Container & Docker Compose",
+          containerName: "Tên Container (Container Name)",
+          imageTag: "Phiên bản Docker Image (Image Tag)",
+          adIp: "IP máy chủ AD (Active Directory IP)",
+          searchBase: "AD Search Base",
+          bindDn: "AD Bind DN",
+          aliases: "AD Aliases (tùy chọn)",
+          domain: "Tên miền Email (Email Domain)",
+          mailServerName: "Tên máy chủ Mail FQDN (Server Name)",
+          spamEmail: "Hộp thư rác (SPAM_EMAIL, tùy chọn)",
+          permitNetwork: "Mạng tin cậy (Permit Networks, tùy chọn)",
+          timeZone: "Múi giờ (Time Zone)",
+          tzLink: "Xem danh sách múi giờ (Time Zones)",
+          enableQuota: "Bật giới hạn dung lượng hòm thư (ENABLE_QUOTA)",
+          btnGen: "🚀 Tạo cấu hình (Generate)",
+          outputFormat: "Định dạng xuất:",
+          optCompose: "🐳 Docker Compose (YAML)",
+          optDocker: "📦 Lệnh Docker Run",
+          optPodman: "🦭 Lệnh Podman Run",
+          btnCopy: "📋 Sao chép vào bộ nhớ tạm",
+          copied: "✅ Đã sao chép!",
+          copyFail: "Sao chép thất bại, vui lòng sao chép thủ công.",
+          commentVolumes: "# Tạo các volume lưu trữ cố định",
+          commentRun: "# Khởi chạy container",
+          placeholderAdIp: "192.168.1.1",
+          placeholderSearchBase: "DC=test,DC=com",
+          placeholderBindDn: "CN=ldap,CN=Users,DC=test,DC=com",
+          placeholderAliases: "OU=aliases,DC=test,DC=com",
+          placeholderDomain: "test.com",
+          placeholderMailServer: "mail.test.com",
+          placeholderSpam: "spam@test.com",
+          placeholderPermitNetwork: "192.168.1.0/24"
+        }
+      };
+
+      var currentLang = "en";
       var cachedResults = {
         compose: "",
         docker: "",
         podman: ""
       };
 
-      function genAllConfigs() {
+      function applyLanguage(lang) {
+        if (!translations[lang]) lang = "en";
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        var dict = translations[lang];
+
+        $("[data-i18n]").each(function() {
+          var key = $(this).attr("data-i18n");
+          if (dict[key]) {
+            if ($(this).is("input[type=button], input[type=submit]")) {
+              $(this).val(dict[key]);
+            } else {
+              $(this).html(dict[key]);
+            }
+          }
+        });
+
+        $("[data-i18n-placeholder]").each(function() {
+          var key = $(this).attr("data-i18n-placeholder");
+          if (dict[key]) {
+            $(this).attr("placeholder", dict[key]);
+          }
+        });
+
+        $("#selectLang").val(lang);
+
+        // 若結果已產生，同步更新產出內容與註解
+        if (!$(".resultCard").hasClass("d-none")) {
+          genAllConfigs(false);
+        }
+      }
+
+      function changeLanguage(lang) {
+        localStorage.setItem("userLanguage", lang);
+        applyLanguage(lang);
+      }
+
+      function genAllConfigs(shouldScroll) {
+        if (typeof shouldScroll === "undefined") shouldScroll = true;
+
+        var dict = translations[currentLang] || translations.en;
         var containerName = $("#inputContainerName").val().trim() || "mailserver";
         var imageTag = $("#inputImageTag").val().trim() || "4.0b1";
         var image = "inmethod/docker-postfix-ad:" + imageTag;
@@ -171,7 +376,7 @@
         }
 
         // 1. Docker Run 指令
-        var dockerCmd = "# 建立具名持久化 Volumes\n" +
+        var dockerCmd = dict.commentVolumes + "\n" +
           "docker volume create " + containerName + "_vmail\n" +
           "docker volume create " + containerName + "_postfix\n" +
           "docker volume create " + containerName + "_dovecot\n" +
@@ -179,7 +384,7 @@
           "docker volume create " + containerName + "_opendkim\n" +
           "docker volume create " + containerName + "_rspamd_conf\n" +
           "docker volume create " + containerName + "_rspamd_var\n\n" +
-          "# 啟動容器\n" +
+          dict.commentRun + "\n" +
           "docker run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
           " -v " + containerName + "_vmail:/home/vmail \\\n" +
@@ -203,8 +408,7 @@
           image + "\n";
 
         // 2. Podman Run 指令
-        var podmanImage = image.startsWith("docker.io/") ? image : ("docker.io/" + image);
-        var podmanCmd = "# 建立具名持久化 Volumes\n" +
+        var podmanCmd = dict.commentVolumes + "\n" +
           "podman volume create " + containerName + "_vmail\n" +
           "podman volume create " + containerName + "_postfix\n" +
           "podman volume create " + containerName + "_dovecot\n" +
@@ -212,7 +416,7 @@
           "podman volume create " + containerName + "_opendkim\n" +
           "podman volume create " + containerName + "_rspamd_conf\n" +
           "podman volume create " + containerName + "_rspamd_var\n\n" +
-          "# 啟動容器\n" +
+          dict.commentRun + "\n" +
           "podman run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
           " -v " + containerName + "_vmail:/home/vmail \\\n" +
@@ -291,10 +495,11 @@
         $(".resultCard").removeClass("d-none");
         renderSelectedOutput();
 
-        // 捲動至結果區塊
-        $('html, body').animate({
-          scrollTop: $(".resultCard").offset().top - 20
-        }, 300);
+        if (shouldScroll) {
+          $('html, body').animate({
+            scrollTop: $(".resultCard").offset().top - 20
+          }, 300);
+        }
 
         return false;
       }
@@ -316,6 +521,7 @@
       }
 
       function fallbackCopy() {
+        var dict = translations[currentLang] || translations.en;
         var text = $("#outputCode").text();
         var textArea = document.createElement("textarea");
         textArea.value = text;
@@ -328,21 +534,27 @@
           document.execCommand('copy');
           showCopySuccess();
         } catch (err) {
-          alert('複製失敗，請手動全選複製');
+          alert(dict.copyFail || 'Copy failed, please copy manually.');
         }
         document.body.removeChild(textArea);
       }
 
       function showCopySuccess() {
+        var dict = translations[currentLang] || translations.en;
         var $btn = $("#btnCopy");
-        var originalText = $btn.html();
-        $btn.removeClass("btn-outline-secondary").addClass("btn-success").html("✅ 已複製！");
+        var originalText = dict.btnCopy || "📋 Copy to Clipboard";
+        $btn.removeClass("btn-outline-secondary").addClass("btn-success").html(dict.copied || "✅ Copied!");
         setTimeout(function() {
           $btn.removeClass("btn-success").addClass("btn-outline-secondary").html(originalText);
         }, 2000);
       }
 
       $(document).ready(function() {
+        // 讀取記錄或預設為英文
+        var savedLang = localStorage.getItem("userLanguage") || "en";
+        applyLanguage(savedLang);
+
+        // Email Domain 自動連動
         $("#inputDomain").on("input", function() {
           var domain = $(this).val().trim();
           if (domain) {

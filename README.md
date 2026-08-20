@@ -1,258 +1,206 @@
-Docker-Postfix-AD
-=========================
-Github
-----------
-https://github.com/WilliamFromTW/docker-Postfix-AD/tree/rspamd    
+# Docker-Postfix-AD
 
-Build Container Images
----------
-git clone https://github.com/WilliamFromTW/docker-Postfix-AD.git    
-cd docker-Postfix-AD    
-docker  build -t name:tag  --no-cache  .    
+🌐 **Language / 語言 / Ngôn ngữ**:  
+[English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md) | [Tiếng Việt](README.vi.md)
 
-Feature
-----------
-* Authentication account can be diferent with email. e.g. account: 520001 , email: william@smile.taipei    
-* postfix mail server    
-* User Account backend with Microsoft Active Directory(2008R2,2012R2,2016,2019)    
-* OpenDKIM    
-* Rspamd(spam filter)    
-* Clamav(antivirus)    
-* Quota (default 20G)
-* Base on Rocky Linux 10.2    
+---
 
-Support
-----------
-* SMTP    
-port 25    
-port 465(SSL)
-port 587(TLS)
+## 📌 Introduction
+A full-featured Postfix Mail Server container with Active Directory (LDAP) backend authentication, Rspamd spam filtering, ClamAV antivirus, OpenDKIM signing, and Quota support.
 
-* POP3    
-port 995(SSL)    
+- **GitHub Repository**: [https://github.com/WilliamFromTW/docker-Postfix-AD](https://github.com/WilliamFromTW/docker-Postfix-AD)
+- **Online Config Generator**: [https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html)
 
-* imap    
-port 143(TLS),993(TLS)    
+---
 
+## 🚀 Features
+- **Independent Account & Email**: Login account name can be distinct from email address (e.g., account: `520001`, email: `william@smile.taipei`).
+- **Microsoft Active Directory LDAP Auth**: Compatible with Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
+- **Postfix Mail Transfer Agent (MTA)**.
+- **Dovecot IMAP / POP3 Server**.
+- **OpenDKIM**: Email signature verification & signing.
+- **Rspamd**: High-performance spam filter with Web UI.
+- **ClamAV**: Antivirus scanner integration.
+- **Mailbox Quota**: Dovecot quota management (default 20GB, configurable).
+- **Base OS**: Rocky Linux.
 
-Prerequisites
-----    
-* Make let\'sencrypt ready in your docker host(not container).     
-Mapping host's /etc/letsencrypt to container        
+---
 
-Steps
------------
-**Create Volume**
+## 🔌 Supported Protocols & Ports
 
-    docker volume create postfixldap_vmail    
-    docker volume create postfixldap_postfix    
-    docker volume create postfixldap_dovecot    
-    docker volume create postfixldap_log    
-    docker volume create postfixldap_rspamd_conf    
-    docker volume create postfixldap_rspamd_var    
-    docker volume create postfixldap_opendkim    
+| Protocol | Port | Encryption |
+| :--- | :--- | :--- |
+| **SMTP** | `25` | Plain / STARTTLS |
+| **SMTPS** | `465` | SSL/TLS |
+| **Submission** | `587` | STARTTLS |
+| **POP3** | `110` | Plain / STARTTLS |
+| **POP3S** | `995` | SSL/TLS |
+| **IMAP** | `143` | Plain / STARTTLS |
+| **IMAPS** | `993` | SSL/TLS |
+| **ManageSieve** | `4190` | TLS |
+| **Rspamd Web UI** | `11334` | HTTP (Proxy recommended) |
 
-**parameters**
+---
 
-    <HOST_IP> : active directory ip
-    <SEARCH_BASE> : active directory ldap search base
-    <BIND_DN> : active directory ldap bind dn
-    <BIND_PW> : active directory ldap bind password
-    <EMAIL_DOMAIN_NAME> :  mail domain name
-    <MAIL_HOST_NAME> :  mail server host name
-    <PERMIT_NETWORKS> :  permit network (optional)
-    <ALIASES> : active directory ldap aliase (optional)
-    <TZ>: time zone default is Asia/Taipei       
+## 📋 Prerequisites
+- Ensure Let's Encrypt certificates are prepared on the **Docker Host** (not inside the container).
+- Maps host `/etc/letsencrypt` to container `/etc/letsencrypt`.
 
-**Container StartUp script generator**    
+---
 
-Use script generator    
-https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html    
-or reference the following  docker command    
+## ⚙️ Quick Start
 
-**docker command**
+### Option 1: Online Generator (Recommended)
+Visit the [Online Config Generator](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html) to interactively generate your `docker-compose.yaml` or `docker run` command with a single click.
 
-    docker run --name postfixldap -v /etc/letsencrypt:/etc/letsencrypt  \
-    -v postfixldap_vmail:/home/vmail 
-    -v postfixldap_postfix:/etc/postfix  
-    -v postfixldap_dovecot:/etc/dovecot 
-    -v postfixldap_rspamd_conf:/etc/rspamd \
-    -v postfixldap_rspamd_var:/var/lib/rspamd \
-    -v postfixldap_opendkim:/etc/opendkim \
-    -v postfixldap_log:/var/log \
-    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
-    -e DOMAIN_NAME="<EMAIL_DOMAIN_NAME>"  \
-    -e HOST_NAME="<MAIL_HOST_NAME>"  \
-    -e HOST_IP="<AD_HOST_IP>"  \
-    -e SEARCH_BASE="<SEARCH_BASE>"  \
-    -e BIND_DN="<BIND_DN>"  \
-    -e BIND_PW="<BIND_PW>"  \
-    -e ALIASES="<ALIASES>"  \
-    -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
-    -e TZ="<TZ>" \
-    -e ENABLE_QUOTA="true" \
-    -e SPAM_EMAIL="<SPAM_EMAIL>" \
-    --restart always -d inmethod/docker-postfix-ad:tag
+---
 
-Example
------
-**Microsfot AD**    
+### Option 2: Docker Compose (`docker-compose.yaml`)
 
-    <HOST_IP> : 192.1.0.227
-    <SEARCH_BASE> : "cn=Users,dc=test,dc=com" or "dc=test,dc=com"
-    <BIND_DN> : cn=ldap,cn=Users,dc=test,dc=com
-    <BIND_PW> : password
-  
-**Mail server(docker)**    
+1. Create a `docker-compose.yaml` file:
 
-    <EMAIL_DOMAIN_NAME> : test.com 
-    <MAIL_HOST_NAME> : mail.test.com
+```yaml
+version: '3.8'
 
-**TimeZone**
+services:
+  mailserver:
+    image: inmethod/docker-postfix-ad:4.0b1
+    container_name: mailserver
+    restart: always
+    network_mode: host
+    environment:
+      - DOMAIN_NAME=test.com
+      - HOST_NAME=mail.test.com
+      - HOST_IP=192.168.1.1
+      - SEARCH_BASE=DC=test,DC=com
+      - BIND_DN=CN=ldap,CN=Users,DC=test,DC=com
+      - BIND_PW=your_bind_dn_password
+      - TZ=Asia/Taipei
+      - ENABLE_QUOTA=true
+      - SPAM_EMAIL=spam@test.com
+      # - ALIASES=OU=aliases,DC=test,DC=com
+      # - MY_NETWORKS=192.168.1.0/24
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - mailserver_vmail:/home/vmail
+      - mailserver_opendkim:/etc/opendkim
+      - mailserver_postfix:/etc/postfix
+      - mailserver_dovecot:/etc/dovecot
+      - mailserver_rspamd_conf:/etc/rspamd
+      - mailserver_rspamd_var:/var/lib/rspamd
+      - mailserver_log:/var/log
 
-    <TZ>:Asia/Taipei
+volumes:
+  mailserver_vmail:
+  mailserver_opendkim:
+  mailserver_postfix:
+  mailserver_dovecot:
+  mailserver_rspamd_conf:
+  mailserver_rspamd_var:
+  mailserver_log:
+```
 
-**docker launch command**
+2. Start the service:
+```bash
+docker compose up -d
+```
 
-    docker volume create postfixldap_vmail    
-    docker volume create postfixldap_postfix    
-    docker volume create postfixldap_dovecot    
-    docker volume create postfixldap_log    
-    docker volume create postfixldap_rspamd_conf    
-    docker volume create postfixldap_rspamd_var    
-    docker volume create postfixldap_opendkim    
-    
-    docker run --name postfixldap \
-    -v /etc/letsencrypt:/etc/letsencrypt \
-    -v postfixldap_vmail:/home/vmail \
-    -v postfixldap_postfix:/etc/postfix \
-    -v postfixldap_dovecot:/etc/dovecot \
-    -v postfixldap_rspamd_conf:/etc/rspamd \
-    -v postfixldap_rspamd_var:/var/lib/rspamd \
-    -v postfixldap_opendkim:/etc/opendkim \
-    -v postfixldap_log:/var/log \
-    -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
-    -e DOMAIN_NAME="test.com" \
-    -e HOST_NAME="mail.test.com" \
-    -e HOST_IP="192.1.0.227" \
-    -e SEARCH_BASE="cn=Users,dc=test,dc=com" \
-    -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
-    -e BIND_PW="password" \
-    -e TZ="Asia/Taipei" \
-    -e SPAM_EMAIL=spam@test.com
-    --restart always -d --net=host inmethod/docker-postfix-ad:4.0b1
-    
+---
 
-Rspamd spam filter WEB UI     
---    
-*  ACCESS WEB UI    
-    
-   use httpd reverse proxy to access localhost:11334    
+### Option 3: Docker CLI Command
 
-*  change login password      
-    
-	default password : kafeiou.pw    
-	command(container) to generate new crypt password     
-	>  rspamadm pw --encrypt -p \<new password\>      
-	
-	change new crypt password in /etc/rspamd/local.d/worker-controller.inc      
+1. Create named volumes:
+```bash
+docker volume create mailserver_vmail
+docker volume create mailserver_postfix
+docker volume create mailserver_dovecot
+docker volume create mailserver_log
+docker volume create mailserver_opendkim
+docker volume create mailserver_rspamd_conf
+docker volume create mailserver_rspamd_var
+```
 
-*  whitelist and blacklist    
+2. Run the container:
+```bash
+docker run --name mailserver \
+  -v /etc/letsencrypt:/etc/letsencrypt \
+  -v mailserver_vmail:/home/vmail \
+  -v mailserver_opendkim:/etc/opendkim \
+  -v mailserver_postfix:/etc/postfix \
+  -v mailserver_dovecot:/etc/dovecot \
+  -v mailserver_rspamd_conf:/etc/rspamd \
+  -v mailserver_rspamd_var:/var/lib/rspamd \
+  -v mailserver_log:/var/log \
+  -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
+  -e DOMAIN_NAME="test.com" \
+  -e HOST_NAME="mail.test.com" \
+  -e HOST_IP="192.168.1.1" \
+  -e SEARCH_BASE="DC=test,DC=com" \
+  -e BIND_DN="CN=ldap,CN=Users,DC=test,DC=com" \
+  -e BIND_PW="your_bind_dn_password" \
+  -e TZ="Asia/Taipei" \
+  -e ENABLE_QUOTA="true" \
+  -e SPAM_EMAIL="spam@test.com" \
+  -d --restart always --net=host \
+  inmethod/docker-postfix-ad:4.0b1
+```
 
-    login web to edit file list in tab Configuration, or manual edit /etc/rspamd/override.d in container    
-	
+---
 
-Enable DKIM 
-----    
-* uncomment parameter in /etc/postfix/main.cf    
-    
-    smtpd_milters = inet:127.0.0.1:8891    
-    non_smtpd_milters = $smtpd_milters    
-    milter_default_action = accept    
+## 🛡️ Rspamd Spam Filter Web UI
+- **Access Web UI**: `http://<host-ip>:11334` (Recommended: use Apache/Nginx reverse proxy with SSL).
+- **Default Password**: `kafeiou.pw`
+- **Change Password**:
+  1. Generate encrypted password hash inside container:
+     ```bash
+     docker exec -it mailserver rspamadm pw --encrypt -p <your_new_password>
+     ```
+  2. Update password hash in `/etc/rspamd/local.d/worker-controller.inc`.
 
-* add /etc/opendkim/keys/default.txt content to DNS TXT record    
+---
 
-* Modify setting "domains" in /getOpenDKIM.sh , and generate multiple dkim files    
-    
-Enable Quota    
---    
-**launch docker with -e ENABLE_QUOTA="true"**    
-    
-Active Directory Notice
-----
-* Login Name can different with email name    
+## 🔑 Enable OpenDKIM
+1. Uncomment milter configuration in `/etc/postfix/main.cf`:
+   ```text
+   smtpd_milters = inet:127.0.0.1:8891
+   non_smtpd_milters = $smtpd_milters
+   milter_default_action = accept
+   ```
+2. Add public key from `/etc/opendkim/keys/default.txt` to your domain DNS TXT record.
+3. Configure `domains` in `/getOpenDKIM.sh` if multiple DKIM domains are required.
 
-* Login Name must be created lower case (because dovecot always use lower case)    
+---
 
-* ALIASES    
-    Create Group and give an aliases email in attribute "mail" ,  and include account in group    
+## 🏢 Active Directory Setup Guidelines
+- **Username Casing**: Account names in AD must be lower-case (Dovecot queries in lower-case).
+- **Email Attribute**: Fill in the `mail` attribute in the AD User or Group object.
+- **Aliases**: Create an AD Group, set its `mail` attribute to the alias email address, and add member accounts to this group.
+- **Local Domain Only**: Set `description` attribute to `local_only` on a User or Group to restrict messaging within local domain only.
 
-* Account    
-    Create User and give email in attribute "mail" , account must be lower case    
+---
 
-* local_only    
-    Write "local_only" attribute "description" in user or group to restrict the use in local domain only    
+## 🔍 Troubleshooting & Verification
+1. Enter container shell:
+   ```bash
+   docker exec -it mailserver bash
+   ```
+2. Check running processes and services:
+   ```bash
+   supervisorctl status
+   ```
+3. Test local ports via telnet/nc:
+   ```bash
+   telnet localhost 25    # Postfix SMTP
+   telnet localhost 143   # Dovecot IMAP
+   telnet localhost 8891  # OpenDKIM
+   telnet localhost 11334 # Rspamd
+   ```
 
+---
 
-Trouble Shotting
-----
-**Checking service**
-
-     1. login container 
-    docker exec -it <container name> bash
-     2. testing service
-    telnet localhost 143 (dovecot)
-    telnet localhost 25(postfix)
-    telnet localhost 8891(dkim service)
-    telnet localhost 12340 (quota)
-    telnet localhost 11334 (rspamd)
-    3. any service above is not working
-    more /etc/supervisord.conf and find the launch command of the stoped service
-    execute command to see error messages .
-    
-**Performance Tunning**
-
-    1. /etc/dovecot/conf.d/10-auth.conf
-      auth_cache_size = 256M    
-      auth_cache_verify_password_with_worker = yes
-      auth_cache_ttl = xxx
-      auth_cache_negative_ttl = xxx
-    2. /etc/dovecot/conf.d/10-master.conf
-      default_vsz_limit = 256M
-      service_count = 0
-    3. /etc/dovecot/dovecot.conf , 15-lda.conf , 20-lmtp.conf
-       mail_fsync = never
-       protocol lda {
-         mail_fsync = optimized
-       }
-       protocol lmtp {
-         mail_fsync = optimized
-       }
-      
-**fail2ban**    
-
-    * add --net=host in docker launch command to get real remote ip from log(strong recommended)      
-             
-**quota**    
-
-     * modify /etc/dovecot/conf.d/90-quota.cf to change quota limit    
-
-**rip=::1, lip=::1, secured, session problem**    
-
-     * this problem occurred offen , i don't known why , suggest imap and pop3 by listening ipv4 only , add "address" for ip(ipv4) interface in /etc/dovecot/conf.d/ 10-master.conf    
-
-
-**multiple domain**    
-
-Check the following files     
-
-/etc/postfix    
-
-1. main.cf(ldap parameter)    
-2. helo_check  
-3. domain    
-
-/etc/dovecot     
-
-1. auth-ldap.conf.ext (add mutiple userdb, passdb )    
-    
+## 🛠️ Build Image Locally
+```bash
+git clone https://github.com/WilliamFromTW/docker-Postfix-AD.git
+cd docker-Postfix-AD
+docker build -t inmethod/docker-postfix-ad:4.0b1 --no-cache .
+```
