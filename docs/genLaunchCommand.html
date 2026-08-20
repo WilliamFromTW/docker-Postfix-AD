@@ -195,7 +195,7 @@
           " -e HOST_IP=\"" + adIp + "\" \\\n" +
           " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
           " -e BIND_DN=\"" + bindDn + "\" \\\n" +
-          " -e BIND_PW=\"your_bind_dn_password\" \\\n" +
+          " -e BIND_PW=\"<span class=\"text-danger fw-bold\">your_bind_dn_password</span>\" \\\n" +
           " -e TZ=\"" + timeZone + "\" \\\n" +
           " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
           cliOptional +
@@ -228,7 +228,7 @@
           " -e HOST_IP=\"" + adIp + "\" \\\n" +
           " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
           " -e BIND_DN=\"" + bindDn + "\" \\\n" +
-          " -e BIND_PW=\"your_bind_dn_password\" \\\n" +
+          " -e BIND_PW=\"<span class=\"text-danger fw-bold\">your_bind_dn_password</span>\" \\\n" +
           " -e TZ=\"" + timeZone + "\" \\\n" +
           " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
           cliOptional +
@@ -241,7 +241,7 @@
           "      - HOST_IP=" + adIp + "\n" +
           "      - SEARCH_BASE=" + searchBase + "\n" +
           "      - BIND_DN=" + bindDn + "\n" +
-          "      - BIND_PW=your_bind_dn_password\n" +
+          "      - BIND_PW=<span class=\"text-danger fw-bold\">your_bind_dn_password</span>\n" +
           "      - TZ=" + timeZone + "\n" +
           "      - ENABLE_QUOTA=" + enableQuota + "\n";
         
@@ -301,7 +301,7 @@
 
       function renderSelectedOutput() {
         var format = $("#outputFormat").val();
-        $("#outputCode").text(cachedResults[format] || "");
+        $("#outputCode").html(cachedResults[format] || "");
       }
 
       function copyCurrentOutput() {
