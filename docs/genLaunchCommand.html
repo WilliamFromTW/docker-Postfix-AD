@@ -44,8 +44,11 @@
             </div>
 
             <div class="col-md-6">
-              <label for="inputImage" class="form-label font-weight-bold">Docker Image (映像檔名稱與版本)</label>
-              <input type="text" class="form-control" id="inputImage" placeholder="inmethod/docker-postfix-ad:4.0b1" value="inmethod/docker-postfix-ad:4.0b1" required>
+              <label for="inputImageTag" class="form-label font-weight-bold">Docker Image (映像檔名稱與版本)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted">inmethod/docker-postfix-ad:</span>
+                <input type="text" class="form-control" id="inputImageTag" placeholder="4.0b1" value="4.0b1" required>
+              </div>
             </div>
 
             <div class="col-md-6">
@@ -141,7 +144,9 @@
 
       function genAllConfigs() {
         var containerName = $("#inputContainerName").val().trim() || "mailserver";
-        var image = $("#inputImage").val().trim() || "inmethod/docker-postfix-ad:4.0b1";
+        var imageTag = $("#inputImageTag").val().trim() || "4.0b1";
+        var image = "inmethod/docker-postfix-ad:" + imageTag;
+        var podmanImage = "docker.io/inmethod/docker-postfix-ad:" + imageTag;
         var adIp = $("#inputADIP").val().trim();
         var searchBase = $("#inputSearchBase").val().trim();
         var bindDn = $("#inputBindDN").val().trim();
