@@ -18,7 +18,9 @@ if [ -n "${HOST_NAME}" ]; then
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/postfix/local-host-names
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/dovecot/conf.d/10-ssl.conf
  sed -i "s/HOST_NAME/${HOST_NAME}/g" /etc/opendkim/TrustedHosts
-
+ if [ ! -f "/etc/letsencrypt/live/${HOST_NAME}/fullchain.pem" ];  then
+  /make_fake_cert.sh ${HOST_NAME}
+ fi
 fi
 
 if [ -n "${SEARCH_BASE}" ]; then
@@ -75,6 +77,15 @@ else
  sed -i "s/\,MY_NETWORKS/ /g" /etc/postfix/main.cf
 fi
 
+if [ -n "${SPAM_EMAIL}" ]; then
+ sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
+ sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/local.d/quarantine_redirect.lua
+else
+ sed -i "s/SPAM_EMAIL/postmaster/g" /etc/postfix/milter_header_checks
+ sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/local.d/quarantine_redirect.lua
+fi
+
+
 if [[ "${ENABLE_QUOTA}" == "true" ]]; then
   sed -i "s/QUOTA_MAIN/check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
   sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.conf
@@ -98,7 +109,7 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/bin/cp default.private /var/lib/rspamd/dkim/${DOMAIN_NAME}.dkim.key
 fi
 
-if [ ! -f "/etc/dovecot/dh.pem ];  then
+if [ ! -f "/etc/dovecot/dh.pem" ];  then
   /usr/bin/openssl dhparam 4096 > /etc/dovecot/dh.pem
 fi
 
@@ -114,7 +125,11 @@ chown -R _rspamd:_rspamd /etc/rspamd/local.d
 chown -R _rspamd:_rspamd /etc/rspamd/override.d  
 chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/sbin/postmap /etc/postfix/aliases
-/usr/bin/newaliases
+/usr/sbin/postalias lmdb:/etc/aliases
 echo $TZ > /etc/timezone
+chown clamupdate:clamupdate /var/lib/clamav
+chmod 755 /var/lib/clamav
+sudo mkdir -p /run/clamd.scan
+sudo chown clamscan:clamscan /run/clamd.scan
 freshclam
 /usr/bin/supervisord -c /etc/supervisord.conf

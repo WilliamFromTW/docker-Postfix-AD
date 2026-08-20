@@ -1,2 +1,4 @@
-test.com
+/\.ua$/i
+/.co\.ua$/i
+
 

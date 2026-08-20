@@ -14,12 +14,12 @@ Feature
 ----------
 * Authentication account can be diferent with email. e.g. account: 520001 , email: william@smile.taipei    
 * postfix mail server    
-* User Account backend with Microsoft Active Directory(2008R2,2012R2,2016)    
+* User Account backend with Microsoft Active Directory(2008R2,2012R2,2016,2019)    
 * OpenDKIM    
 * Rspamd(spam filter)    
 * Clamav(antivirus)    
 * Quota (default 20G)
-* Base on Rocky Linux 8.6    
+* Base on Rocky Linux 10.2    
 
 Support
 ----------
@@ -91,6 +91,7 @@ or reference the following  docker command
     -e MY_NETWORKS="<PERMIT_NETWORKS>"  \
     -e TZ="<TZ>" \
     -e ENABLE_QUOTA="true" \
+    -e SPAM_EMAIL="<SPAM_EMAIL>" \
     --restart always -d inmethod/docker-postfix-ad:tag
 
 Example
@@ -138,7 +139,8 @@ Example
     -e BIND_DN="cn=ldap,cn=Users,dc=test,dc=com" \
     -e BIND_PW="password" \
     -e TZ="Asia/Taipei" \
-    --restart always -d --net=host inmethod/docker-postfix-ad:3.5
+    -e SPAM_EMAIL=spam@test.com
+    --restart always -d --net=host inmethod/docker-postfix-ad:4.0b1
     
 
 Rspamd spam filter WEB UI     
@@ -254,14 +256,3 @@ Check the following files
 
 1. auth-ldap.conf.ext (add mutiple userdb, passdb )    
     
-**upgrade from 2.4 to 3.x**       
-
-1. backup old volume (postfix,dovecot,vmail,rspamd)    
-2. create new volume and startup with new images(old vmail volume can use directly when new voluem create)          
-3. merge ohter old settings    
-    
-**Free Domain Controller**    
-You can use free active directory server (Turnkey Domain Controller) instead of Microsoft AD    
-https://www.turnkeylinux.org/domain-controller     
-https://www.youtube.com/watch?v=PMUUuXmtFc8    
-

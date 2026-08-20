@@ -1,0 +1,6 @@
+# /etc/postfix/milter_header_checks
+# 匹配由 Rspamd 標記為 reject 動作或垃圾旗標的信件，並重定向至隔離帳號
+/^X-Rspamd-Action:\s+reject/i    REDIRECT SPAM_EMAIL
+/^X-Rspamd-Action:\s+add header/i    REDIRECT SPAM_EMAIL
+/^X-Spam:\s+YES/i           REDIRECT SPAM_EMAIL
+

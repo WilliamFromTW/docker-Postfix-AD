@@ -96,7 +96,7 @@ mydomain = DOMAIN_NAME
 # to recipient addresses that have no @domain part.
 #
 #myorigin = $myhostname
-#myorigin = $mydomain
+myorigin = $mydomain
 
 # RECEIVING MAIL
 
@@ -677,6 +677,7 @@ sample_directory = /usr/share/doc/postfix-2.10.1/samples
 readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
 
 ###############################################################
+default_database_type = lmdb
 smtpd_recipient_restrictions =
  check_sender_access pcre:/etc/postfix/sender_access,
  check_client_access pcre:/etc/postfix/client_access,
@@ -733,7 +734,7 @@ smtpd_delay_reject = yes
 smtpd_helo_restrictions =
  permit_mynetworks,
  permit_sasl_authenticated,
- check_helo_access hash:/etc/postfix/helo_check,
+ check_helo_access lmdb:/etc/postfix/helo_check,
  permit
 ##############################################################
 virtual_mailbox_domains = /etc/postfix/domains
@@ -741,10 +742,10 @@ virtual_mailbox_base = /home/vmail/
 virtual_mailbox_maps = ldap:/etc/postfix/ldap-users.cf
 virtual_uid_maps = static:1001
 virtual_gid_maps = static:1001
-virtual_alias_maps = hash:/etc/postfix/aliases,ldap:/etc/postfix/ldap-aliases.cf
+virtual_alias_maps = lmdb:/etc/postfix/aliases,ldap:/etc/postfix/ldap-aliases.cf
 ##############################################################
-recipient_bcc_maps = hash:/etc/postfix/recipient_bcc
-sender_bcc_maps = hash:/etc/postfix/sender_bcc
+recipient_bcc_maps = lmdb:/etc/postfix/recipient_bcc
+sender_bcc_maps = lmdb:/etc/postfix/sender_bcc
 #always_bcc =
 inet_protocols = ipv4
 
@@ -756,7 +757,7 @@ smtpd_tls_cert_file = /etc/letsencrypt/live/HOST_NAME/fullchain.pem
 # smtpd_tls_CAfile = /etc/pki/tls/root.crt
 smtpd_tls_loglevel = 1
 smtpd_tls_session_cache_timeout = 3600s
-smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_tls_cache
+smtpd_tls_session_cache_database = lmdb:/var/lib/postfix/smtpd_tls_cache
 tls_random_source = dev:/dev/urandom
 tls_random_exchange_name = /var/lib/postfix/prng_exch
 
@@ -812,16 +813,21 @@ smtpd_client_connection_rate_limit=30
 smtpd_client_connection_count_limit=20
 
 smtpd_restriction_classes = local_only local_only2
-local_only = check_recipient_access hash:/etc/postfix/local_only_domains, reject
-local_only2 = check_sender_access hash:/etc/postfix/local_only2_domains, reject
+local_only = check_recipient_access lmdb:/etc/postfix/local_only_domains, reject
+local_only2 = check_sender_access lmdb:/etc/postfix/local_only2_domains, reject
 
 smtpd_milters = inet:127.0.0.1:11332
 # add dkim 
 #smtpd_milters = inet:127.0.0.1:8891,inet:127.0.0.1:11332
 non_smtpd_milters = $smtpd_milters
 milter_default_action = accept
+milter_header_checks = pcre:/etc/postfix/milter_header_checks
 
 #backwards-compatible default setting 
 append_dot_mydomain = yes
-compatibility_level = 2
-
+smtpd_tls_fingerprint_digest = sha256
+mynetworks_style = host
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, defer_unauth_destination
+smtpd_forbid_bare_newline = yes
+address_verify_map = lmdb:$data_directory/verify_cache
+compatibility_level=3.6
