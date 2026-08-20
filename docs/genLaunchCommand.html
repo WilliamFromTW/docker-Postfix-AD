@@ -336,6 +336,19 @@
           $btn.removeClass("btn-success").addClass("btn-outline-secondary").html(originalText);
         }, 2000);
       }
+
+      $(document).ready(function() {
+        $("#inputDomain").on("input", function() {
+          var domain = $(this).val().trim();
+          if (domain) {
+            $("#inputMailServerName").val("mail." + domain);
+            $("#inputSpamEmail").val("spam@" + domain);
+          } else {
+            $("#inputMailServerName").val("");
+            $("#inputSpamEmail").val("");
+          }
+        });
+      });
     </script>
   </body>
 </html>
