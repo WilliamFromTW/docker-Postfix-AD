@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-TW">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -8,148 +8,334 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
-    <title>postfix mail server + rspamd  + Active Directory</title>
-    <script type="text/javascript">
-	    function genStartUpCommand()
-	    {
-	    	var inputADIP = ( $("#inputADIP").val());
-	    	var inputSearchBase =  ( $("#inputSearchBase").val());
-	    	var inputAliases =  ( $("#inputAliases").val());
-	    	var inputBindDN =  ( $("#inputBindDN").val());
-	    	var inputDomain =  ( $("#inputDomain").val());
-	    	var inputMailServerName =  ( $("#inputMailServerName").val());
-	    	var inputPermitNetwork =  ( $("#inputPermitNetwork").val());
-	    	var inputTimeZone =  ( $("#inputTimeZone").val());
-	    	var inputContainerName =  ( $("#inputContainerName").val());
-	    	var inputContainer =  ( $("#inputContainer").val());
-	    	
-	    	var optionalValue = "";
-	    	if (inputAliases === null || inputAliases.trim() === "" )
-	    		;
-	    	else
-	    		optionalValue += " -e ALIASES=\""+inputAliases+"\" \\\n";
-
-	    	if (inputPermitNetwork === null || inputPermitNetwork.trim() === "" )
-	    		;
-	    	else{
-	    		optionalValue +=  " -e MY_NETWORKS=\""+inputPermitNetwork.replace("/","\\/")+"\" \\\n";
-	    	}
-	    		    	
-
-           var podmancmd = "podman volume create "+inputContainerName+"_vmail\npodman volume create "+inputContainerName+"_postfix\npodman volume create "+inputContainerName+"_dovecot\npodman volume create "+inputContainerName+"_log\npodman volume create "+inputContainerName+"_opendkim\npodman volume create "+inputContainerName+"_rspamd_conf\npodman volume create "+inputContainerName+"_rspamd_var\npodman run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd_conf:/etc/rspamd\\\n -v "+inputContainerName+"_rspamd_var:/var/lib/rspamd  \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"<font color='red'>your BIND_DN password</font>\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n --label=disable -d  --restart always  --net=host \\\n docker.io/inmethod/docker-postfix-ad:4.0b1\n";
-           var dockercmd = "docker volume create "+inputContainerName+"_vmail\ndocker volume create "+inputContainerName+"_postfix\ndocker volume create "+inputContainerName+"_dovecot\ndocker volume create "+inputContainerName+"_log\ndocker volume create "+inputContainerName+"_opendkim\ndocker volume create "+inputContainerName+"_rspamd_conf\ndocker volume create "+inputContainerName+"_rspamd_var\ndocker run --name "+inputContainerName+" \\\n -v /etc/letsencrypt:/etc/letsencrypt \\\n -v "+inputContainerName+"_vmail:/home/vmail \\\n -v "+inputContainerName+"_opendkim:/etc/opendkim \\\n -v "+inputContainerName+"_postfix:/etc/postfix \\\n -v "+inputContainerName+"_dovecot:/etc/dovecot \\\n -v "+inputContainerName+"_rspamd_conf:/etc/rspamd\\\n -v "+inputContainerName+"_rspamd_var:/var/lib/rspamd \\\n -v "+inputContainerName+"_log:/var/log \\\n -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587  -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n -e DOMAIN_NAME=\""+inputDomain+"\" \\\n -e HOST_NAME=\""+inputMailServerName+"\" \\\n -e HOST_IP=\""+inputADIP+"\" \\\n -e SEARCH_BASE=\""+inputSearchBase+"\" \\\n -e BIND_DN=\""+inputBindDN+"\" \\\n -e BIND_PW=\"<font color='red'>your BIND_DN password</font>\" \\\n -e TZ=\""+ inputTimeZone +"\" \\\n"+optionalValue+" -e ENABLE_QUOTA=\"false\" \\\n -d  --restart always  --net=host \\\n inmethod/docker-postfix-ad:4.0b1\n";
-
-//	        alert( inputContainer );
-	        if( inputContainer==="1" ){
-		    	$( ".genResult" ).empty().append( "<pre>"+dockercmd+"</pre>" );
-	        }
-	        else{
-	    	  $( ".genResult" ).empty().append( "<pre>"+podmancmd+"</pre>" );
-	        }
-	    	return false;
-	    }
-	 </script>
-	 <script
-  src="https://code.jquery.com/jquery-3.1.1.slim.js">
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js" ></script>
-
+    <title>Postfix Mail Server + Rspamd + Active Directory 配置產生器</title>
+    <style>
+      pre {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 0.95rem;
+      }
+      .card-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-light pb-5">
  
-    <h1 align='center'> Container StartUp Scripts Generator</h1>
-    <h2 align='center'><a href='https://github.com/WilliamFromTW/docker-Postfix-AD'  target=_blank>docker-postfix-AD </a> </h2>
-<br/>
-<br/>
+    <div class="container mt-4">
+      <div class="text-center mb-4">
+        <h1 class="h2">Container StartUp Scripts & Compose Generator</h1>
+        <h2 class="h5 text-muted"><a href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank" class="text-decoration-none">docker-Postfix-AD (GitHub)</a></h2>
+      </div>
 
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <form class="row g-3" id="form1" onSubmit="return genAllConfigs()">
+            
+            <div class="col-md-6">
+              <label for="inputContainerName" class="form-label font-weight-bold">Container Name (容器名稱)</label>
+              <input type="text" class="form-control" id="inputContainerName" placeholder="mailserver" value="mailserver" required>
+            </div>
 
-    
-  <div class="container">
+            <div class="col-md-6">
+              <label for="inputImage" class="form-label font-weight-bold">Docker Image (映像檔名稱與版本)</label>
+              <input type="text" class="form-control" id="inputImage" placeholder="inmethod/docker-postfix-ad:4.0b1" value="inmethod/docker-postfix-ad:4.0b1" required>
+            </div>
 
-    <form class="row g-3" id="form1"   onSubmit="return genStartUpCommand()">
-    <div class="row">
-  <label for="inputContainerName" class="col-sm-3 col-form-label col-form-label-lg">Container Name</label>
-  <div class="col-sm-2">
-    <input type="text" class="form-control form-control-lg" id="inputContainerName" placeholder="mailserver"  value="mailserver"   required>
-  </div>
-  </div>
-    <div class="row">
-  <label for="inputContainer" class="col-sm-3 col-form-label col-form-label-lg">Container</label>
-  <div class="col-sm-2">
-  <select class="form-select  form-control form-control-lg" aria-label=".form-select-sm example" id="inputContainer">
-  <option value="1">docker</option>
-  <option value="2">podman</option>
-</select>  
-  </div>
-  </div>
+            <div class="col-md-6">
+              <label for="inputADIP" class="form-label font-weight-bold">AD IP (Active Directory 伺服器 IP)</label>
+              <input type="text" class="form-control" id="inputADIP" placeholder="192.168.1.1" required>
+            </div>
 
+            <div class="col-md-6">
+              <label for="inputSearchBase" class="form-label font-weight-bold">AD Search Base</label>
+              <input type="text" class="form-control" id="inputSearchBase" placeholder="DC=test,DC=com" required>
+            </div>
 
-    <div class="row">
-  <label for="inputADIP" class="col-sm-3 col-form-label col-form-label-lg">AD  IP</label>
-  <div class="col-sm-3">
-    <input type="text" class="form-control form-control-lg" id="inputADIP" placeholder="192.168.1.1"  required>
-  </div>
-</div>
- <div class="row">
-   <label for="inputSearchBase" class="col-sm-3 col-form-label col-form-label-lg">AD Search Base</label>
-   <div class="col-sm-6">
-     <input type="text" class="form-control form-control-lg" id="inputSearchBase" placeholder="DC=test,DC=com"  required >
-  </div>
-</div>
-<div class="row">
-  <label for="inputAliases" class="col-sm-3 col-form-label col-form-label-lg">AD Aliases(optional)</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com"   >
- </div>
-</div>
-<div class="row">
-  <label for="inputBindDN" class="col-sm-3 col-form-label col-form-label-lg">AD Bind DN</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com"  required>
- </div>
-</div>
+            <div class="col-md-6">
+              <label for="inputBindDN" class="form-label font-weight-bold">AD Bind DN</label>
+              <input type="text" class="form-control" id="inputBindDN" placeholder="CN=ldap,CN=Users,DC=test,DC=com" required>
+            </div>
 
+            <div class="col-md-6">
+              <label for="inputAliases" class="form-label">AD Aliases (選填)</label>
+              <input type="text" class="form-control" id="inputAliases" placeholder="OU=aliases,DC=test,DC=com">
+            </div>
 
+            <div class="col-md-6">
+              <label for="inputDomain" class="form-label font-weight-bold">Email Domain (郵件網域名稱)</label>
+              <input type="text" class="form-control" id="inputDomain" placeholder="test.com" required>
+            </div>
 
-<div class="row" >
-  <label for="inputPermitNetwork" class="col-sm-3 col-form-label col-form-label-lg">Permit trusted networks(optional)</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputPermitNetwork" placeholder="192.168.1.0/24"   >
- </div>
-</div>
+            <div class="col-md-6">
+              <label for="inputMailServerName" class="form-label font-weight-bold">Email Server Name (郵件主機 FQDN)</label>
+              <input type="text" class="form-control" id="inputMailServerName" placeholder="mail.test.com" required>
+            </div>
 
-<div class="row">
-  <label for="inputDomain" class="col-sm-3 col-form-label col-form-label-lg">Email Domain</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputDomain" placeholder="test.com"   required>
- </div>
-</div>
+            <div class="col-md-6">
+              <label for="inputSpamEmail" class="form-label">SPAM_EMAIL (垃圾郵件信箱，選填)</label>
+              <input type="email" class="form-control" id="inputSpamEmail" placeholder="spam@test.com">
+            </div>
 
-<div class="row">
-  <label for="inputMailServerName" class="col-sm-3 col-form-label col-form-label-lg">Email Server Name</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputMailServerName" placeholder="mail.test.com"  required>
- </div>
-</div>
+            <div class="col-md-6">
+              <label for="inputPermitNetwork" class="form-label">Permit Trusted Networks (信任網段，選填)</label>
+              <input type="text" class="form-control" id="inputPermitNetwork" placeholder="192.168.1.0/24">
+            </div>
 
-<div class="row">
-  <label for="inputTimeZone" class="col-sm-3 col-form-label col-form-label-lg">Time Zone</label>
-  <div class="col-sm-6">
-    <input type="text" class="form-control form-control-lg" id="inputTimeZone" placeholder="Asia/Taipei"  required>
- </div>
-</div>
-<div class="row">
-  <label for="TimeZones" class="col-sm-12 col-form-label col-form-label-lg"><a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones' target=_blank>Click Here to get Time Zones</a></label>  
-</div>
+            <div class="col-md-6">
+              <label for="inputTimeZone" class="form-label font-weight-bold">Time Zone (時區)</label>
+              <input type="text" class="form-control" id="inputTimeZone" placeholder="Asia/Taipei" value="Asia/Taipei" required>
+              <div class="form-text"><a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">查看時區列表 (List of Time Zones)</a></div>
+            </div>
 
-  <div class="col-12  ">
- 
-     <button class="btn btn-primary" type="submit">Gen</button>
-  </div>
-</form>
-<hr>
-<div class="genResult"></div>
-</div>
+            <div class="col-md-6 d-flex align-items-center">
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="inputEnableQuota" checked>
+                <label class="form-check-label" for="inputEnableQuota">
+                  啟用 Quota 信箱配額限制 (ENABLE_QUOTA)
+                </label>
+              </div>
+            </div>
 
+            <div class="col-12 mt-4 text-center">
+              <button class="btn btn-primary btn-lg px-5" type="submit">🚀 產生設定 (Generate)</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="resultCard card shadow-sm d-none">
+        <div class="card-header bg-white py-3 card-header-flex">
+          <div class="d-flex align-items-center gap-2">
+            <label for="outputFormat" class="form-label mb-0 fw-bold">輸出格式：</label>
+            <select class="form-select w-auto" id="outputFormat" onchange="renderSelectedOutput()">
+              <option value="compose" selected>🐳 Docker Compose (YAML)</option>
+              <option value="docker">📦 Docker Run 指令</option>
+              <option value="podman">🦭 Podman Run 指令</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopy" onclick="copyCurrentOutput()">
+            📋 複製到剪貼簿
+          </button>
+        </div>
+        <div class="card-body">
+          <pre id="outputCode" class="m-0"></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+      var cachedResults = {
+        compose: "",
+        docker: "",
+        podman: ""
+      };
+
+      function genAllConfigs() {
+        var containerName = $("#inputContainerName").val().trim() || "mailserver";
+        var image = $("#inputImage").val().trim() || "inmethod/docker-postfix-ad:4.0b1";
+        var adIp = $("#inputADIP").val().trim();
+        var searchBase = $("#inputSearchBase").val().trim();
+        var bindDn = $("#inputBindDN").val().trim();
+        var aliases = $("#inputAliases").val().trim();
+        var domain = $("#inputDomain").val().trim();
+        var mailServerName = $("#inputMailServerName").val().trim();
+        var spamEmail = $("#inputSpamEmail").val().trim();
+        var permitNetwork = $("#inputPermitNetwork").val().trim();
+        var timeZone = $("#inputTimeZone").val().trim() || "Asia/Taipei";
+        var enableQuota = $("#inputEnableQuota").is(":checked") ? "true" : "false";
+
+        // Docker / Podman CLI 額外選項
+        var cliOptional = "";
+        if (aliases !== "") {
+          cliOptional += ' -e ALIASES="' + aliases + '" \\\n';
+        }
+        if (permitNetwork !== "") {
+          cliOptional += ' -e MY_NETWORKS="' + permitNetwork.replace(/\//g, "\\/") + '" \\\n';
+        }
+        if (spamEmail !== "") {
+          cliOptional += ' -e SPAM_EMAIL="' + spamEmail + '" \\\n';
+        }
+
+        // 1. Docker Run 指令
+        var dockerCmd = "# 建立具名持久化 Volumes\n" +
+          "docker volume create " + containerName + "_vmail\n" +
+          "docker volume create " + containerName + "_postfix\n" +
+          "docker volume create " + containerName + "_dovecot\n" +
+          "docker volume create " + containerName + "_log\n" +
+          "docker volume create " + containerName + "_opendkim\n" +
+          "docker volume create " + containerName + "_rspamd_conf\n" +
+          "docker volume create " + containerName + "_rspamd_var\n\n" +
+          "# 啟動容器\n" +
+          "docker run --name " + containerName + " \\\n" +
+          " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
+          " -v " + containerName + "_vmail:/home/vmail \\\n" +
+          " -v " + containerName + "_opendkim:/etc/opendkim \\\n" +
+          " -v " + containerName + "_postfix:/etc/postfix \\\n" +
+          " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
+          " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
+          " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
+          " -v " + containerName + "_log:/var/log \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -e DOMAIN_NAME=\"" + domain + "\" \\\n" +
+          " -e HOST_NAME=\"" + mailServerName + "\" \\\n" +
+          " -e HOST_IP=\"" + adIp + "\" \\\n" +
+          " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
+          " -e BIND_DN=\"" + bindDn + "\" \\\n" +
+          " -e BIND_PW=\"your_bind_dn_password\" \\\n" +
+          " -e TZ=\"" + timeZone + "\" \\\n" +
+          " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
+          cliOptional +
+          " -d --restart always --net=host \\\n " +
+          image + "\n";
+
+        // 2. Podman Run 指令
+        var podmanImage = image.startsWith("docker.io/") ? image : ("docker.io/" + image);
+        var podmanCmd = "# 建立具名持久化 Volumes\n" +
+          "podman volume create " + containerName + "_vmail\n" +
+          "podman volume create " + containerName + "_postfix\n" +
+          "podman volume create " + containerName + "_dovecot\n" +
+          "podman volume create " + containerName + "_log\n" +
+          "podman volume create " + containerName + "_opendkim\n" +
+          "podman volume create " + containerName + "_rspamd_conf\n" +
+          "podman volume create " + containerName + "_rspamd_var\n\n" +
+          "# 啟動容器\n" +
+          "podman run --name " + containerName + " \\\n" +
+          " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
+          " -v " + containerName + "_vmail:/home/vmail \\\n" +
+          " -v " + containerName + "_opendkim:/etc/opendkim \\\n" +
+          " -v " + containerName + "_postfix:/etc/postfix \\\n" +
+          " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
+          " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
+          " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
+          " -v " + containerName + "_log:/var/log \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -e DOMAIN_NAME=\"" + domain + "\" \\\n" +
+          " -e HOST_NAME=\"" + mailServerName + "\" \\\n" +
+          " -e HOST_IP=\"" + adIp + "\" \\\n" +
+          " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
+          " -e BIND_DN=\"" + bindDn + "\" \\\n" +
+          " -e BIND_PW=\"your_bind_dn_password\" \\\n" +
+          " -e TZ=\"" + timeZone + "\" \\\n" +
+          " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
+          cliOptional +
+          " --label=disable -d --restart always --net=host \\\n " +
+          podmanImage + "\n";
+
+        // 3. Docker Compose YAML
+        var composeEnv = "      - DOMAIN_NAME=" + domain + "\n" +
+          "      - HOST_NAME=" + mailServerName + "\n" +
+          "      - HOST_IP=" + adIp + "\n" +
+          "      - SEARCH_BASE=" + searchBase + "\n" +
+          "      - BIND_DN=" + bindDn + "\n" +
+          "      - BIND_PW=your_bind_dn_password\n" +
+          "      - TZ=" + timeZone + "\n" +
+          "      - ENABLE_QUOTA=" + enableQuota + "\n";
+        
+        if (spamEmail !== "") {
+          composeEnv += "      - SPAM_EMAIL=" + spamEmail + "\n";
+        }
+        if (aliases !== "") {
+          composeEnv += "      - ALIASES=" + aliases + "\n";
+        }
+        if (permitNetwork !== "") {
+          composeEnv += "      - MY_NETWORKS=" + permitNetwork + "\n";
+        }
+
+        var composeYaml = "version: '3.8'\n\n" +
+          "services:\n" +
+          "  " + containerName + ":\n" +
+          "    image: " + image + "\n" +
+          "    container_name: " + containerName + "\n" +
+          "    restart: always\n" +
+          "    network_mode: host\n" +
+          "    environment:\n" +
+          composeEnv +
+          "    volumes:\n" +
+          "      - /etc/letsencrypt:/etc/letsencrypt\n" +
+          "      - " + containerName + "_vmail:/home/vmail\n" +
+          "      - " + containerName + "_opendkim:/etc/opendkim\n" +
+          "      - " + containerName + "_postfix:/etc/postfix\n" +
+          "      - " + containerName + "_dovecot:/etc/dovecot\n" +
+          "      - " + containerName + "_rspamd_conf:/etc/rspamd\n" +
+          "      - " + containerName + "_rspamd_var:/var/lib/rspamd\n" +
+          "      - " + containerName + "_log:/var/log\n\n" +
+          "volumes:\n" +
+          "  " + containerName + "_vmail:\n" +
+          "  " + containerName + "_opendkim:\n" +
+          "  " + containerName + "_postfix:\n" +
+          "  " + containerName + "_dovecot:\n" +
+          "  " + containerName + "_rspamd_conf:\n" +
+          "  " + containerName + "_rspamd_var:\n" +
+          "  " + containerName + "_log:\n";
+
+        cachedResults = {
+          compose: composeYaml,
+          docker: dockerCmd,
+          podman: podmanCmd
+        };
+
+        $(".resultCard").removeClass("d-none");
+        renderSelectedOutput();
+
+        // 捲動至結果區塊
+        $('html, body').animate({
+          scrollTop: $(".resultCard").offset().top - 20
+        }, 300);
+
+        return false;
+      }
+
+      function renderSelectedOutput() {
+        var format = $("#outputFormat").val();
+        $("#outputCode").text(cachedResults[format] || "");
+      }
+
+      function copyCurrentOutput() {
+        var text = $("#outputCode").text();
+        if (!text) return;
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(showCopySuccess, fallbackCopy);
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      function fallbackCopy() {
+        var text = $("#outputCode").text();
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showCopySuccess();
+        } catch (err) {
+          alert('複製失敗，請手動全選複製');
+        }
+        document.body.removeChild(textArea);
+      }
+
+      function showCopySuccess() {
+        var $btn = $("#btnCopy");
+        var originalText = $btn.html();
+        $btn.removeClass("btn-outline-secondary").addClass("btn-success").html("✅ 已複製！");
+        setTimeout(function() {
+          $btn.removeClass("btn-success").addClass("btn-outline-secondary").html(originalText);
+        }, 2000);
+      }
+    </script>
   </body>
 </html>
