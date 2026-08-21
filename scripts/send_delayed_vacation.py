@@ -112,11 +112,6 @@ def background_delayed_task(owner_email, sender_email, subject, body, orig_msg_i
         sys.stderr.write(f"Delayed task error: {e}\n")
 
 def main():
-    # Usage: send_delayed_vacation.py <owner_email>
-    if len(sys.argv) < 2:
-        sys.exit(0)
-
-    owner_email = sys.argv[1].lower().strip()
     raw_email = sys.stdin.buffer.read()
     if not raw_email:
         sys.exit(0)
@@ -124,6 +119,16 @@ def main():
     try:
         msg = email.message_from_bytes(raw_email)
     except Exception:
+        sys.exit(0)
+
+    if len(sys.argv) > 1 and sys.argv[1].strip():
+        owner_email = sys.argv[1].lower().strip()
+    else:
+        delivered_to = msg.get("Delivered-To", "") or msg.get("X-Original-To", "") or msg.get("Envelope-To", "") or msg.get("To", "")
+        _, owner_email = parseaddr(decode_mime_words(delivered_to))
+        owner_email = owner_email.lower().strip()
+
+    if not owner_email:
         sys.exit(0)
 
     from_header = decode_mime_words(msg.get("From", ""))

@@ -308,7 +308,7 @@ def main():
 
     if is_always_on or not (start_dt and end_dt):
         sieve_lines.extend([
-            f'  pipe :copy "send_delayed_vacation.py" ["{from_addr}"];',
+            '  pipe :copy "send_delayed_vacation.py";',
             '}',
             'keep;'
         ])
@@ -323,7 +323,7 @@ def main():
             f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "ge" "iso8601" "{iso_start}",',
             f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "le" "iso8601" "{iso_end}"',
             '  ) {',
-            f'    pipe :copy "send_delayed_vacation.py" ["{from_addr}"];',
+            '    pipe :copy "send_delayed_vacation.py";',
             '  }',
             '}',
             'keep;'
