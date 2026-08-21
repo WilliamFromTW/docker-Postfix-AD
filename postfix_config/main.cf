@@ -786,16 +786,17 @@ smtp_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
 
 
 ##
-## 效能調教
+## 效能調教與平滑發信流控 (Smooth Outbound Pacing)
 ##
+default_destination_rate_delay = 3s
+smtp_destination_rate_delay = 3s
+default_destination_concurrency_limit = 5
+smtp_destination_concurrency_limit = 5
 #default_process_limit = 150
 #qmgr_message_active_limit = 40000
 #qmgr_message_recipient_limit = 40000
-#default_destination_concurrency_limit=100
 #default_destination_recipient_limit=100
-#default_process_limit=200
 #smtp_mx_session_limit=100
-#smtp_destination_concurrency_limit=100
 #maximal_backoff_time = 1000s
 #minimal_backoff_time = 300s
 
