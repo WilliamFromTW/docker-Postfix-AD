@@ -10,10 +10,11 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 
 - **GitHub Repository**: [https://github.com/WilliamFromTW/docker-Postfix-AD](https://github.com/WilliamFromTW/docker-Postfix-AD)
 - **Online Config Generator**: [https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html)
+- **System Architecture & Technical Guide**: [ARCHITECTURE.md](ARCHITECTURE.md) | [Online Interactive Guide](https://williamfromtw.github.io/docker-Postfix-AD/architecture.html)
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 - **Independent Account & Email**: Login account name can be distinct from email address (e.g., account: `520001`, email: `william@smile.taipei`).
 - **Microsoft Active Directory LDAP Auth**: Compatible with Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
 - **Postfix Mail Transfer Agent (MTA)**.
@@ -22,6 +23,7 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 - **Rspamd**: High-performance spam filter with Web UI.
 - **ClamAV**: Antivirus scanner integration.
 - **Mailbox Quota**: Dovecot quota management (default 20GB, configurable).
+- **Zero-Config SSL Startup**: Built-in fallback certificate generator (`make_fake_cert.sh`) for instant startup, with official Let's Encrypt DNS-01 integration.
 - **Base OS**: Rocky Linux.
 
 ---
@@ -39,12 +41,6 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 | **IMAPS** | `993` | SSL/TLS |
 | **ManageSieve** | `4190` | TLS |
 | **Rspamd Web UI** | `11334` | HTTP (Proxy recommended) |
-
----
-
-## 📋 Prerequisites
-- Ensure Let's Encrypt certificates are prepared on the **Docker Host** (not inside the container).
-- Maps host `/etc/letsencrypt` to container `/etc/letsencrypt`.
 
 ---
 
@@ -147,54 +143,13 @@ docker run --name mailserver \
 
 ---
 
-## 🛡️ Rspamd Spam Filter Web UI
-- **Access Web UI**: `http://<host-ip>:11334` (Recommended: use Apache/Nginx reverse proxy with SSL).
-- **Default Password**: `kafeiou.pw`
-- **Change Password**:
-  1. Generate encrypted password hash inside container:
-     ```bash
-     docker exec -it mailserver rspamadm pw --encrypt -p <your_new_password>
-     ```
-  2. Update password hash in `/etc/rspamd/local.d/worker-controller.inc`.
-
----
-
-## 🔑 Enable OpenDKIM
-1. Uncomment milter configuration in `/etc/postfix/main.cf`:
-   ```text
-   smtpd_milters = inet:127.0.0.1:8891
-   non_smtpd_milters = $smtpd_milters
-   milter_default_action = accept
-   ```
-2. Add public key from `/etc/opendkim/keys/default.txt` to your domain DNS TXT record.
-3. Configure `domains` in `/getOpenDKIM.sh` if multiple DKIM domains are required.
-
----
-
-## 🏢 Active Directory Setup Guidelines
-- **Username Casing**: Account names in AD must be lower-case (Dovecot queries in lower-case).
-- **Email Attribute**: Fill in the `mail` attribute in the AD User or Group object.
-- **Aliases**: Create an AD Group, set its `mail` attribute to the alias email address, and add member accounts to this group.
-- **Local Domain Only**: Set `description` attribute to `local_only` on a User or Group to restrict messaging within local domain only.
-
----
-
-## 🔍 Troubleshooting & Verification
-1. Enter container shell:
-   ```bash
-   docker exec -it mailserver bash
-   ```
-2. Check running processes and services:
-   ```bash
-   supervisorctl status
-   ```
-3. Test local ports via telnet/nc:
-   ```bash
-   telnet localhost 25    # Postfix SMTP
-   telnet localhost 143   # Dovecot IMAP
-   telnet localhost 8891  # OpenDKIM
-   telnet localhost 11334 # Rspamd
-   ```
+## 🏛️ In-Depth Architecture & Operations Guide
+For detailed configuration guidelines and Mermaid workflow diagrams, please refer to the dedicated **[System Architecture Guide (ARCHITECTURE.md)](ARCHITECTURE.md)**:
+- **Active Directory LDAP Rules**: Account lowercase rule, `mail` attribute, `ALIASES` group, `local_only` restrictions.
+- **Mail Security Pipeline**: Postfix + Rspamd + ClamAV + OpenDKIM milter inspection flow.
+- **SSL/TLS Certificates**: Out-of-the-box self-signed generator (`make_fake_cert.sh`) & Host Certbot DNS-01 renewal guide.
+- **DKIM & SPF Setup**: OpenDKIM activation, `getOpenDKIM.sh` multi-domain key generation, DNS TXT templates.
+- **Troubleshooting & Tuning**: Service diagnostics, fail2ban integration, performance caching.
 
 ---
 

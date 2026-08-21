@@ -34,25 +34,45 @@
     </style>
   </head>
   <body class="bg-light pb-5">
- 
-    <div class="container mt-4">
-      <!-- Header & Language Switcher -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div></div>
-        <div class="lang-switcher-container">
-          <label for="selectLang" class="form-label mb-0 fw-bold text-secondary">🌐 Language:</label>
-          <select id="selectLang" class="form-select form-select-sm w-auto shadow-sm" onchange="changeLanguage(this.value)">
-            <option value="en" selected>English</option>
-            <option value="zh-TW">繁體中文</option>
-            <option value="zh-CN">简体中文</option>
-            <option value="vi">Tiếng Việt</option>
-          </select>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top mb-4">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank">
+          docker-Postfix-AD
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" href="genLaunchCommand.html" data-i18n="navGenerator">⚡ Config Generator</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="architecture.html" data-i18n="navArchitecture">🏛️ System Architecture</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank" data-i18n="navGithub">🐙 GitHub</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <label for="selectLang" class="text-white-50 small mb-0 fw-bold">🌐 Language:</label>
+            <select id="selectLang" class="form-select form-select-sm w-auto shadow-sm" onchange="changeLanguage(this.value)">
+              <option value="en" selected>English</option>
+              <option value="zh-TW">繁體中文</option>
+              <option value="zh-CN">简体中文</option>
+              <option value="vi">Tiếng Việt</option>
+            </select>
+          </div>
         </div>
       </div>
-
+    </nav>
+ 
+    <div class="container mt-2">
       <div class="text-center mb-4">
-        <h1 class="h2" data-i18n="mainHeading">Container StartUp Scripts & Compose Generator</h1>
-        <h2 class="h5 text-muted"><a href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank" class="text-decoration-none">docker-Postfix-AD (GitHub)</a></h2>
+        <h1 class="h2 fw-bold" data-i18n="mainHeading">Container StartUp Scripts & Compose Generator</h1>
+        <p class="text-muted" data-i18n="generatorSubTitle">Quickly generate docker-compose.yaml or CLI commands for Postfix + AD + Rspamd.</p>
       </div>
 
       <div class="card shadow-sm mb-4">
@@ -160,7 +180,11 @@
       var translations = {
         en: {
           docTitle: "Postfix Mail Server + Rspamd + Active Directory Config Generator",
+          navGenerator: "⚡ Config Generator",
+          navArchitecture: "🏛️ System Architecture",
+          navGithub: "🐙 GitHub",
           mainHeading: "Container StartUp Scripts & Compose Generator",
+          generatorSubTitle: "Quickly generate docker-compose.yaml or CLI commands for Postfix + AD + Rspamd.",
           containerName: "Container Name",
           imageTag: "Docker Image Version",
           adIp: "AD IP (Active Directory Server IP)",
@@ -195,7 +219,11 @@
         },
         "zh-TW": {
           docTitle: "Postfix 郵件伺服器 + Rspamd + Active Directory 設定產生器",
+          navGenerator: "⚡ 線上設定產生器",
+          navArchitecture: "🏛️ 系統架構指南",
+          navGithub: "🐙 GitHub 專案庫",
           mainHeading: "容器啟動腳本與 Compose 設定產生器",
+          generatorSubTitle: "快速產生適用於 Postfix + AD + Rspamd 的 docker-compose.yaml 或 CLI 啟動指令。",
           containerName: "容器名稱 (Container Name)",
           imageTag: "Docker 映像檔版本 (Image Tag)",
           adIp: "AD 伺服器 IP (Active Directory IP)",
@@ -230,7 +258,11 @@
         },
         "zh-CN": {
           docTitle: "Postfix 邮件服务器 + Rspamd + Active Directory 配置生成器",
+          navGenerator: "⚡ 在线配置生成器",
+          navArchitecture: "🏛️ 系统架构指南",
+          navGithub: "🐙 GitHub 项目库",
           mainHeading: "容器启动脚本与 Compose 配置生成器",
+          generatorSubTitle: "快速生成适用于 Postfix + AD + Rspamd 的 docker-compose.yaml 或 CLI 启动命令。",
           containerName: "容器名称 (Container Name)",
           imageTag: "Docker 镜像版本 (Image Tag)",
           adIp: "AD 服务器 IP (Active Directory IP)",
@@ -265,7 +297,11 @@
         },
         vi: {
           docTitle: "Công cụ tạo cấu hình Postfix + Rspamd + Active Directory",
+          navGenerator: "⚡ Công cụ tạo cấu hình",
+          navArchitecture: "🏛️ Kiến Trúc Hệ Thống",
+          navGithub: "🐙 GitHub",
           mainHeading: "Công cụ tạo cấu hình Container & Docker Compose",
+          generatorSubTitle: "Tạo tệp docker-compose.yaml hoặc lệnh CLI khởi chạy Postfix + AD + Rspamd nhanh chóng.",
           containerName: "Tên Container (Container Name)",
           imageTag: "Phiên bản Docker Image (Image Tag)",
           adIp: "IP máy chủ AD (Active Directory IP)",

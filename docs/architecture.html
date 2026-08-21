@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title data-i18n="docTitle">System Architecture & Technical Guide - docker-Postfix-AD</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- Mermaid.js for Vector Flowcharts -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    </script>
+
+    <style>
+      .mermaid {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        overflow-x: auto;
+      }
+      pre {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 0.95rem;
+      }
+      .card-header-title {
+        font-weight: 700;
+        font-size: 1.15rem;
+      }
+      .section-anchor {
+        padding-top: 1rem;
+      }
+      .nav-link.active {
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body class="bg-light pb-5">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank">
+          docker-Postfix-AD
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="genLaunchCommand.html" data-i18n="navGenerator">⚡ Config Generator</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="architecture.html" data-i18n="navArchitecture">🏛️ System Architecture</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/WilliamFromTW/docker-Postfix-AD" target="_blank" data-i18n="navGithub">🐙 GitHub</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <label for="selectLang" class="text-white-50 small mb-0 fw-bold">🌐 Language:</label>
+            <select id="selectLang" class="form-select form-select-sm w-auto shadow-sm" onchange="changeLanguage(this.value)">
+              <option value="en" selected>English</option>
+              <option value="zh-TW">繁體中文</option>
+              <option value="zh-CN">简体中文</option>
+              <option value="vi">Tiếng Việt</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <!-- Header -->
+      <div class="text-center mb-5">
+        <h1 class="h2 fw-bold" data-i18n="mainTitle">System Architecture & Technical Guide</h1>
+        <p class="text-muted" data-i18n="subTitle">In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, and OpenDKIM signing.</p>
+      </div>
+
+      <!-- Section 1: Active Directory Integration -->
+      <div class="card shadow-sm mb-4 section-anchor" id="sec-ad">
+        <div class="card-header bg-white py-3">
+          <span class="card-header-title text-primary" data-i18n="sec1Title">1. Active Directory (LDAP) Integration Model</span>
+        </div>
+        <div class="card-body">
+          <p data-i18n="sec1Desc">Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.</p>
+          
+          <div class="mermaid my-3" id="diagram-ad">
+graph TD
+    Client[Email Client / Remote SMTP] -->|SMTP :25/:465/:587| Postfix[Postfix MTA]
+    Client -->|IMAP/POP3 :993/:995| Dovecot[Dovecot IMAP/POP3]
+    
+    subgraph Active Directory DC [Windows Active Directory]
+        AD[(AD LDAP Service :389)]
+    end
+
+    Postfix -->|ldap-users.cf: Verify Recipient & Local Mailbox| AD
+    Postfix -->|ldap-aliases.cf: Resolve Group Aliases| AD
+    Postfix -->|ldap-local_only.cf: Check Domain Restriction| AD
+    Dovecot -->|dovecot-ldap.conf.ext: Authenticate & Lookup Mailbox| AD
+    Dovecot -->|Maildir Storage / Quota Enforcement| VMail[(/home/vmail Storage)]
+          </div>
+
+          <h5 class="fw-bold mt-4" data-i18n="adRulesTitle">Active Directory Configuration Rules:</h5>
+          <ul class="list-group list-group-flush mb-2">
+            <li class="list-group-item" data-i18n="adRule1"><strong>Account Casing:</strong> AD user logon names (sAMAccountName) <u>MUST be lowercase</u> (e.g. <code>520001</code> or <code>john</code>), as Dovecot queries in lowercase.</li>
+            <li class="list-group-item" data-i18n="adRule2"><strong>Email Address (<code>mail</code> attribute):</strong> Fill in the full email address in the user's <code>mail</code> attribute (e.g. <code>john@example.com</code>). Logon account and email can be different.</li>
+            <li class="list-group-item" data-i18n="adRule3"><strong>Group Aliases (<code>ALIASES</code>):</strong> Create an AD Group, set its <code>mail</code> attribute to the alias email address, and add member user accounts to this group.</li>
+            <li class="list-group-item" data-i18n="adRule4"><strong>Local Domain Only (<code>local_only</code>):</strong> Set the <code>description</code> attribute to <code>local_only</code> on an AD User or Group to restrict messaging to local domain only.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2: Mail Filtering Pipeline -->
+      <div class="card shadow-sm mb-4 section-anchor" id="sec-pipeline">
+        <div class="card-header bg-white py-3">
+          <span class="card-header-title text-success" data-i18n="sec2Title">2. Mail Filtering & Security Pipeline</span>
+        </div>
+        <div class="card-body">
+          <p data-i18n="sec2Desc">Every email is inspected by a coordinated milter pipeline comprising Rspamd, ClamAV antivirus, and OpenDKIM signing before local mailbox delivery.</p>
+          
+          <div class="mermaid my-3" id="diagram-pipeline">
+sequenceDiagram
+    participant Sender as External Sender / Client
+    participant Postfix as Postfix SMTP
+    participant Rspamd as Rspamd Spam Filter (:11334)
+    participant ClamAV as ClamAV Antivirus (:3310)
+    participant DKIM as OpenDKIM Signing (:8891)
+    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
+
+    Sender->>Postfix: Send Email (SMTP)
+    Postfix->>Rspamd: Milter Stream Inspection
+    Rspamd->>ClamAV: Scan Attachments for Malware
+    ClamAV-->>Rspamd: Scan Result (Clean / Infected)
+    Rspamd->>Rspamd: SPF, DMARC, Heuristics, Neural Rules Scoring
+    alt Spam Detected (Action: Reject or Quarantine)
+        Rspamd-->>Postfix: Tag Header / Redirect to SPAM_EMAIL
+    else Clean Email
+        Rspamd-->>Postfix: Pass Message
+        Postfix->>DKIM: Inspect / Sign DKIM Signature (Port 8891)
+        DKIM-->>Postfix: Return Signed Header
+        Postfix->>Dovecot: Deliver via LMTP to /home/vmail (Quota Checked)
+    end
+          </div>
+
+          <h5 class="fw-bold mt-4" data-i18n="rspamdAdminTitle">Rspamd Web UI & Administration:</h5>
+          <ul>
+            <li data-i18n="rspamdUrl"><strong>URL:</strong> <code>http://&lt;host-ip&gt;:11334</code> (Default password: <code>kafeiou.pw</code>)</li>
+            <li data-i18n="rspamdPw"><strong>Change Password:</strong> Run <code>docker exec -it mailserver rspamadm pw --encrypt -p &lt;new_password&gt;</code> and update <code>/etc/rspamd/local.d/worker-controller.inc</code>.</li>
+            <li data-i18n="spamRedirect"><strong>Spam Redirection (<code>SPAM_EMAIL</code>):</strong> Quarantined spam is automatically rerouted to the configured admin spam mailbox.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 3: SSL/TLS & Let's Encrypt -->
+      <div class="card shadow-sm mb-4 section-anchor" id="sec-ssl">
+        <div class="card-header bg-white py-3">
+          <span class="card-header-title text-warning text-dark" data-i18n="sec3Title">3. SSL/TLS Certificate & Let's Encrypt Automation</span>
+        </div>
+        <div class="card-body">
+          <p data-i18n="sec3Desc">Out-of-the-box readiness via self-signed fallback certificates, coupled with official Let's Encrypt DNS-01 host volume mapping.</p>
+          
+          <div class="mermaid my-3" id="diagram-ssl">
+graph TD
+    subgraph Container Startup setup.sh
+        A{Check /etc/letsencrypt/live/HOST_NAME/fullchain.pem}
+        A -->|Not Found| B[Execute /make_fake_cert.sh]
+        B --> C[Generate Self-Signed Fake Certificate]
+        C --> D[Postfix & Dovecot SSL Services Start Immediately]
+        A -->|Found| E[Directly Load Official Let's Encrypt Certificate]
+        E --> D
+    end
+
+    subgraph Host Maintenance DNS-01 Certbot
+        F[Administrator runs Certbot DNS-01 on Host] --> G[Obtain Real Wildcard / SAN Certificate]
+        G --> H[Store in Host /etc/letsencrypt]
+        H -->|Volume Mapping| I[Container Accesses Updated Certificate]
+        I --> J[Reload Services: postfix reload & dovecot reload]
+    end
+          </div>
+
+          <h5 class="fw-bold mt-4" data-i18n="certbotGuideTitle">Host Certbot DNS-01 Step-by-Step Guide:</h5>
+          <pre><code># 1. Install Certbot on Host
+sudo apt install certbot    # Debian / Ubuntu
+sudo dnf install certbot    # RHEL / Rocky Linux
+
+# 2. Issue Certificate via DNS-01 Challenge (No port 80 required)
+sudo certbot certonly --manual --preferred-challenges dns -d mail.example.com -d example.com
+
+# 3. Reload Container SSL Services
+docker exec -it mailserver postfix reload
+docker exec -it mailserver dovecot reload</code></pre>
+        </div>
+      </div>
+
+      <!-- Section 4: DKIM & SPF Configuration -->
+      <div class="card shadow-sm mb-4 section-anchor" id="sec-dkim">
+        <div class="card-header bg-white py-3">
+          <span class="card-header-title text-info text-dark" data-i18n="sec4Title">4. DKIM & SPF Digital Signature Configuration</span>
+        </div>
+        <div class="card-body">
+          <p data-i18n="sec4Desc">Ensure high email deliverability and combat spoofing by configuring OpenDKIM keys and public DNS TXT records.</p>
+
+          <h6 class="fw-bold" data-i18n="dkimStep1Title">Step 1: Enable OpenDKIM Milter in Container</h6>
+          <pre><code># Enter container
+docker exec -it mailserver bash
+
+# Uncomment milter settings in /etc/postfix/main.cf:
+smtpd_milters = inet:127.0.0.1:8891
+non_smtpd_milters = $smtpd_milters
+milter_default_action = accept
+
+# Reload Postfix
+postfix reload</code></pre>
+
+          <h6 class="fw-bold mt-3" data-i18n="dkimStep2Title">Step 2: Generate Multi-Domain Keys (/getOpenDKIM.sh)</h6>
+          <pre><code># Edit /getOpenDKIM.sh to add your domains:
+domains=( 'example.com' 'example2.com' )
+
+# Run the script:
+/getOpenDKIM.sh</code></pre>
+
+          <h6 class="fw-bold mt-3" data-i18n="dkimStep3Title">Step 3: Add DNS TXT Records</h6>
+          <div class="table-responsive">
+            <table class="table table-bordered bg-white">
+              <thead class="table-light">
+                <tr>
+                  <th>Record Type</th>
+                  <th>Host / Name</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>SPF (TXT)</strong></td>
+                  <td><code>@</code> (or domain)</td>
+                  <td><code>v=spf1 ip4:&lt;YOUR_SERVER_PUBLIC_IP&gt; mx ~all</code></td>
+                </tr>
+                <tr>
+                  <td><strong>DKIM (TXT)</strong></td>
+                  <td><code>default._domainkey</code></td>
+                  <td><code>v=DKIM1; k=rsa; p=&lt;PUBLIC_KEY_FROM_default.txt&gt;</code></td>
+                </tr>
+                <tr>
+                  <td><strong>DMARC (TXT)</strong></td>
+                  <td><code>_dmarc</code></td>
+                  <td><code>v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript">
+      var translations = {
+        en: {
+          docTitle: "System Architecture & Technical Guide - docker-Postfix-AD",
+          navGenerator: "⚡ Config Generator",
+          navArchitecture: "🏛️ System Architecture",
+          navGithub: "🐙 GitHub",
+          mainTitle: "System Architecture & Technical Guide",
+          subTitle: "In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, and OpenDKIM signing.",
+          sec1Title: "1. Active Directory (LDAP) Integration Model",
+          sec1Desc: "Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.",
+          adRulesTitle: "Active Directory Configuration Rules:",
+          adRule1: "<strong>Account Casing:</strong> AD user logon names (sAMAccountName) <u>MUST be lowercase</u> (e.g. <code>520001</code> or <code>john</code>), as Dovecot queries in lowercase.",
+          adRule2: "<strong>Email Address (<code>mail</code> attribute):</strong> Fill in the full email address in the user's <code>mail</code> attribute (e.g. <code>john@example.com</code>). Logon account and email can be different.",
+          adRule3: "<strong>Group Aliases (<code>ALIASES</code>):</strong> Create an AD Group, set its <code>mail</code> attribute to the alias email address, and add member user accounts to this group.",
+          adRule4: "<strong>Local Domain Only (<code>local_only</code>):</strong> Set the <code>description</code> attribute to <code>local_only</code> on an AD User or Group to restrict messaging to local domain only.",
+          sec2Title: "2. Mail Filtering & Security Pipeline",
+          sec2Desc: "Every email is inspected by a coordinated milter pipeline comprising Rspamd, ClamAV antivirus, and OpenDKIM signing before local mailbox delivery.",
+          rspamdAdminTitle: "Rspamd Web UI & Administration:",
+          rspamdUrl: "<strong>URL:</strong> <code>http://&lt;host-ip&gt;:11334</code> (Default password: <code>kafeiou.pw</code>)",
+          rspamdPw: "<strong>Change Password:</strong> Run <code>docker exec -it mailserver rspamadm pw --encrypt -p &lt;new_password&gt;</code> and update <code>/etc/rspamd/local.d/worker-controller.inc</code>.",
+          spamRedirect: "<strong>Spam Redirection (<code>SPAM_EMAIL</code>):</strong> Quarantined spam is automatically rerouted to the configured admin spam mailbox.",
+          sec3Title: "3. SSL/TLS Certificate & Let's Encrypt Automation",
+          sec3Desc: "Out-of-the-box readiness via self-signed fallback certificates, coupled with official Let's Encrypt DNS-01 host volume mapping.",
+          certbotGuideTitle: "Host Certbot DNS-01 Step-by-Step Guide:",
+          sec4Title: "4. DKIM & SPF Digital Signature Configuration",
+          sec4Desc: "Ensure high email deliverability and combat spoofing by configuring OpenDKIM keys and public DNS TXT records.",
+          dkimStep1Title: "Step 1: Enable OpenDKIM Milter in Container",
+          dkimStep2Title: "Step 2: Generate Multi-Domain Keys (/getOpenDKIM.sh)",
+          dkimStep3Title: "Step 3: Add DNS TXT Records"
+        },
+        "zh-TW": {
+          docTitle: "系統架構與技術維運指南 - docker-Postfix-AD",
+          navGenerator: "⚡ 線上設定產生器",
+          navArchitecture: "🏛️ 系統架構指南",
+          navGithub: "🐙 GitHub 專案庫",
+          mainTitle: "系統架構與技術維運指南",
+          subTitle: "詳細剖析 Active Directory LDAP 整合、Rspamd 郵件安全過濾管道、Let's Encrypt 自動化憑證機制與 OpenDKIM 數位簽章。",
+          sec1Title: "1. Active Directory (LDAP) 整合模型",
+          sec1Desc: "Postfix 與 Dovecot 透過 LDAP 協定（Port 389）直接向微軟 Active Directory 進行收件人驗證、帳號密碼認證及群組別名解析。",
+          adRulesTitle: "Active Directory 欄位設定規範：",
+          adRule1: "<strong>帳號大小寫：</strong> AD 登入帳號（sAMAccountName）<u>必須為全小寫</u>（如 <code>520001</code> 或 <code>john</code>），因 Dovecot 查詢時均轉為小寫。",
+          adRule2: "<strong>Email 地址（<code>mail</code> 屬性）：</strong> 請於 AD 使用者屬性的 <code>mail</code> 欄位填寫完整電子郵件（如 <code>john@smile.taipei</code>），登入帳號與 Email 可完全不同。",
+          adRule3: "<strong>群組別名（<code>ALIASES</code>）：</strong> 建立 AD 群組並將別名填入 <code>mail</code> 屬性，將成員帳號加入群組即可群發。",
+          adRule4: "<strong>限制僅限本地網域寄收（<code>local_only</code>）：</strong> 將使用者或群組的 <code>description</code> 屬性設為 <code>local_only</code> 即可限制僅限內部收發。",
+          sec2Title: "2. 郵件安全過濾管道 (Postfix + Rspamd + ClamAV + OpenDKIM)",
+          sec2Desc: "所有信件在送達信箱前，均依序經過 Rspamd 評分、ClamAV 防毒掃描及 OpenDKIM 簽章驗證之完整 Milter 過濾鏈。",
+          rspamdAdminTitle: "Rspamd Web 控制台與管理：",
+          rspamdUrl: "<strong>網址：</strong> <code>http://&lt;宿主機IP&gt;:11334</code>（預設密碼：<code>kafeiou.pw</code>）",
+          rspamdPw: "<strong>修改密碼：</strong> 執行 <code>docker exec -it mailserver rspamadm pw --encrypt -p &lt;新密碼&gt;</code> 並更新 <code>/etc/rspamd/local.d/worker-controller.inc</code>。",
+          spamRedirect: "<strong>垃圾郵件轉發（<code>SPAM_EMAIL</code>）：</strong> 判定為隔離的垃圾郵件會自動轉送至管理員指定信箱。",
+          sec3Title: "3. SSL/TLS 憑證架構與 Let's Encrypt 自動化",
+          sec3Desc: "容器啟動時具備測試自簽憑證自動補位機制，並完美支援宿主機 Let's Encrypt DNS-01 憑證掛載更新。",
+          certbotGuideTitle: "宿主機 Certbot DNS-01 申請步驟：",
+          sec4Title: "4. DKIM 與 SPF 數位安全簽章手冊",
+          sec4Desc: "配置 OpenDKIM 簽章與公網 DNS 記錄，大幅提升信件到達率並防止偽造。",
+          dkimStep1Title: "步驟 1：於容器內啟用 OpenDKIM Milter",
+          dkimStep2Title: "步驟 2：批次產生多網域金鑰 (/getOpenDKIM.sh)",
+          dkimStep3Title: "步驟 3：新增 DNS TXT 記錄"
+        },
+        "zh-CN": {
+          docTitle: "系统架构与技术运维指南 - docker-Postfix-AD",
+          navGenerator: "⚡ 在线配置生成器",
+          navArchitecture: "🏛️ 系统架构指南",
+          navGithub: "🐙 GitHub 项目库",
+          mainTitle: "系统架构与技术运维指南",
+          subTitle: "详细剖析 Active Directory LDAP 整合、Rspamd 邮件安全过滤管道、Let's Encrypt 自动化证书机制与 OpenDKIM 数字签名。",
+          sec1Title: "1. Active Directory (LDAP) 整合模型",
+          sec1Desc: "Postfix 与 Dovecot 通过 LDAP 协议（Port 389）直接向微软 Active Directory 进行收件人验证、账号密码认证及组别名解析。",
+          adRulesTitle: "Active Directory 字段配置规范：",
+          adRule1: "<strong>账号大小写：</strong> AD 登录账号（sAMAccountName）<u>必须为全小写</u>（如 <code>520001</code> 或 <code>john</code>），因 Dovecot 查询时均转为小写。",
+          adRule2: "<strong>Email 地址（<code>mail</code> 属性）：</strong> 请在 AD 用户属性的 <code>mail</code> 字段填写完整电子邮件（如 <code>john@smile.taipei</code>），登录账号与 Email 可完全不同。",
+          adRule3: "<strong>组别名（<code>ALIASES</code>）：</strong> 创建 AD 组并将别名填入 <code>mail</code> 属性，将成员账号加入该组即可群发。",
+          adRule4: "<strong>限制仅限本地域名收发（<code>local_only</code>）：</strong> 将用户或组的 <code>description</code> 属性设为 <code>local_only</code> 即可限制仅限内部收发。",
+          sec2Title: "2. 邮件安全过滤管道 (Postfix + Rspamd + ClamAV + OpenDKIM)",
+          sec2Desc: "所有信件在送达邮箱前，均依序经过 Rspamd 评分、ClamAV 防病毒扫描及 OpenDKIM 签名验证之完整 Milter 过滤链。",
+          rspamdAdminTitle: "Rspamd Web 控制台与管理：",
+          rspamdUrl: "<strong>网址：</strong> <code>http://&lt;宿主机IP&gt;:11334</code>（默认密码：<code>kafeiou.pw</code>）",
+          rspamdPw: "<strong>修改密码：</strong> 执行 <code>docker exec -it mailserver rspamadm pw --encrypt -p &lt;新密码&gt;</code> 并更新 <code>/etc/rspamd/local.d/worker-controller.inc</code>。",
+          spamRedirect: "<strong>垃圾邮件转发（<code>SPAM_EMAIL</code>）：</strong> 判定为隔离的垃圾邮件会自动转送至管理员指定邮箱。",
+          sec3Title: "3. SSL/TLS 证书架构与 Let's Encrypt 自动化",
+          sec3Desc: "容器启动时具备测试自签证书自动补位机制，并完美支持宿主机 Let's Encrypt DNS-01 证书挂载更新。",
+          certbotGuideTitle: "宿主机 Certbot DNS-01 申请步骤：",
+          sec4Title: "4. DKIM 与 SPF 数字安全签名手册",
+          sec4Desc: "配置 OpenDKIM 签名与公网 DNS 记录，大幅提升信件到达率并防止伪造。",
+          dkimStep1Title: "步骤 1：在容器内启用 OpenDKIM Milter",
+          dkimStep2Title: "步骤 2：批量生成多域名密钥 (/getOpenDKIM.sh)",
+          dkimStep3Title: "步骤 3：添加 DNS TXT 记录"
+        },
+        vi: {
+          docTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật - docker-Postfix-AD",
+          navGenerator: "⚡ Công cụ tạo cấu hình",
+          navArchitecture: "🏛️ Kiến Trúc Hệ Thống",
+          navGithub: "🐙 GitHub",
+          mainTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật",
+          subTitle: "Tổng quan chuyên sâu về tích hợp Active Directory LDAP, quy trình lọc Rspamd, tự động hóa SSL Let's Encrypt và chữ ký số OpenDKIM.",
+          sec1Title: "1. Mô Hình Tích Hợp Active Directory (LDAP)",
+          sec1Desc: "Postfix và Dovecot kết nối trực tiếp với máy chủ Windows Active Directory Domain Controller qua cổng LDAP 389 để xác thực người nhận, hòm thư và bí danh nhóm.",
+          adRulesTitle: "Quy tắc cấu hình Active Directory:",
+          adRule1: "<strong>Quy tắc chữ thường:</strong> Tên đăng nhập trong AD <u>bắt buộc phải viết thường</u> (ví dụ: <code>520001</code> hoặc <code>john</code>).",
+          adRule2: "<strong>Địa chỉ Email (thuộc tính <code>mail</code>):</strong> Nhập email đầy đủ vào thuộc tính <code>mail</code> trong AD. Tên đăng nhập và email có thể khác nhau.",
+          adRule3: "<strong>Bí danh nhóm (<code>ALIASES</code>):</strong> Tạo Group trong AD và đặt email bí danh vào thuộc tính <code>mail</code>, sau đó thêm thành viên vào nhóm.",
+          adRule4: "<strong>Chỉ gửi nhận nội bộ (<code>local_only</code>):</strong> Đặt thuộc tính <code>description</code> của User/Group thành <code>local_only</code> để giới hạn liên lạc nội bộ.",
+          sec2Title: "2. Quy Trình Lọc Thư & Bảo Mật",
+          sec2Desc: "Mọi email đều được kiểm tra qua chuỗi Milter gồm Rspamd, ClamAV diệt virus và OpenDKIM trước khi chuyển vào hòm thư.",
+          rspamdAdminTitle: "Quản trị Rspamd Web UI:",
+          rspamdUrl: "<strong>Địa chỉ:</strong> <code>http://&lt;IP-Host&gt;:11334</code> (Mật khẩu mặc định: <code>kafeiou.pw</code>)",
+          rspamdPw: "<strong>Đổi mật khẩu:</strong> Chạy <code>docker exec -it mailserver rspamadm pw --encrypt -p &lt;mat_khau_moi&gt;</code> và cập nhật vào <code>/etc/rspamd/local.d/worker-controller.inc</code>.",
+          spamRedirect: "<strong>Chuyển tiếp thư rác (<code>SPAM_EMAIL</code>):</strong> Thư rác bị cách ly sẽ tự động được gửi về hòm thư quản trị viên.",
+          sec3Title: "3. Kiến Trúc Chứng Chỉ SSL/TLS & Let's Encrypt",
+          sec3Desc: "Sẵn sàng hoạt động ngay với chứng chỉ tự ký dự phòng và hỗ trợ ánh xạ chứng chỉ chính thức Let's Encrypt DNS-01 từ máy chủ Host.",
+          certbotGuideTitle: "Hướng dẫn Certbot DNS-01 trên Host:",
+          sec4Title: "4. Hướng Dẫn Cấu Hình DKIM & SPF",
+          sec4Desc: "Cấu hình khóa OpenDKIM và bản ghi DNS TXT công khai để tăng tỷ lệ gửi thư thành công và chống giả mạo.",
+          dkimStep1Title: "Bước 1: Bật OpenDKIM Milter trong Container",
+          dkimStep2Title: "Bước 2: Tạo khóa DKIM nhiều tên miền (/getOpenDKIM.sh)",
+          dkimStep3Title: "Bước 3: Thêm bản ghi DNS TXT"
+        }
+      };
+
+      function applyLanguage(lang) {
+        if (!translations[lang]) lang = "en";
+        document.documentElement.lang = lang;
+        var dict = translations[lang];
+
+        $("[data-i18n]").each(function() {
+          var key = $(this).attr("data-i18n");
+          if (dict[key]) {
+            $(this).html(dict[key]);
+          }
+        });
+
+        $("#selectLang").val(lang);
+      }
+
+      function changeLanguage(lang) {
+        localStorage.setItem("userLanguage", lang);
+        applyLanguage(lang);
+      }
+
+      $(document).ready(function() {
+        var savedLang = localStorage.getItem("userLanguage") || "en";
+        applyLanguage(savedLang);
+        mermaid.run();
+      });
+    </script>
+  </body>
+</html>

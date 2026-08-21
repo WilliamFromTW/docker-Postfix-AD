@@ -10,6 +10,7 @@
 
 - **GitHub 项目库**: [https://github.com/WilliamFromTW/docker-Postfix-AD](https://github.com/WilliamFromTW/docker-Postfix-AD)
 - **在线配置生成器**: [https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html)
+- **系统架构与运维指南**: [ARCHITECTURE.zh-CN.md](ARCHITECTURE.zh-CN.md) | [在线互动架构图](https://williamfromtw.github.io/docker-Postfix-AD/architecture.html)
 
 ---
 
@@ -22,6 +23,7 @@
 - **Rspamd**：高性能垃圾邮件过滤引擎与 Web 控制台。
 - **ClamAV**：内置防病毒扫描。
 - **邮箱配额限制 (Quota)**：默认 20GB（可灵活调整）。
+- **开箱即用 SSL 机制**：内置测试自签证书生成器 (`make_fake_cert.sh`)，并支持宿主机 Let's Encrypt DNS-01 证书挂载更新。
 - **底层系统**：Rocky Linux。
 
 ---
@@ -39,12 +41,6 @@
 | **IMAPS** | `993` | SSL/TLS |
 | **ManageSieve** | `4190` | TLS |
 | **Rspamd Web UI** | `11334` | HTTP (建议配合反向代理使用) |
-
----
-
-## 📋 前置准备
-- 请确保 Docker 宿主机（Host）已准备好 Let's Encrypt 证书。
-- 将宿主机之 `/etc/letsencrypt` 挂载映射至容器内的 `/etc/letsencrypt`。
 
 ---
 
@@ -147,54 +143,13 @@ docker run --name mailserver \
 
 ---
 
-## 🛡️ Rspamd 垃圾邮件过滤器 Web 控制台
-- **登录 Web 界面**：`http://<宿主机IP>:11334`（建议配置反向代理并启用 SSL）。
-- **默认密码**：`kafeiou.pw`
-- **修改管理员密码**：
-  1. 在容器内生成加密散列：
-     ```bash
-     docker exec -it mailserver rspamadm pw --encrypt -p <您的新密码>
-     ```
-  2. 将生成的加密字符串更新至 `/etc/rspamd/local.d/worker-controller.inc`。
-
----
-
-## 🔑 启用 OpenDKIM 数字签名
-1. 取消 `/etc/postfix/main.cf` 中的 milter 注释：
-   ```text
-   smtpd_milters = inet:127.0.0.1:8891
-   non_smtpd_milters = $smtpd_milters
-   milter_default_action = accept
-   ```
-2. 将 `/etc/opendkim/keys/default.txt` 的公钥内容添加至您的域名 DNS TXT 记录中。
-3. 如有多域名需求，可编辑 `/getOpenDKIM.sh` 中的 `domains` 参数批量生成密钥。
-
----
-
-## 🏢 Active Directory (AD) 配置规范
-- **账号大小写**：AD 中的用户登录账号必须为**小写**（因 Dovecot 默认均转为小写查询）。
-- **Email 属性**：请在 AD 用户或组对象中的 `mail` 属性填入电子邮件地址。
-- **组别名 (Aliases)**：创建组并在 `mail` 属性填写别名邮箱，将成员账号加入该组即可。
-- **限制仅限本地域名收发 (local_only)**：在 AD 用户或组的 `description` 属性填写 `local_only` 即可限制仅限内部通信。
-
----
-
-## 🔍 服务检查与排错
-1. 进入容器内部：
-   ```bash
-   docker exec -it mailserver bash
-   ```
-2. 检查各服务运行状态：
-   ```bash
-   supervisorctl status
-   ```
-3. 测试服务端口监听是否正常：
-   ```bash
-   telnet localhost 25    # Postfix SMTP
-   telnet localhost 143   # Dovecot IMAP
-   telnet localhost 8891  # OpenDKIM
-   telnet localhost 11334 # Rspamd
-   ```
+## 🏛️ 深度系统架构与技术运维指南
+如需深入了解 Active Directory 配置细节、邮件安全过滤流程图与 DKIM/Let's Encrypt 设置手册，请参阅专属的 **[系统架构指南 (ARCHITECTURE.zh-CN.md)](ARCHITECTURE.zh-CN.md)**：
+- **Active Directory LDAP 配置规范**：账号小写规范、`mail` 属性、`ALIASES` 组别名、`local_only` 限制。
+- **邮件过滤与安全管道**：Postfix + Rspamd + ClamAV + OpenDKIM 处理流程。
+- **SSL/TLS 证书架构**：测试自签证书自动补位机制 (`make_fake_cert.sh`) 与宿主机 Certbot DNS-01 申请教学。
+- **DKIM & SPF 配置指南**：OpenDKIM 启用、`getOpenDKIM.sh` 批量多域名密钥生成、DNS TXT 记录模板。
+- **排错、性能调优与 Fail2ban 实务**。
 
 ---
 

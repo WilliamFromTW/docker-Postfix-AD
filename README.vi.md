@@ -10,6 +10,7 @@
 
 - **Kho lưu trữ GitHub**: [https://github.com/WilliamFromTW/docker-Postfix-AD](https://github.com/WilliamFromTW/docker-Postfix-AD)
 - **Công cụ tạo cấu hình trực tuyến**: [https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html](https://williamfromtw.github.io/docker-Postfix-AD/genLaunchCommand.html)
+- **Kiến trúc hệ thống & Hướng dẫn kỹ thuật**: [ARCHITECTURE.vi.md](ARCHITECTURE.vi.md) | [Xem biểu đồ tương tác trực tuyến](https://williamfromtw.github.io/docker-Postfix-AD/architecture.html)
 
 ---
 
@@ -22,6 +23,7 @@
 - **Rspamd**: Bộ lọc thư rác hiệu suất cao với giao diện Web UI.
 - **ClamAV**: Tích hợp quét mã độc/virus.
 - **Hạn ngạch hòm thư (Quota)**: Mặc định 20GB (có thể tùy chỉnh).
+- **Khởi động SSL không cần cấu hình trước**: Tự động tạo chứng chỉ tự ký (`make_fake_cert.sh`) khi khởi chạy lần đầu và hỗ trợ tích hợp Let's Encrypt DNS-01 trên Host.
 - **Hệ điều hành nền tảng**: Rocky Linux.
 
 ---
@@ -39,12 +41,6 @@
 | **IMAPS** | `993` | SSL/TLS |
 | **ManageSieve** | `4190` | TLS |
 | **Rspamd Web UI** | `11334` | HTTP (Khuyến nghị dùng Reverse Proxy) |
-
----
-
-## 📋 Yêu cầu chuẩn bị
-- Đảm bảo chứng chỉ Let's Encrypt đã được thiết lập sẵn trên **máy chủ Docker Host** (không phải bên trong container).
-- Ánh xạ thư mục `/etc/letsencrypt` từ máy chủ vào `/etc/letsencrypt` của container.
 
 ---
 
@@ -147,54 +143,13 @@ docker run --name mailserver \
 
 ---
 
-## 🛡️ Giao diện Web bộ lọc thư rác Rspamd
-- **Truy cập Web UI**: `http://<IP-may-chu>:11334` (Khuyến nghị dùng Reverse Proxy với chứng chỉ SSL).
-- **Mật khẩu mặc định**: `kafeiou.pw`
-- **Đổi mật khẩu quản trị viên**:
-  1. Tạo mã băm mật khẩu trong container:
-     ```bash
-     docker exec -it mailserver rspamadm pw --encrypt -p <mat_khau_moi>
-     ```
-  2. Cập nhật chuỗi băm vào tệp `/etc/rspamd/local.d/worker-controller.inc`.
-
----
-
-## 🔑 Kích hoạt chữ ký số OpenDKIM
-1. Bỏ chú thích cấu hình milter trong `/etc/postfix/main.cf`:
-   ```text
-   smtpd_milters = inet:127.0.0.1:8891
-   non_smtpd_milters = $smtpd_milters
-   milter_default_action = accept
-   ```
-2. Thêm khóa công khai từ `/etc/opendkim/keys/default.txt` vào bản ghi DNS TXT của tên miền.
-3. Chỉnh sửa tham số `domains` trong `/getOpenDKIM.sh` nếu cần tạo nhiều tên miền DKIM.
-
----
-
-## 🏢 Hướng dẫn thiết lập Active Directory (AD)
-- **Quy tắc chữ thường**: Tên tài khoản đăng nhập trong AD bắt buộc phải viết bằng **chữ thường** (Dovecot luôn truy vấn bằng chữ thường).
-- **Thuộc tính Email**: Nhập địa chỉ email vào thuộc tính `mail` của User hoặc Group trong AD.
-- **Bí danh nhóm (Aliases)**: Tạo Group và điền địa chỉ email bí danh vào thuộc tính `mail`, sau đó thêm các tài khoản thành viên vào nhóm.
-- **Chỉ gửi nhận nội bộ (local_only)**: Đặt thuộc tính `description` của User hoặc Group thành `local_only` để giới hạn chỉ liên lạc trong nội bộ tên miền.
-
----
-
-## 🔍 Kiểm tra dịch vụ & Khắc phục sự cố
-1. Truy cập vào bên trong container:
-   ```bash
-   docker exec -it mailserver bash
-   ```
-2. Kiểm tra trạng thái các tiến trình dịch vụ:
-   ```bash
-   supervisorctl status
-   ```
-3. Kiểm tra cổng mạng bằng telnet/nc:
-   ```bash
-   telnet localhost 25    # Postfix SMTP
-   telnet localhost 143   # Dovecot IMAP
-   telnet localhost 8891  # OpenDKIM
-   telnet localhost 11334 # Rspamd
-   ```
+## 🏛️ Hướng Dẫn Kỹ Thuật & Kiến Trúc Chuyên Sâu
+Để tìm hiểu chi tiết về tích hợp Active Directory, quy trình lọc thư và hướng dẫn chứng chỉ Let's Encrypt / DKIM, vui lòng xem tài liệu **[Kiến trúc hệ thống (ARCHITECTURE.vi.md)](ARCHITECTURE.vi.md)**:
+- **Quy tắc cấu hình Active Directory**: Quy tắc chữ thường, thuộc tính `mail`, bí danh `ALIASES`, giới hạn `local_only`.
+- **Quy trình lọc thư & Bảo mật**: Luồng xử lý Postfix + Rspamd + ClamAV + OpenDKIM.
+- **Kiến trúc chứng chỉ SSL/TLS**: Cơ chế tự tạo chứng chỉ tự ký (`make_fake_cert.sh`) và hướng dẫn Certbot DNS-01 trên Host.
+- **Hướng dẫn DKIM & SPF**: Kích hoạt OpenDKIM, tạo khóa hàng loạt với `getOpenDKIM.sh`, bản ghi mẫu DNS TXT.
+- **Chẩn đoán, tối ưu hiệu năng & Fail2ban**.
 
 ---
 
