@@ -15,13 +15,14 @@
     </script>
 
     <style>
-      .mermaid {
+      .mermaid-box {
         background-color: #ffffff;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         padding: 1.5rem;
         text-align: center;
         overflow-x: auto;
+        min-height: 200px;
       }
       pre {
         background-color: #f8f9fa;
@@ -95,21 +96,8 @@
         <div class="card-body">
           <p data-i18n="sec1Desc">Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.</p>
           
-          <div class="mermaid my-3" id="diagram-ad">
-graph TD
-    RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
-    Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
-    Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
-    
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP Service :389")]
-    end
-
-    Postfix -->|ldap-users.cf: Verify Recipient & Local Mailbox| AD
-    Postfix -->|ldap-aliases.cf: Resolve Group Aliases| AD
-    Postfix -->|ldap-local_only.cf: Check Domain Restriction| AD
-    Dovecot -->|dovecot-ldap.conf.ext: Authenticate & Lookup Mailbox| AD
-    Dovecot -->|Maildir Storage / Quota Enforcement| VMail[("Storage /home/vmail")]
+          <div class="mermaid-box my-3" id="diagram-ad-container">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
 
           <h5 class="fw-bold mt-4" data-i18n="adRulesTitle">Active Directory Configuration Rules:</h5>
@@ -130,28 +118,8 @@ graph TD
         <div class="card-body">
           <p data-i18n="sec2Desc">Every email is inspected by a coordinated milter pipeline comprising Rspamd, ClamAV antivirus, and OpenDKIM signing before local mailbox delivery.</p>
           
-          <div class="mermaid my-3" id="diagram-pipeline">
-sequenceDiagram
-    participant Sender as External Sender / Client
-    participant Postfix as Postfix SMTP
-    participant Rspamd as Rspamd Spam Filter (:11334)
-    participant ClamAV as ClamAV Antivirus (:3310)
-    participant DKIM as OpenDKIM Signing (:8891)
-    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
-
-    Sender->>Postfix: Send Email (SMTP)
-    Postfix->>Rspamd: Milter Stream Inspection
-    Rspamd->>ClamAV: Scan Attachments for Malware
-    ClamAV-->>Rspamd: Scan Result (Clean / Infected)
-    Rspamd->>Rspamd: SPF, DMARC, Heuristics, Neural Rules Scoring
-    alt Spam Detected (Action: Reject or Quarantine)
-        Rspamd-->>Postfix: Tag Header / Redirect to SPAM_EMAIL
-    else Clean Email
-        Rspamd-->>Postfix: Pass Message
-        Postfix->>DKIM: Inspect / Sign DKIM Signature (Port 8891)
-        DKIM-->>Postfix: Return Signed Header
-        Postfix->>Dovecot: Deliver via LMTP to /home/vmail (Quota Checked)
-    end
+          <div class="mermaid-box my-3" id="diagram-pipeline-container">
+            <div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
 
           <h5 class="fw-bold mt-4" data-i18n="rspamdAdminTitle">Rspamd Web UI & Administration:</h5>
@@ -171,23 +139,8 @@ sequenceDiagram
         <div class="card-body">
           <p data-i18n="sec3Desc">Out-of-the-box readiness via self-signed fallback certificates, coupled with official Let's Encrypt DNS-01 host volume mapping.</p>
           
-          <div class="mermaid my-3" id="diagram-ssl">
-graph TD
-    subgraph SG1 ["Container Startup (setup.sh)"]
-        A{"Check /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
-        A -->|Not Found| B["Execute /make_fake_cert.sh"]
-        B --> C["Generate Self-Signed Fake Certificate"]
-        C --> D["Postfix & Dovecot SSL Services Start Immediately"]
-        A -->|Found| E["Directly Load Official Let's Encrypt Certificate"]
-        E --> D
-    end
-
-    subgraph SG2 ["Host Maintenance (Production SSL via DNS-01)"]
-        F["Administrator runs Certbot DNS-01 on Host"] --> G["Obtain Real Wildcard / SAN Certificate"]
-        G --> H["Store in Host /etc/letsencrypt"]
-        H -->|Volume Mapping| I["Container Accesses Updated Certificate"]
-        I --> J["Reload Services: postfix reload & dovecot reload"]
-    end
+          <div class="mermaid-box my-3" id="diagram-ssl-container">
+            <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
 
           <h5 class="fw-bold mt-4" data-i18n="certbotGuideTitle">Host Certbot DNS-01 Step-by-Step Guide:</h5>
@@ -297,7 +250,58 @@ domains=( 'example.com' 'example2.com' )
           sec4Desc: "Ensure high email deliverability and combat spoofing by configuring OpenDKIM keys and public DNS TXT records.",
           dkimStep1Title: "Step 1: Enable OpenDKIM Milter in Container",
           dkimStep2Title: "Step 2: Generate Multi-Domain Keys (/getOpenDKIM.sh)",
-          dkimStep3Title: "Step 3: Add DNS TXT Records"
+          dkimStep3Title: "Step 3: Add DNS TXT Records",
+          diagramAd: `graph TD
+    RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
+    Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
+    
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP Service :389")]
+    end
+
+    Postfix -->|"ldap-users.cf: Verify Recipient & Local Mailbox"| AD
+    Postfix -->|"ldap-aliases.cf: Resolve Group Aliases"| AD
+    Postfix -->|"ldap-local_only.cf: Check Domain Restriction"| AD
+    Dovecot -->|"dovecot-ldap.conf.ext: Authenticate & Lookup Mailbox"| AD
+    Dovecot -->|"Maildir Storage / Quota Enforcement"| VMail[("Storage /home/vmail")]`,
+          diagramPipeline: `sequenceDiagram
+    participant Sender as External Sender / Client
+    participant Postfix as Postfix SMTP
+    participant Rspamd as Rspamd Spam Filter (:11334)
+    participant ClamAV as ClamAV Antivirus (:3310)
+    participant DKIM as OpenDKIM Signing (:8891)
+    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
+
+    Sender->>Postfix: Send Email (SMTP)
+    Postfix->>Rspamd: Milter Stream Inspection
+    Rspamd->>ClamAV: Scan Attachments for Malware
+    ClamAV-->>Rspamd: Scan Result (Clean / Infected)
+    Rspamd->>Rspamd: SPF, DMARC, Heuristics, Neural Rules Scoring
+    alt Spam Detected (Action: Reject or Quarantine)
+        Rspamd-->>Postfix: Tag Header / Redirect to SPAM_EMAIL
+    else Clean Email
+        Rspamd-->>Postfix: Pass Message
+        Postfix->>DKIM: Inspect / Sign DKIM Signature (Port 8891)
+        DKIM-->>Postfix: Return Signed Header
+        Postfix->>Dovecot: Deliver via LMTP to /home/vmail (Quota Checked)
+    end`,
+          diagramSsl: `graph TD
+    subgraph SG1 ["Container Startup (setup.sh)"]
+        A{"Check /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|Not Found| B["Execute /make_fake_cert.sh"]
+        B --> C["Generate Self-Signed Fake Certificate"]
+        C --> D["Postfix & Dovecot SSL Services Start Immediately"]
+        A -->|Found| E["Directly Load Official Let's Encrypt Certificate"]
+        E --> D
+    end
+
+    subgraph SG2 ["Host Maintenance (Production SSL via DNS-01)"]
+        F["Administrator runs Certbot DNS-01 on Host"] --> G["Obtain Real Wildcard / SAN Certificate"]
+        G --> H["Store in Host /etc/letsencrypt"]
+        H -->|Volume Mapping| I["Container Accesses Updated Certificate"]
+        I --> J["Reload Services inside Container: postfix reload & dovecot reload"]
+    end`
         },
         "zh-TW": {
           docTitle: "系統架構與技術維運指南 - docker-Postfix-AD",
@@ -326,7 +330,58 @@ domains=( 'example.com' 'example2.com' )
           sec4Desc: "配置 OpenDKIM 簽章與公網 DNS 記錄，大幅提升信件到達率並防止偽造。",
           dkimStep1Title: "步驟 1：於容器內啟用 OpenDKIM Milter",
           dkimStep2Title: "步驟 2：批次產生多網域金鑰 (/getOpenDKIM.sh)",
-          dkimStep3Title: "步驟 3：新增 DNS TXT 記錄"
+          dkimStep3Title: "步驟 3：新增 DNS TXT 記錄",
+          diagramAd: `graph TD
+    RemoteMTA["外部郵件伺服器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 傳輸)"| Postfix["Postfix MTA"]
+    Client["郵件用戶端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (驗證寄信)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (收信存取)"| Dovecot["Dovecot IMAP/POP3"]
+    
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP 伺服器 :389")]
+    end
+
+    Postfix -->|"ldap-users.cf: 查驗收件人與本地信箱"| AD
+    Postfix -->|"ldap-aliases.cf: 解析群組別名"| AD
+    Postfix -->|"ldap-local_only.cf: 檢查內部網域限制"| AD
+    Dovecot -->|"dovecot-ldap.conf.ext: 帳號密碼認證與信箱查詢"| AD
+    Dovecot -->|"Maildir 儲存 / Quota 配額控管"| VMail[("儲存空間 /home/vmail")]`,
+          diagramPipeline: `sequenceDiagram
+    participant Sender as 外部寄件者 / 用戶端
+    participant Postfix as Postfix SMTP
+    participant Rspamd as Rspamd 垃圾郵件過濾 (:11334)
+    participant ClamAV as ClamAV 防毒掃描 (:3310)
+    participant DKIM as OpenDKIM 簽章服務 (:8891)
+    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
+
+    Sender->>Postfix: 傳送郵件 (SMTP)
+    Postfix->>Rspamd: Milter 串流過濾檢查
+    Rspamd->>ClamAV: 掃描附件是否含有惡意程式
+    ClamAV-->>Rspamd: 掃描結果 (Clean / Infected)
+    Rspamd->>Rspamd: SPF, DMARC, 啟發式規則, 神經網絡評分
+    alt 判定為垃圾郵件 (隔離 / 拒收)
+        Rspamd-->>Postfix: 標記標頭 / 轉發至 SPAM_EMAIL
+    else 正常郵件
+        Rspamd-->>Postfix: 允許通過
+        Postfix->>DKIM: 簽署 / 驗證 DKIM 數位簽章 (Port 8891)
+        DKIM-->>Postfix: 回傳已簽章標頭
+        Postfix->>Dovecot: 經由 LMTP 派送至 /home/vmail (檢查 Quota)
+    end`,
+          diagramSsl: `graph TD
+    subgraph SG1 ["容器啟動階段 (setup.sh)"]
+        A{"檢查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|不存在| B["自動執行 /make_fake_cert.sh"]
+        B --> C["產生自簽 Fake 測試憑證"]
+        C --> D["Postfix 與 Dovecot SSL 服務立即無痛啟動"]
+        A -->|已存在| E["直接載入正式 Let's Encrypt 憑證"]
+        E --> D
+    end
+
+    subgraph SG2 ["宿主機維運 (事後透過 DNS-01 申請正式憑證)"]
+        F["管理者於宿主機執行 Certbot DNS-01"] --> G["向 Let's Encrypt 取得正式萬用/主機憑證"]
+        G --> H["存入宿主機 /etc/letsencrypt"]
+        H -->|Volume 映射| I["容器即時讀取最新正式憑證"]
+        I --> J["於容器內重新載入服務: postfix & dovecot reload"]
+    end`
         },
         "zh-CN": {
           docTitle: "系统架构与技术运维指南 - docker-Postfix-AD",
@@ -355,7 +410,58 @@ domains=( 'example.com' 'example2.com' )
           sec4Desc: "配置 OpenDKIM 签名与公网 DNS 记录，大幅提升信件到达率并防止伪造。",
           dkimStep1Title: "步骤 1：在容器内启用 OpenDKIM Milter",
           dkimStep2Title: "步骤 2：批量生成多域名密钥 (/getOpenDKIM.sh)",
-          dkimStep3Title: "步骤 3：添加 DNS TXT 记录"
+          dkimStep3Title: "步骤 3：添加 DNS TXT 记录",
+          diagramAd: `graph TD
+    RemoteMTA["外部邮件服务器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 传输)"| Postfix["Postfix MTA"]
+    Client["邮件客户端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (验证发信)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (收信访问)"| Dovecot["Dovecot IMAP/POP3"]
+    
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP 服务器 :389")]
+    end
+
+    Postfix -->|"ldap-users.cf: 查验收件人与本地邮箱"| AD
+    Postfix -->|"ldap-aliases.cf: 解析组别名"| AD
+    Postfix -->|"ldap-local_only.cf: 检查内部域名限制"| AD
+    Dovecot -->|"dovecot-ldap.conf.ext: 账号密码认证与邮箱查询"| AD
+    Dovecot -->|"Maildir 存储 / Quota 配额管控"| VMail[("存储空间 /home/vmail")]`,
+          diagramPipeline: `sequenceDiagram
+    participant Sender as 外部发件人 / 客户端
+    participant Postfix as Postfix SMTP
+    participant Rspamd as Rspamd 垃圾邮件过滤 (:11334)
+    participant ClamAV as ClamAV 防病毒扫描 (:3310)
+    participant DKIM as OpenDKIM 签名服务 (:8891)
+    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
+
+    Sender->>Postfix: 发送邮件 (SMTP)
+    Postfix->>Rspamd: Milter 串流过滤检查
+    Rspamd->>ClamAV: 扫描附件是否包含恶意程序
+    ClamAV-->>Rspamd: 扫描结果 (Clean / Infected)
+    Rspamd->>Rspamd: SPF, DMARC, 启发式规则, 神经网络评分
+    alt 判定为垃圾邮件 (隔离 / 拒收)
+        Rspamd-->>Postfix: 标记标头 / 转发至 SPAM_EMAIL
+    else 正常邮件
+        Rspamd-->>Postfix: 允许通过
+        Postfix->>DKIM: 签署 / 验证 DKIM 数字签名 (Port 8891)
+        DKIM-->>Postfix: 返回已签名标头
+        Postfix->>Dovecot: 经由 LMTP 派送至 /home/vmail (检查 Quota)
+    end`,
+          diagramSsl: `graph TD
+    subgraph SG1 ["容器启动阶段 (setup.sh)"]
+        A{"检查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|不存在| B["自动执行 /make_fake_cert.sh"]
+        B --> C["生成自签 Fake 测试证书"]
+        C --> D["Postfix 与 Dovecot SSL 服务立即无痛启动"]
+        A -->|已存在| E["直接载入正式 Let's Encrypt 证书"]
+        E --> D
+    end
+
+    subgraph SG2 ["宿主机运维 (事后通过 DNS-01 申请正式证书)"]
+        F["管理员在宿主机执行 Certbot DNS-01"] --> G["向 Let's Encrypt 获取正式通配符/主机证书"]
+        G --> H["存入宿主机 /etc/letsencrypt"]
+        H -->|Volume 映射| I["容器即时读取最新正式证书"]
+        I --> J["在容器内重新载入服务: postfix & dovecot reload"]
+    end`
         },
         vi: {
           docTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật - docker-Postfix-AD",
@@ -384,9 +490,86 @@ domains=( 'example.com' 'example2.com' )
           sec4Desc: "Cấu hình khóa OpenDKIM và bản ghi DNS TXT công khai để tăng tỷ lệ gửi thư thành công và chống giả mạo.",
           dkimStep1Title: "Bước 1: Bật OpenDKIM Milter trong Container",
           dkimStep2Title: "Bước 2: Tạo khóa DKIM nhiều tên miền (/getOpenDKIM.sh)",
-          dkimStep3Title: "Bước 3: Thêm bản ghi DNS TXT"
+          dkimStep3Title: "Bước 3: Thêm bản ghi DNS TXT",
+          diagramAd: `graph TD
+    RemoteMTA["Máy chủ Mail bên ngoài (Remote MTA)"] -->|"SMTP :25 (Truyền tải Server-to-Server)"| Postfix["Postfix MTA"]
+    Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (Nhận & Đọc thư)"| Dovecot["Dovecot IMAP/POP3"]
+    
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP Server :389")]
+    end
+
+    Postfix -->|"ldap-users.cf: Kiểm tra người nhận & Hòm thư"| AD
+    Postfix -->|"ldap-aliases.cf: Phân giải bí danh nhóm"| AD
+    Postfix -->|"ldap-local_only.cf: Kiểm tra giới hạn tên miền"| AD
+    Dovecot -->|"dovecot-ldap.conf.ext: Xác thực & Tra cứu hòm thư"| AD
+    Dovecot -->|"Lưu trữ Maildir / Quản lý Quota"| VMail[("Lưu trữ /home/vmail")]`,
+          diagramPipeline: `sequenceDiagram
+    participant Sender as Người gửi bên ngoài / Client
+    participant Postfix as Postfix SMTP
+    participant Rspamd as Bộ lọc thư rác Rspamd (:11334)
+    participant ClamAV as Quét mã độc ClamAV (:3310)
+    participant DKIM as Dịch vụ ký OpenDKIM (:8891)
+    participant Dovecot as Dovecot LDA / LMTP (:home/vmail)
+
+    Sender->>Postfix: Gửi email (SMTP)
+    Postfix->>Rspamd: Chuyển tiếp luồng Milter kiểm tra
+    Rspamd->>ClamAV: Quét tệp đính kèm tìm virus
+    ClamAV-->>Rspamd: Kết quả quét (Clean / Infected)
+    Rspamd->>Rspamd: Chấm điểm SPF, DMARC, quy tắc nơ-ron
+    alt Phát hiện thư rác (Spam)
+        Rspamd-->>Postfix: Đánh dấu tiêu đề / Chuyển tiếp đến SPAM_EMAIL
+    else Email hợp lệ (Clean)
+        Rspamd-->>Postfix: Cho phép thông qua
+        Postfix->>DKIM: Ký / Xác thực chữ ký số DKIM (Cổng 8891)
+        DKIM-->>Postfix: Trả về tiêu đề đã ký
+        Postfix->>Dovecot: Giao qua LMTP vào /home/vmail (Kiểm tra Quota)
+    end`,
+          diagramSsl: `graph TD
+    subgraph SG1 ["Khởi chạy Container (setup.sh)"]
+        A{"Kiểm tra /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|Chưa có| B["Tự động chạy /make_fake_cert.sh"]
+        B --> C["Tạo chứng chỉ tự ký Fake Test"]
+        C --> D["Dịch vụ SSL Postfix & Dovecot khởi chạy ngay lập tức"]
+        A -->|Đã có| E["Tải trực tiếp chứng chỉ Let's Encrypt chính thức"]
+        E --> D
+    end
+
+    subgraph SG2 ["Vận hành trên Host (Cập nhật chứng chỉ DNS-01)"]
+        F["Quản trị viên chạy Certbot DNS-01 trên Host"] --> G["Nhận chứng chỉ chính thức từ Let's Encrypt"]
+        G --> H["Lưu vào thư mục /etc/letsencrypt trên Host"]
+        H -->|Ánh xạ Volume| I["Container tự động nhận chứng chỉ mới"]
+        I --> J["Tải lại dịch vụ trong Container: postfix & dovecot reload"]
+    end`
         }
       };
+
+      var renderSeq = 0;
+
+      async function renderDiagrams(lang) {
+        var dict = translations[lang] || translations["en"];
+        var currentSeq = ++renderSeq;
+
+        var diagrams = [
+          { target: '#diagram-ad-container', code: dict.diagramAd, prefix: 'ad' },
+          { target: '#diagram-pipeline-container', code: dict.diagramPipeline, prefix: 'pipeline' },
+          { target: '#diagram-ssl-container', code: dict.diagramSsl, prefix: 'ssl' }
+        ];
+
+        for (var i = 0; i < diagrams.length; i++) {
+          var item = diagrams[i];
+          var renderId = 'mermaid-' + item.prefix + '-' + currentSeq + '-' + i;
+          try {
+            var result = await mermaid.render(renderId, item.code);
+            if (currentSeq === renderSeq) {
+              $(item.target).html(result.svg);
+            }
+          } catch (err) {
+            console.error('Mermaid render error for ' + item.prefix, err);
+          }
+        }
+      }
 
       function applyLanguage(lang) {
         if (!translations[lang]) lang = "en";
@@ -401,6 +584,7 @@ domains=( 'example.com' 'example2.com' )
         });
 
         $("#selectLang").val(lang);
+        renderDiagrams(lang);
       }
 
       function changeLanguage(lang) {
@@ -411,7 +595,6 @@ domains=( 'example.com' 'example2.com' )
       $(document).ready(function() {
         var savedLang = localStorage.getItem("userLanguage") || "en";
         applyLanguage(savedLang);
-        mermaid.run();
       });
     </script>
   </body>
