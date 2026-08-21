@@ -16,7 +16,8 @@ hosts = HOST_IP:389
 base= SEARCH_BASE 
 dn = BIND_DN
 dnpass = BIND_PW
-#pass_filter     = (&(mail=%u)(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
 pass_filter     = (&(objectClass=*)(|(samaccountname=%u)(samaccountname=%n)(userPrincipalName=%u)(mail=%u)))
+user_filter     = (&(objectClass=*)(|(mail=%u)(userPrincipalName=%u)(samaccountname=%n)(samaccountname=%u)))
+user_attrs      = =home=/home/vmail/%u, =mail=maildir:/home/vmail/%u/Maildir, =sieve=/home/vmail/%u/sieve/dovecot.sieve, =sieve_dir=/home/vmail/%u/sieve, =uid=1001, =gid=1001
 
 
