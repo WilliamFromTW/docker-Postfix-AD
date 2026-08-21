@@ -59,7 +59,7 @@ version: '3.8'
 
 services:
   mailserver:
-    image: inmethod/docker-postfix-ad:4.0b1
+    image: inmethod/docker-postfix-ad:latest
     container_name: mailserver
     restart: always
     network_mode: host
@@ -137,7 +137,7 @@ docker run --name mailserver \
   -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
   -d --restart always --net=host \
-  inmethod/docker-postfix-ad:4.0b1
+  inmethod/docker-postfix-ad:latest
 ```
 
 ---
@@ -156,5 +156,5 @@ docker run --name mailserver \
 ```bash
 git clone https://github.com/WilliamFromTW/docker-Postfix-AD.git
 cd docker-Postfix-AD
-docker build -t inmethod/docker-postfix-ad:4.0b1 --no-cache .
+docker build -t inmethod/docker-postfix-ad:latest --no-cache .
 ```

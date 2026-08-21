@@ -88,7 +88,7 @@
               <label for="inputImageTag" class="form-label font-weight-bold" data-i18n="imageTag">Docker Image Version</label>
               <div class="input-group">
                 <span class="input-group-text bg-light text-muted">inmethod/docker-postfix-ad:</span>
-                <input type="text" class="form-control" id="inputImageTag" placeholder="4.0b1" value="4.0b1" required>
+                <input type="text" class="form-control" id="inputImageTag" placeholder="latest" value="latest" required>
               </div>
             </div>
 
@@ -385,7 +385,7 @@
 
         var dict = translations[currentLang] || translations.en;
         var containerName = $("#inputContainerName").val().trim() || "mailserver";
-        var imageTag = $("#inputImageTag").val().trim() || "4.0b1";
+        var imageTag = $("#inputImageTag").val().trim() || "latest";
         var image = "inmethod/docker-postfix-ad:" + imageTag;
         var podmanImage = "docker.io/inmethod/docker-postfix-ad:" + imageTag;
         var adIp = $("#inputADIP").val().trim();
