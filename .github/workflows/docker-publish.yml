@@ -2,7 +2,7 @@ name: Build and Push to Docker Hub
 
 on:
   push:
-    branches: [ "main" ]  # 當推送到 main 分支時觸發
+    branches: [ "rspamd" ]  # 當推送到 main 分支時觸發
 
 jobs:
   build-and-push:
@@ -22,4 +22,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: inmethod/docker-postfix-ad:latest
+          tags: inmethod/:latest
