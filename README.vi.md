@@ -18,13 +18,12 @@
 - **Tài khoản đăng nhập độc lập với Email**: Tên đăng nhập có thể khác với địa chỉ email (ví dụ: tài khoản: `520001`, email: `william@smile.taipei`).
 - **Xác thực Microsoft Active Directory LDAP**: Tương thích Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
 - **Postfix Mail Transfer Agent (MTA)**.
-- **Máy chủ Dovecot IMAP / POP3**.
+- **Máy chủ Dovecot IMAP / POP3 / LMTP**.
+- **Tự động trả lời email thông minh (Auto-Reply / Vacation)**: Hỗ trợ thiết lập báo nghỉ phép và phản hồi tự động bằng lệnh email mà không cần giao diện Webmail.
 - **OpenDKIM**: Ký và xác thực chữ ký số email.
 - **Rspamd**: Bộ lọc thư rác hiệu suất cao với giao diện Web UI.
 - **ClamAV**: Tích hợp quét mã độc/virus.
 - **Hạn ngạch hòm thư (Quota)**: Mặc định 20GB (có thể tùy chỉnh).
-- **Khởi động SSL không cần cấu hình trước**: Tự động tạo chứng chỉ tự ký (`make_fake_cert.sh`) khi khởi chạy lần đầu và hỗ trợ tích hợp Let's Encrypt DNS-01 trên Host.
-- **Hệ điều hành nền tảng**: Rocky Linux.
 
 ---
 

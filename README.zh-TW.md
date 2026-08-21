@@ -18,13 +18,12 @@
 - **帳號與信箱可獨立分離**：登入帳號名稱可與電子郵件地址不同（例如：帳號 `520001`，信箱 `william@smile.taipei`）。
 - **微軟 Active Directory LDAP 認證**：相容 Windows Server 2008R2、2012R2、2016、2019、2022。
 - **Postfix 郵件傳輸代理 (MTA)**。
-- **Dovecot IMAP / POP3 伺服器**。
+- **Dovecot IMAP / POP3 / LMTP 伺服器**。
+- **Email 驅動智慧自動回覆 (Auto-Reply / Vacation)**：支援透過郵件指令設定休假與公出自動回信，無 Webmail 亦可輕鬆使用。
 - **OpenDKIM**：郵件數位簽章與驗證。
 - **Rspamd**：高效能垃圾郵件過濾引擎與 Web 控制台。
 - **ClamAV**：內建防毒掃描。
 - **信箱配額限制 (Quota)**：預設 20GB（可彈性調整）。
-- **開箱即用 SSL 機制**：內建測試自簽憑證產生器 (`make_fake_cert.sh`)，並支援宿主機 Let's Encrypt DNS-01 憑證掛載更新。
-- **底層系統**：Rocky Linux。
 
 ---
 

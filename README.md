@@ -18,13 +18,12 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 - **Independent Account & Email**: Login account name can be distinct from email address (e.g., account: `520001`, email: `william@smile.taipei`).
 - **Microsoft Active Directory LDAP Auth**: Compatible with Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
 - **Postfix Mail Transfer Agent (MTA)**.
-- **Dovecot IMAP / POP3 Server**.
+- **Dovecot IMAP / POP3 / LMTP Server**.
+- **Email-Driven Smart Auto-Reply & Vacation Responder**: Sieve-powered automatic replies triggered via email commands without requiring a Webmail GUI.
 - **OpenDKIM**: Email signature verification & signing.
 - **Rspamd**: High-performance spam filter with Web UI.
 - **ClamAV**: Antivirus scanner integration.
 - **Mailbox Quota**: Dovecot quota management (default 20GB, configurable).
-- **Zero-Config SSL Startup**: Built-in fallback certificate generator (`make_fake_cert.sh`) for instant startup, with official Let's Encrypt DNS-01 integration.
-- **Base OS**: Rocky Linux.
 
 ---
 
