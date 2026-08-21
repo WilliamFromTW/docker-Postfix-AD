@@ -26,7 +26,7 @@ COPY logrotate.d/ /etc/logrotate.d/
 COPY getOpenDKIM.sh /getOpenDKIM.sh
 COPY make_fake_cert.sh /make_fake_cert.sh
 COPY scripts/ /usr/lib/dovecot/sieve-pipe/
-RUN chmod 755 /usr/lib/dovecot/sieve-pipe/handle_autoreply.py
+RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*.py
 RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem
 RUN unbound-control-setup
 RUN chown -R _rspamd:_rspamd /etc/rspamd/maps.d

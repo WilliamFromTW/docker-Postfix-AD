@@ -8,6 +8,7 @@ Listens via Sieve Extprograms pipe on standard input.
 import sys
 import os
 import re
+import json
 import email
 from email.header import decode_header
 from email.mime.text import MIMEText
@@ -118,9 +119,6 @@ def send_notification(to_addr, subject, body_text):
         except Exception as e:
             sys.stderr.write(f"Error sending confirmation email: {e}\n")
 
-def escape_sieve_string(s):
-    return s.replace("\\", "\\\\").replace('"', '\\"')
-
 def find_user_sieve_dir(email_addr):
     local_part = email_addr.split("@")[0].lower()
     cand1 = os.path.join(VMAIL_BASE, email_addr.lower(), "sieve")
@@ -185,6 +183,7 @@ def main():
 
     sieve_dir = find_user_sieve_dir(from_addr)
     sieve_file = os.path.join(sieve_dir, "dovecot.sieve")
+    cfg_file = os.path.join(sieve_dir, "autoreply_config.json")
 
     # 1. Turn OFF
     if re.search(r"^(off|cancel|stop|關閉|取消|停用)", param_str, re.IGNORECASE):
@@ -193,8 +192,12 @@ def main():
             f.write(content)
         compile_sieve(sieve_file)
 
+        with open(cfg_file, "w", encoding="utf-8") as f:
+            json.dump({"enabled": False}, f)
+
         try:
             os.chown(sieve_file, 1001, 1001)
+            os.chown(cfg_file, 1001, 1001)
             svbin = sieve_file.replace(".sieve", ".svbin")
             if os.path.exists(svbin):
                 os.chown(svbin, 1001, 1001)
@@ -278,12 +281,20 @@ def main():
                     f"Best regards,\n{user_name}"
                 )
 
-    escaped_body = escape_sieve_string(body)
-    escaped_subj = escape_sieve_string(reply_subject)
+    # Save Config for 15s Delayed Worker
+    cfg_data = {
+        "enabled": True,
+        "owner": from_addr,
+        "subject": reply_subject,
+        "body": body,
+        "is_always_on": is_always_on
+    }
+    with open(cfg_file, "w", encoding="utf-8") as f:
+        json.dump(cfg_data, f, ensure_ascii=False, indent=2)
 
-    # Build Sieve Script with Bot & DMARC/Bounce Protection
+    # Build Sieve Script with 15-Second Delayed Async Pipe & Bot Protection
     sieve_lines = [
-        'require ["vacation", "date", "relational"];',
+        'require ["vnd.dovecot.pipe", "copy", "date", "relational"];',
         '',
         '# Smart Filter: Do not auto-reply to noreply, bots, DMARC reports, or bounces',
         'if not anyof (',
@@ -297,11 +308,7 @@ def main():
 
     if is_always_on or not (start_dt and end_dt):
         sieve_lines.extend([
-            '  vacation',
-            f'    :days {DEFAULT_DAYS}',
-            f'    :from "{from_addr}"',
-            f'    :subject "{escaped_subj}"',
-            f'    "{escaped_body}";',
+            f'  pipe :copy "send_delayed_vacation.py" ["{from_addr}"];',
             '}',
             'keep;'
         ])
@@ -316,11 +323,7 @@ def main():
             f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "ge" "iso8601" "{iso_start}",',
             f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "le" "iso8601" "{iso_end}"',
             '  ) {',
-            '    vacation',
-            f'      :days {DEFAULT_DAYS}',
-            f'      :from "{from_addr}"',
-            f'      :subject "{escaped_subj}"',
-            f'      "{escaped_body}";',
+            f'    pipe :copy "send_delayed_vacation.py" ["{from_addr}"];',
             '  }',
             '}',
             'keep;'
@@ -341,6 +344,7 @@ def main():
 
     try:
         os.chown(sieve_file, 1001, 1001)
+        os.chown(cfg_file, 1001, 1001)
         svbin = sieve_file.replace(".sieve", ".svbin")
         if os.path.exists(svbin):
             os.chown(svbin, 1001, 1001)
@@ -348,6 +352,8 @@ def main():
         pass
 
     # Send Success Notification Email
+    delay_info_zh = "（外部來信將延遲 15 秒後自然發送）"
+    delay_info_en = " (Outgoing replies will be sent after a 15-second natural delay)"
     if is_chinese:
         notif_subj = f"【自動回覆通知】已成功啟用自動回覆 (生效期間：{time_notif_short})"
         notif_body = (
@@ -356,6 +362,7 @@ def main():
             f"=====================================================\n\n"
             f"• 帳號：{from_addr}\n"
             f"• 生效區間：{time_desc}\n"
+            f"• 回應延遲：15 秒自然延遲發信 {delay_info_zh}\n"
             f"• 防轟炸頻率：同一寄件者 24 小時內最多回覆 1 次 (:days {DEFAULT_DAYS})\n"
             f"• 自動回覆主旨：{reply_subject}\n\n"
             f"【自動回覆內文預覽】：\n"
@@ -372,6 +379,7 @@ def main():
             f"=====================================================\n\n"
             f"• Account: {from_addr}\n"
             f"• Active Period: {time_desc}\n"
+            f"• Response Delay: 15-second natural delay {delay_info_en}\n"
             f"• Frequency Limit: At most 1 reply per 24 hours to the same sender (:days {DEFAULT_DAYS})\n"
             f"• Auto-Reply Subject: {reply_subject}\n\n"
             f"【Auto-Reply Body Preview】:\n"

@@ -134,9 +134,7 @@ chown postfix:postfix /var/spool/postfix/private
 chmod 700 /var/spool/postfix/private
 
 mkdir -p /usr/lib/dovecot/sieve-pipe
-if [ -f "/usr/lib/dovecot/sieve-pipe/handle_autoreply.py" ]; then
-  chmod 755 /usr/lib/dovecot/sieve-pipe/handle_autoreply.py
-fi
+chmod 755 /usr/lib/dovecot/sieve-pipe/*.py 2>/dev/null || true
 
 mkdir -p /etc/dovecot/sieve/global
 if [ -f "/etc/dovecot/sieve/global/autoreply_handler.sieve" ]; then
