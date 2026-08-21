@@ -20,7 +20,6 @@ COPY dovecot/ /etc/dovecot/
 COPY opendkim/ /etc/opendkim/
 COPY rspamd/  /etc/rspamd/
 COPY clamd/clamd.d/   /etc/clamd.d/
-COPY redis/ /etc/redis/
 COPY setup.sh /setup.sh
 COPY start_dovecot.sh /start_dovecot.sh
 COPY logrotate.d/ /etc/logrotate.d/
