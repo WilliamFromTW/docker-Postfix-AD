@@ -20,8 +20,9 @@ The container integrates **Postfix** (MTA) and **Dovecot** (IMAP/POP3) with **Mi
 
 ```mermaid
 graph TD
-    Client["Email Client / Remote MTA"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
-    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
+    RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
+    Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory"]
         AD[("AD LDAP Service :389")]

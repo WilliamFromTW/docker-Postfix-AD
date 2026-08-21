@@ -20,8 +20,9 @@ Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiế
 
 ```mermaid
 graph TD
-    Client["Email Client / SMTP bên ngoài"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
-    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
+    RemoteMTA["Máy chủ Mail bên ngoài (Remote MTA)"] -->|"SMTP :25 (Truyền tải Server-to-Server)"| Postfix["Postfix MTA"]
+    Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (Nhận & Đọc thư)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory"]
         AD[("AD LDAP Server :389")]

@@ -20,8 +20,9 @@
 
 ```mermaid
 graph TD
-    Client["邮件客户端 / 外部 SMTP"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
-    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
+    RemoteMTA["外部邮件服务器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 传输)"| Postfix["Postfix MTA"]
+    Client["邮件客户端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (验证发信)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (收信访问)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory"]
         AD[("AD LDAP 服务器 :389")]
