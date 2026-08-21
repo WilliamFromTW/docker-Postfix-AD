@@ -281,19 +281,28 @@ def main():
     escaped_body = escape_sieve_string(body)
     escaped_subj = escape_sieve_string(reply_subject)
 
-    # Build Sieve Script
+    # Build Sieve Script with Bot & DMARC/Bounce Protection
     sieve_lines = [
         'require ["vacation", "date", "relational"];',
-        ''
+        '',
+        '# Smart Filter: Do not auto-reply to noreply, bots, DMARC reports, or bounces',
+        'if not anyof (',
+        '  header :matches "From" ["*noreply*", "*no-reply*", "*donotreply*", "*mailer-daemon*", "*postmaster*", "*dmarc*", "*bounce*", "*notification*"],',
+        '  header :matches "Sender" ["*noreply*", "*no-reply*", "*donotreply*", "*mailer-daemon*", "*postmaster*", "*dmarc*", "*bounce*", "*notification*"],',
+        '  header :matches "Precedence" ["bulk", "list", "junk", "auto_reply"],',
+        '  header :matches "Auto-Submitted" ["auto-generated", "auto-replied"],',
+        '  header :contains "Content-Type" "multipart/report"',
+        ') {'
     ]
 
     if is_always_on or not (start_dt and end_dt):
         sieve_lines.extend([
-            'vacation',
-            f'  :days {DEFAULT_DAYS}',
-            f'  :from "{from_addr}"',
-            f'  :subject "{escaped_subj}"',
-            f'  "{escaped_body}";',
+            '  vacation',
+            f'    :days {DEFAULT_DAYS}',
+            f'    :from "{from_addr}"',
+            f'    :subject "{escaped_subj}"',
+            f'    "{escaped_body}";',
+            '}',
             'keep;'
         ])
         time_desc = "即刻生效，直到寄信停用" if is_chinese else "Active immediately until turned off"
@@ -303,15 +312,16 @@ def main():
         iso_end = f"{end_dt.strftime('%Y-%m-%dT%H:%M:%S')}{TZ_OFFSET_STR}"
 
         sieve_lines.extend([
-            'if allof (',
-            f'  currentdate :zone "{TZ_SIEVE_ZONE}" :value "ge" "iso8601" "{iso_start}",',
-            f'  currentdate :zone "{TZ_SIEVE_ZONE}" :value "le" "iso8601" "{iso_end}"',
-            ') {',
-            '  vacation',
-            f'    :days {DEFAULT_DAYS}',
-            f'    :from "{from_addr}"',
-            f'    :subject "{escaped_subj}"',
-            f'    "{escaped_body}";',
+            '  if allof (',
+            f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "ge" "iso8601" "{iso_start}",',
+            f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "le" "iso8601" "{iso_end}"',
+            '  ) {',
+            '    vacation',
+            f'      :days {DEFAULT_DAYS}',
+            f'      :from "{from_addr}"',
+            f'      :subject "{escaped_subj}"',
+            f'      "{escaped_body}";',
+            '  }',
             '}',
             'keep;'
         ])
