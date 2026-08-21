@@ -199,7 +199,50 @@ graph TD
 
 ---
 
-## ⚡ 5. 性能调优、日志检查与 Fail2ban 实务
+## 🤖 5. Email 驱动之智能自动回复 (Auto-Reply / Vacation Responder)
+
+针对无 Webmail 前端界面的环境，本项目提供独创的 **Email-Driven 智能自动回复与休假应答系统**（由 Postfix LMTP、Dovecot Pigeonhole Sieve 与 Sieve Extprograms 驱动）。
+
+```mermaid
+graph TD
+    User["用户 (任何邮件客户端)"] -->|"发送指令信 (From == To, 主题: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"拦截指令信"| Handler["解析脚本 (handle_autoreply.py)"]
+    Handler -->|"解析日期区间与回复正文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"sievec 编译"| Binary[".svbin 二进制规则"]
+    Handler -->|"发送配置结果确认信"| User
+
+    RemoteSender["外部发件人"] -->|"发送邮件"| Postfix
+    Postfix -->|"LMTP 派送"| Dovecot
+    Dovecot -->|"读取 dovecot.sieve 判定"| CheckDate{"是否在生效区间内？"}
+    CheckDate -->|"是 (且24hr内未回复过)"| AutoReply["自动发送 Vacation 回复给外部发件人"]
+    CheckDate -->|"否"| Inbox["正常存入 Maildir 收件箱"]
+```
+
+### 📩 如何启用 / 停用自动回复
+用户只需在任何电脑或手机邮件 App 中**发一封信给自己**：
+
+#### 1. 指定日期区间（默认时区：UTC+8 台北时间）
+- **收件人**：自己 (`your_email@example.com`)
+- **主题**：`#autoreply 2026-08-25 ~ 2026-08-30 外出开会 / 休假`（亦支持 `#vacation`、`#休假`、`#不在`、`#出差`、`#请假`）
+- **正文**：填写您要回复给对方的邮件内容（可自定义职务代理人、紧急电话等）。
+- *系统将于 2026-08-25 00:00:00 自动生效，并于 2026-08-30 23:59:59 (UTC+8) 自动过期失效，完全无需手动关闭。*
+
+#### 2. 常开模式（直到手动关闭）
+- **主题**：`#autoreply on 出差中`
+- **正文**：自定义回复内容。
+
+#### 3. 立即停用 / 取消
+- **主题**：`#autoreply off`（或 `#autoreply cancel`、`#autoreply 停用`）
+
+#### 4. 即时确认信与防洗版保护
+- 配置成功或取消后，系统会在数秒内**自动回发确认信**给用户本人，清楚列出生效区间与回复内容预览。
+- **防洗版机制 (`:days 1`)**：同一外部发件人在 24 小时内发送多封邮件时，Sieve 最多仅会回复 1 次，彻底避免邮件循环与轰炸。
+
+---
+
+## ⚡ 6. 性能调优、日志检查与 Fail2ban 实务
 
 ### 1. Fail2ban 与真实 IP 获取
 为了让宿主机上的 fail2ban 能直接读取 `/var/log/maillog` 进行阻断，强烈建议启动容器时使用 **`--net=host`**（或 Compose 中的 `network_mode: host`）。

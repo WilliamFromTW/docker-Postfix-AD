@@ -743,6 +743,7 @@ virtual_mailbox_maps = ldap:/etc/postfix/ldap-users.cf
 virtual_uid_maps = static:1001
 virtual_gid_maps = static:1001
 virtual_alias_maps = lmdb:/etc/postfix/aliases,ldap:/etc/postfix/ldap-aliases.cf
+virtual_transport = lmtp:unix:private/dovecot-lmtp
 ##############################################################
 recipient_bcc_maps = lmdb:/etc/postfix/recipient_bcc
 sender_bcc_maps = lmdb:/etc/postfix/sender_bcc

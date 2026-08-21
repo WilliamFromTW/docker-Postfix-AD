@@ -85,7 +85,7 @@
       <!-- Header -->
       <div class="text-center mb-5">
         <h1 class="h2 fw-bold" data-i18n="mainTitle">System Architecture & Technical Guide</h1>
-        <p class="text-muted" data-i18n="subTitle">In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, and OpenDKIM signing.</p>
+        <p class="text-muted" data-i18n="subTitle">In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, OpenDKIM signing, and Email-Driven Auto-Reply.</p>
       </div>
 
       <!-- Section 1: Active Directory Integration -->
@@ -216,6 +216,45 @@ domains=( 'example.com' 'example2.com' )
         </div>
       </div>
 
+      <!-- Section 5: Email-Driven Auto-Reply -->
+      <div class="card shadow-sm mb-4 section-anchor" id="sec-autoreply">
+        <div class="card-header bg-white py-3">
+          <span class="card-header-title text-danger" data-i18n="sec5Title">5. Email-Driven Auto-Reply & Vacation Responder</span>
+        </div>
+        <div class="card-body">
+          <p data-i18n="sec5Desc">For environments without Webmail, users can easily configure Vacation / Out of Office auto-replies simply by sending an email command to themselves.</p>
+          
+          <div class="mermaid-box my-3" id="diagram-autoreply-container">
+            <div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>
+          </div>
+
+          <h5 class="fw-bold mt-4" data-i18n="arGuideTitle">How to Use Auto-Reply:</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="p-3 bg-white border rounded">
+                <h6 class="fw-bold text-primary" data-i18n="arMode1Title">📅 Date Range Mode (UTC+8 / Asia/Taipei)</h6>
+                <p class="small text-muted mb-2" data-i18n="arMode1Desc">Send email to yourself with date range. Automatically expires when period ends.</p>
+                <pre class="m-0 small"><code>To: your_email@example.com
+Subject: #autoreply 2026-08-25 ~ 2026-08-30 Out of Office
+Body: Hello, I am currently out of office until Aug 30.</code></pre>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 bg-white border rounded">
+                <h6 class="fw-bold text-success" data-i18n="arMode2Title">⚡ Always On / Turn Off Mode</h6>
+                <p class="small text-muted mb-2" data-i18n="arMode2Desc">Turn on indefinitely or cancel immediately.</p>
+                <pre class="m-0 small"><code># Turn on:
+Subject: #autoreply on Business Trip
+Body: I am on business trip.
+
+# Turn off immediately:
+Subject: #autoreply off</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Scripts -->
@@ -229,7 +268,7 @@ domains=( 'example.com' 'example2.com' )
           navArchitecture: "🏛️ System Architecture",
           navGithub: "🐙 GitHub",
           mainTitle: "System Architecture & Technical Guide",
-          subTitle: "In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, and OpenDKIM signing.",
+          subTitle: "In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, OpenDKIM signing, and Email-Driven Auto-Reply.",
           sec1Title: "1. Active Directory (LDAP) Integration Model",
           sec1Desc: "Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.",
           adRulesTitle: "Active Directory Configuration Rules:",
@@ -251,6 +290,13 @@ domains=( 'example.com' 'example2.com' )
           dkimStep1Title: "Step 1: Enable OpenDKIM Milter in Container",
           dkimStep2Title: "Step 2: Generate Multi-Domain Keys (/getOpenDKIM.sh)",
           dkimStep3Title: "Step 3: Add DNS TXT Records",
+          sec5Title: "5. Email-Driven Auto-Reply & Vacation Responder (Sieve & LMTP)",
+          sec5Desc: "For environments without Webmail, users can easily configure Vacation / Out of Office auto-replies simply by sending an email command to themselves.",
+          arGuideTitle: "How to Use Auto-Reply:",
+          arMode1Title: "📅 Date Range Mode (UTC+8 / Asia/Taipei)",
+          arMode1Desc: "Send email to yourself with date range. Automatically expires when period ends.",
+          arMode2Title: "⚡ Always On / Turn Off Mode",
+          arMode2Desc: "Turn on indefinitely or cancel immediately.",
           diagramAd: `graph TD
     RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
     Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
@@ -301,7 +347,21 @@ domains=( 'example.com' 'example2.com' )
         G --> H["Store in Host /etc/letsencrypt"]
         H -->|Volume Mapping| I["Container Accesses Updated Certificate"]
         I --> J["Reload Services inside Container: postfix reload & dovecot reload"]
-    end`
+    end`,
+          diagramAutoreply: `graph TD
+    User["User (Any Email Client)"] -->|"Send Command to Self (From == To, Subject: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP Delivery (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"Intercept Command"| Handler["Parser Script (handle_autoreply.py)"]
+    Handler -->|"Parse Date Range & Body"| SieveGen["Generate /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"sievec Compile"| Binary[".svbin Bytecode"]
+    Handler -->|"Send Confirmation Email"| User
+
+    RemoteSender["External Sender"] -->|"Send Email"| Postfix
+    Postfix -->|"LMTP Delivery"| Dovecot
+    Dovecot -->|"Read dovecot.sieve"| CheckDate{"Within Active Date Range?"}
+    CheckDate -->|"Yes (and not replied in 24h)"| AutoReply["Auto-Reply Vacation Response to Sender"]
+    CheckDate -->|"No"| Inbox["Deliver to Maildir Inbox"]`
         },
         "zh-TW": {
           docTitle: "系統架構與技術維運指南 - docker-Postfix-AD",
@@ -309,7 +369,7 @@ domains=( 'example.com' 'example2.com' )
           navArchitecture: "🏛️ 系統架構指南",
           navGithub: "🐙 GitHub 專案庫",
           mainTitle: "系統架構與技術維運指南",
-          subTitle: "詳細剖析 Active Directory LDAP 整合、Rspamd 郵件安全過濾管道、Let's Encrypt 自動化憑證機制與 OpenDKIM 數位簽章。",
+          subTitle: "詳細剖析 Active Directory LDAP 整合、Rspamd 郵件安全過濾管道、Let's Encrypt 自動化憑證機制、OpenDKIM 數位簽章與 Email 驅動自動回覆。",
           sec1Title: "1. Active Directory (LDAP) 整合模型",
           sec1Desc: "Postfix 與 Dovecot 透過 LDAP 協定（Port 389）直接向微軟 Active Directory 進行收件人驗證、帳號密碼認證及群組別名解析。",
           adRulesTitle: "Active Directory 欄位設定規範：",
@@ -331,6 +391,13 @@ domains=( 'example.com' 'example2.com' )
           dkimStep1Title: "步驟 1：於容器內啟用 OpenDKIM Milter",
           dkimStep2Title: "步驟 2：批次產生多網域金鑰 (/getOpenDKIM.sh)",
           dkimStep3Title: "步驟 3：新增 DNS TXT 記錄",
+          sec5Title: "5. Email 驅動之智慧自動回覆 (Auto-Reply / Vacation Responder)",
+          sec5Desc: "針對無 Webmail 前端介面的環境，使用者只需發送一封指令信給自己，即可自動啟用/關閉指定區間之休假自動回信。",
+          arGuideTitle: "自動回覆使用指令教學：",
+          arMode1Title: "📅 指定日期區間模式 (台灣 UTC+8 台北時間)",
+          arMode1Desc: "發信給自己並指定起訖日期，時間結束後自動失效，免手動關閉。",
+          arMode2Title: "⚡ 常開模式 / 立即停用",
+          arMode2Desc: "支援無期限常開與隨時發信停用。",
           diagramAd: `graph TD
     RemoteMTA["外部郵件伺服器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 傳輸)"| Postfix["Postfix MTA"]
     Client["郵件用戶端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (驗證寄信)"| Postfix
@@ -381,7 +448,21 @@ domains=( 'example.com' 'example2.com' )
         G --> H["存入宿主機 /etc/letsencrypt"]
         H -->|Volume 映射| I["容器即時讀取最新正式憑證"]
         I --> J["於容器內重新載入服務: postfix & dovecot reload"]
-    end`
+    end`,
+          diagramAutoreply: `graph TD
+    User["使用者 (任何郵件客戶端)"] -->|"發送指令信 (From == To, 主旨: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"攔截指令信"| Handler["解析腳本 (handle_autoreply.py)"]
+    Handler -->|"解析日期區間與回信內文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"sievec 編譯"| Binary[".svbin 二進位規則"]
+    Handler -->|"發送設定結果確認信"| User
+
+    RemoteSender["外部寄件者"] -->|"發送信件"| Postfix
+    Postfix -->|"LMTP 派送"| Dovecot
+    Dovecot -->|"讀取 dovecot.sieve 判定"| CheckDate{"是否在生效區間內？"}
+    CheckDate -->|"是 (且24hr內未回過)"| AutoReply["自動發送 Vacation 回信給外部寄件者"]
+    CheckDate -->|"否"| Inbox["正常存入 Maildir 收件匣"]`
         },
         "zh-CN": {
           docTitle: "系统架构与技术运维指南 - docker-Postfix-AD",
@@ -389,7 +470,7 @@ domains=( 'example.com' 'example2.com' )
           navArchitecture: "🏛️ 系统架构指南",
           navGithub: "🐙 GitHub 项目库",
           mainTitle: "系统架构与技术运维指南",
-          subTitle: "详细剖析 Active Directory LDAP 整合、Rspamd 邮件安全过滤管道、Let's Encrypt 自动化证书机制与 OpenDKIM 数字签名。",
+          subTitle: "详细剖析 Active Directory LDAP 整合、Rspamd 邮件安全过滤管道、Let's Encrypt 自动化证书机制、OpenDKIM 数字签名与 Email 驱动自动回复。",
           sec1Title: "1. Active Directory (LDAP) 整合模型",
           sec1Desc: "Postfix 与 Dovecot 通过 LDAP 协议（Port 389）直接向微软 Active Directory 进行收件人验证、账号密码认证及组别名解析。",
           adRulesTitle: "Active Directory 字段配置规范：",
@@ -411,6 +492,13 @@ domains=( 'example.com' 'example2.com' )
           dkimStep1Title: "步骤 1：在容器内启用 OpenDKIM Milter",
           dkimStep2Title: "步骤 2：批量生成多域名密钥 (/getOpenDKIM.sh)",
           dkimStep3Title: "步骤 3：添加 DNS TXT 记录",
+          sec5Title: "5. Email 驱动之智能自动回复 (Auto-Reply / Vacation Responder)",
+          sec5Desc: "针对无 Webmail 前端界面的环境，用户只需发送一封指令信给自己，即可自动启用/关闭指定区间之休假自动回复。",
+          arGuideTitle: "自动回复使用指令教学：",
+          arMode1Title: "📅 指定日期区间模式 (UTC+8 台北时间)",
+          arMode1Desc: "发信给自己并指定起讫日期，时间结束后自动失效，免手动关闭。",
+          arMode2Title: "⚡ 常开模式 / 立即停用",
+          arMode2Desc: "支持无期限常开与随时发信停用。",
           diagramAd: `graph TD
     RemoteMTA["外部邮件服务器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 传输)"| Postfix["Postfix MTA"]
     Client["邮件客户端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (验证发信)"| Postfix
@@ -461,7 +549,21 @@ domains=( 'example.com' 'example2.com' )
         G --> H["存入宿主机 /etc/letsencrypt"]
         H -->|Volume 映射| I["容器即时读取最新正式证书"]
         I --> J["在容器内重新载入服务: postfix & dovecot reload"]
-    end`
+    end`,
+          diagramAutoreply: `graph TD
+    User["用户 (任何邮件客户端)"] -->|"发送指令信 (From == To, 主题: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"拦截指令信"| Handler["解析脚本 (handle_autoreply.py)"]
+    Handler -->|"解析日期区间与回复正文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"sievec 编译"| Binary[".svbin 二进制规则"]
+    Handler -->|"发送配置结果确认信"| User
+
+    RemoteSender["外部发件人"] -->|"发送邮件"| Postfix
+    Postfix -->|"LMTP 派送"| Dovecot
+    Dovecot -->|"读取 dovecot.sieve 判定"| CheckDate{"是否在生效区间内？"}
+    CheckDate -->|"是 (且24hr内未回复过)"| AutoReply["自动发送 Vacation 回复给外部发件人"]
+    CheckDate -->|"否"| Inbox["正常存入 Maildir 收件箱"]`
         },
         vi: {
           docTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật - docker-Postfix-AD",
@@ -469,7 +571,7 @@ domains=( 'example.com' 'example2.com' )
           navArchitecture: "🏛️ Kiến Trúc Hệ Thống",
           navGithub: "🐙 GitHub",
           mainTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật",
-          subTitle: "Tổng quan chuyên sâu về tích hợp Active Directory LDAP, quy trình lọc Rspamd, tự động hóa SSL Let's Encrypt và chữ ký số OpenDKIM.",
+          subTitle: "Tổng quan chuyên sâu về tích hợp Active Directory LDAP, quy trình lọc Rspamd, tự động hóa SSL Let's Encrypt, chữ ký số OpenDKIM và tự động trả lời thư qua Email.",
           sec1Title: "1. Mô Hình Tích Hợp Active Directory (LDAP)",
           sec1Desc: "Postfix và Dovecot kết nối trực tiếp với máy chủ Windows Active Directory Domain Controller qua cổng LDAP 389 để xác thực người nhận, hòm thư và bí danh nhóm.",
           adRulesTitle: "Quy tắc cấu hình Active Directory:",
@@ -491,6 +593,13 @@ domains=( 'example.com' 'example2.com' )
           dkimStep1Title: "Bước 1: Bật OpenDKIM Milter trong Container",
           dkimStep2Title: "Bước 2: Tạo khóa DKIM nhiều tên miền (/getOpenDKIM.sh)",
           dkimStep3Title: "Bước 3: Thêm bản ghi DNS TXT",
+          sec5Title: "5. Tự Động Trả Lời Thư Tự Động Qua Email (Auto-Reply / Vacation Responder)",
+          sec5Desc: "Đối với môi trường không có Webmail, người dùng có thể dễ dàng thiết lập trả lời tự động bằng cách gửi một email lệnh cho chính mình.",
+          arGuideTitle: "Hướng dẫn lệnh Tự động trả lời:",
+          arMode1Title: "📅 Chế độ Khoảng thời gian (UTC+8 / Asia/Taipei)",
+          arMode1Desc: "Gửi thư cho chính mình kèm khoảng thời gian. Tự động hết hạn khi hết thời gian.",
+          arMode2Title: "⚡ Chế độ Luôn bật / Tắt ngay",
+          arMode2Desc: "Bật vô thời hạn hoặc tắt bất cứ lúc nào.",
           diagramAd: `graph TD
     RemoteMTA["Máy chủ Mail bên ngoài (Remote MTA)"] -->|"SMTP :25 (Truyền tải Server-to-Server)"| Postfix["Postfix MTA"]
     Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
@@ -541,7 +650,21 @@ domains=( 'example.com' 'example2.com' )
         G --> H["Lưu vào thư mục /etc/letsencrypt trên Host"]
         H -->|Ánh xạ Volume| I["Container tự động nhận chứng chỉ mới"]
         I --> J["Tải lại dịch vụ trong Container: postfix & dovecot reload"]
-    end`
+    end`,
+          diagramAutoreply: `graph TD
+    User["Người dùng (Mọi ứng dụng Mail Client)"] -->|"Gửi lệnh cho chính mình (From == To, Tiêu đề: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"Phân phối LMTP (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"Chặn bắt lệnh"| Handler["Script xử lý (handle_autoreply.py)"]
+    Handler -->|"Phân tích khoảng thời gian & Nội dung"| SieveGen["Tạo /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"Biên dịch sievec"| Binary["Mã nhị phân .svbin"]
+    Handler -->|"Gửi thư xác nhận thiết lập"| User
+
+    RemoteSender["Người gửi bên ngoài"] -->|"Gửi thư"| Postfix
+    Postfix -->|"Phân phối LMTP"| Dovecot
+    Dovecot -->|"Đọc dovecot.sieve kiểm tra"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
+    CheckDate -->|"Đúng (và chưa trả lời trong 24h)"| AutoReply["Tự động gửi thư phản hồi Vacation"]
+    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir bình thường"]`
         }
       };
 
@@ -554,7 +677,8 @@ domains=( 'example.com' 'example2.com' )
         var diagrams = [
           { target: '#diagram-ad-container', code: dict.diagramAd, prefix: 'ad' },
           { target: '#diagram-pipeline-container', code: dict.diagramPipeline, prefix: 'pipeline' },
-          { target: '#diagram-ssl-container', code: dict.diagramSsl, prefix: 'ssl' }
+          { target: '#diagram-ssl-container', code: dict.diagramSsl, prefix: 'ssl' },
+          { target: '#diagram-autoreply-container', code: dict.diagramAutoreply, prefix: 'autoreply' }
         ];
 
         for (var i = 0; i < diagrams.length; i++) {

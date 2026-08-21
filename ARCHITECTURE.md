@@ -199,7 +199,50 @@ Value: v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com
 
 ---
 
-## ⚡ 5. Performance Tuning, Troubleshooting & Fail2ban
+## 🤖 5. Email-Driven Auto-Reply & Vacation Responder (Sieve & LMTP)
+
+For environments without a Webmail GUI, the system provides a smart **Email-Driven Auto-Reply / Vacation** mechanism powered by Postfix LMTP, Dovecot Pigeonhole Sieve, and Sieve Extprograms.
+
+```mermaid
+graph TD
+    User["User (Any Email Client)"] -->|"Send Command to Self (From == To, Subject: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP Delivery (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"Intercept Command"| Handler["Parser Script (handle_autoreply.py)"]
+    Handler -->|"Parse Date Range & Body"| SieveGen["Generate /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"sievec Compile"| Binary[".svbin Bytecode"]
+    Handler -->|"Send Confirmation Email"| User
+
+    RemoteSender["External Sender"] -->|"Send Email"| Postfix
+    Postfix -->|"LMTP Delivery"| Dovecot
+    Dovecot -->|"Read dovecot.sieve"| CheckDate{"Within Active Date Range?"}
+    CheckDate -->|"Yes (and not replied in 24h)"| AutoReply["Auto-Reply Vacation Response to Sender"]
+    CheckDate -->|"No"| Inbox["Deliver to Maildir Inbox"]
+```
+
+### 📩 How Users Enable / Disable Auto-Reply
+Users simply send an email **to themselves** from their desktop/mobile email client:
+
+#### 1. Enable with Date Range (Timezone: UTC+8 / Asia/Taipei)
+- **To**: `your_email@example.com`
+- **Subject**: `#autoreply 2026-08-25 ~ 2026-08-30 Out of Office / Vacation`
+- **Body**: Fill in your custom out-of-office message, delegate contact info, or emergency phone numbers.
+- *System automatically activates on 2026-08-25 00:00:00 and expires on 2026-08-30 23:59:59 (UTC+8).*
+
+#### 2. Enable Indefinitely (Until Turned Off)
+- **Subject**: `#autoreply on Out of Office`
+- **Body**: Custom message.
+
+#### 3. Disable / Cancel Immediately
+- **Subject**: `#autoreply off` (or `#autoreply cancel`)
+
+#### 4. Instant Confirmation & Anti-Loop Protection
+- The system automatically sends a **Confirmation Email** back to the user upon activation/deactivation.
+- **Anti-Loop (`:days 1`)**: The same external sender will receive at most ONE auto-reply every 24 hours, preventing email storm loops.
+
+---
+
+## ⚡ 6. Performance Tuning, Troubleshooting & Fail2ban
 
 ### 1. Fail2ban & Real Client IP
 To ensure fail2ban on the host can read real client IPs from `/var/log/maillog` for automated IP banning, running with **`--net=host`** (or `network_mode: host` in Compose) is strongly recommended.

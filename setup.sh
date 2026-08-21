@@ -126,6 +126,24 @@ chown -R _rspamd:_rspamd /etc/rspamd/override.d
 chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/sbin/postmap /etc/postfix/aliases
 /usr/sbin/postalias lmdb:/etc/aliases
+# -------------------------------------------------------------
+# 智慧自動回覆 (Email-Driven Auto-Reply / Sieve) 啟動防呆初始化
+# -------------------------------------------------------------
+mkdir -p /var/spool/postfix/private
+chown postfix:postfix /var/spool/postfix/private
+chmod 700 /var/spool/postfix/private
+
+mkdir -p /usr/lib/dovecot/sieve-pipe
+if [ -f "/usr/lib/dovecot/sieve-pipe/handle_autoreply.py" ]; then
+  chmod 755 /usr/lib/dovecot/sieve-pipe/handle_autoreply.py
+fi
+
+mkdir -p /etc/dovecot/sieve/global
+if [ -f "/etc/dovecot/sieve/global/autoreply_handler.sieve" ]; then
+  /usr/bin/sievec /etc/dovecot/sieve/global/autoreply_handler.sieve 2>/dev/null || /usr/sbin/sievec /etc/dovecot/sieve/global/autoreply_handler.sieve 2>/dev/null
+  chown -R vmail:vmail /etc/dovecot/sieve
+fi
+
 echo $TZ > /etc/timezone
 chown clamupdate:clamupdate /var/lib/clamav
 chmod 755 /var/lib/clamav

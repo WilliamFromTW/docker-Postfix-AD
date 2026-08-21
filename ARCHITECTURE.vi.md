@@ -199,7 +199,50 @@ Giá trị: v=DMARC1; p=quarantine; rua=mailto:postmaster@smile.taipei
 
 ---
 
-## ⚡ 5. Tối Ưu Hiệu Năng, Chẩn Đoán & Fail2ban
+## 🤖 5. Tự Động Trả Lời Thư Tự Động Qua Email (Auto-Reply / Vacation Responder)
+
+Đối với môi trường không có giao diện Webmail, hệ thống cung cấp cơ chế **Tự Động Phản Hồi Thư / Báo Nghỉ Phép Qua Email** (kết hợp Postfix LMTP, Dovecot Pigeonhole Sieve và Sieve Extprograms).
+
+```mermaid
+graph TD
+    User["Người dùng (Mọi ứng dụng Mail Client)"] -->|"Gửi lệnh cho chính mình (From == To, Tiêu đề: #autoreply)"| Postfix["Postfix MTA"]
+    Postfix -->|"Phân phối LMTP (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    
+    Dovecot -->|"Chặn bắt lệnh"| Handler["Script xử lý (handle_autoreply.py)"]
+    Handler -->|"Phân tích khoảng thời gian & Nội dung"| SieveGen["Tạo /home/vmail/%u/sieve/dovecot.sieve"]
+    SieveGen -->|"Biên dịch sievec"| Binary["Mã nhị phân .svbin"]
+    Handler -->|"Gửi thư xác nhận thiết lập"| User
+
+    RemoteSender["Người gửi bên ngoài"] -->|"Gửi thư"| Postfix
+    Postfix -->|"Phân phối LMTP"| Dovecot
+    Dovecot -->|"Đọc dovecot.sieve kiểm tra"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
+    CheckDate -->|"Đúng (và chưa trả lời trong 24h)"| AutoReply["Tự động gửi thư phản hồi Vacation"]
+    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir bình thường"]
+```
+
+### 📩 Cách Người Dùng Bật / Tắt Tự Động Trả Lời
+Người dùng chỉ cần **gửi một email cho chính mình** từ ứng dụng email trên máy tính hoặc điện thoại:
+
+#### 1. Bật với Khoảng Thời Gian (Múi giờ: UTC+8 / Asia/Taipei)
+- **Người nhận**: Chính mình (`your_email@example.com`)
+- **Tiêu đề**: `#autoreply 2026-08-25 ~ 2026-08-30 Đi công tác / Nghỉ phép` (hoặc `#vacation`)
+- **Nội dung**: Soạn nội dung bạn muốn tự động gửi lại cho đối tác (người thay thế, số điện thoại khẩn cấp...).
+- *Hệ thống sẽ tự động kích hoạt vào lúc 2026-08-25 00:00:00 và tự động hết hạn vào 2026-08-30 23:59:59 (UTC+8).*
+
+#### 2. Chế Độ Luôn Bật (Cho đến khi tắt thủ công)
+- **Tiêu đề**: `#autoreply on Đi công tác`
+- **Nội dung**: Nội dung phản hồi tùy chỉnh.
+
+#### 3. Tắt / Hủy Ngay Lập Tức
+- **Tiêu đề**: `#autoreply off` (hoặc `#autoreply cancel`)
+
+#### 4. Thư Xác Nhận & Bảo Vệ Chống Spam Loop
+- Sau khi thiết lập thành công hoặc tắt, hệ thống sẽ **tự động gửi email xác nhận** về hòm thư của bạn kèm xem trước nội dung.
+- **Cơ chế chống lặp (`:days 1`)**: Cùng một người gửi bên ngoài trong 24 giờ chỉ nhận được tối đa 1 email tự động phản hồi.
+
+---
+
+## ⚡ 6. Tối Ưu Hiệu Năng, Chẩn Đoán & Fail2ban
 
 ### 1. Fail2ban & Nhận diện IP thực của Client
 Để fail2ban trên máy chủ Host có thể đọc trực tiếp IP thực từ `/var/log/maillog` để chặn tấn công, khuyến nghị chạy container với **`--net=host`** (hoặc `network_mode: host` trong Compose).
