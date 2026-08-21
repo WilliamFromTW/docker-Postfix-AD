@@ -36,6 +36,6 @@ userdb {
   args = /etc/dovecot/dovecot-ldap2.conf.ext
 
   #Default fields can be used to specify defaults that LDAP may override
-  default_fields = uid=vmail gid=vmail
+  default_fields = uid=1001 gid=1001 home=/home/vmail/%u mail=maildir:/home/vmail/%u/Maildir
 }
 
