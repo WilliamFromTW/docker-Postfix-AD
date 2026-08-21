@@ -2,7 +2,14 @@ name: Build and Push to Docker Hub
 
 on:
   push:
-    branches: [ "rspamd" ]  # 當推送到 main 分支時觸發
+    branches: [ "rspamd" ] 
+    
+  schedule:
+    # 每個月 1 號的 UTC 02:00（台灣時間每月 1 號上午 10:00）執行一次
+    - cron: "0 2 1 * *"
+
+  # 支援手動觸發：隨時可以手動點擊「Run workflow」
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -22,4 +29,5 @@ jobs:
         with:
           context: .
           push: true
+          # 建議同時保留專屬分支標籤與最新的 latest 標籤
           tags: inmethod/docker-postfix-ad:latest
