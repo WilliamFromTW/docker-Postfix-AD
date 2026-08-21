@@ -20,18 +20,18 @@ Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiế
 
 ```mermaid
 graph TD
-    Client[Email Client / SMTP bên ngoài] -->|SMTP :25/:465/:587| Postfix[Postfix MTA]
-    Client -->|IMAP/POP3 :993/:995| Dovecot[Dovecot IMAP/POP3]
+    Client["Email Client / SMTP bên ngoài"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
+    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph Active Directory DC [Windows Active Directory]
-        AD[(AD LDAP Server :389)]
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP Server :389")]
     end
 
     Postfix -->|ldap-users.cf: Kiểm tra người nhận & Hòm thư| AD
     Postfix -->|ldap-aliases.cf: Phân giải bí danh nhóm| AD
     Postfix -->|ldap-local_only.cf: Kiểm tra giới hạn tên miền| AD
     Dovecot -->|dovecot-ldap.conf.ext: Xác thực & Tra cứu hòm thư| AD
-    Dovecot -->|Lưu trữ Maildir / Quản lý Quota| VMail[(Lưu trữ /home/vmail)]
+    Dovecot -->|Lưu trữ Maildir / Quản lý Quota| VMail[("Lưu trữ /home/vmail")]
 ```
 
 ### 📋 Quy tắc cấu hình Active Directory (AD)
@@ -95,20 +95,20 @@ Container được thiết kế để **hoạt động ngay lập tức** (Zero-
 
 ```mermaid
 graph TD
-    subgraph Khởi chạy Container (setup.sh)
-        A{Kiểm tra /etc/letsencrypt/live/HOST_NAME/fullchain.pem}
-        A -->|Chưa có| B[Tự động chạy /make_fake_cert.sh]
-        B --> C[Tạo chứng chỉ tự ký Fake Test]
-        C --> D[Dịch vụ SSL Postfix & Dovecot khởi chạy ngay lập tức]
-        A -->|Đã có| E[Tải trực tiếp chứng chỉ Let's Encrypt chính thức]
+    subgraph SG1 ["Khởi chạy Container (setup.sh)"]
+        A{"Kiểm tra /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|Chưa có| B["Tự động chạy /make_fake_cert.sh"]
+        B --> C["Tạo chứng chỉ tự ký Fake Test"]
+        C --> D["Dịch vụ SSL Postfix & Dovecot khởi chạy ngay lập tức"]
+        A -->|Đã có| E["Tải trực tiếp chứng chỉ Let's Encrypt chính thức"]
         E --> D
     end
 
-    subgraph Vận hành trên Host (Cập nhật chứng chỉ DNS-01)
-        F[Quản trị viên chạy Certbot DNS-01 trên Host] --> G[Nhận chứng chỉ chính thức từ Let's Encrypt]
-        G --> H[Lưu vào thư mục /etc/letsencrypt trên Host]
-        H -->|Ánh xạ Volume| I[Container tự động nhận chứng chỉ mới]
-        I --> J[Tải lại dịch vụ trong Container: postfix & dovecot reload]
+    subgraph SG2 ["Vận hành trên Host (Cập nhật chứng chỉ DNS-01)"]
+        F["Quản trị viên chạy Certbot DNS-01 trên Host"] --> G["Nhận chứng chỉ chính thức từ Let's Encrypt"]
+        G --> H["Lưu vào thư mục /etc/letsencrypt trên Host"]
+        H -->|Ánh xạ Volume| I["Container tự động nhận chứng chỉ mới"]
+        I --> J["Tải lại dịch vụ trong Container: postfix & dovecot reload"]
     end
 ```
 

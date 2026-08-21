@@ -20,18 +20,18 @@ The container integrates **Postfix** (MTA) and **Dovecot** (IMAP/POP3) with **Mi
 
 ```mermaid
 graph TD
-    Client[Email Client / Remote MTA] -->|SMTP :25/:465/:587| Postfix[Postfix MTA]
-    Client -->|IMAP/POP3 :993/:995| Dovecot[Dovecot IMAP/POP3]
+    Client["Email Client / Remote MTA"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
+    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph Active Directory DC [Windows Active Directory]
-        AD[(AD LDAP Service :389)]
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP Service :389")]
     end
 
     Postfix -->|ldap-users.cf: Verify Recipient & Local Mailbox| AD
     Postfix -->|ldap-aliases.cf: Resolve Group Aliases| AD
     Postfix -->|ldap-local_only.cf: Check Domain Restriction| AD
     Dovecot -->|dovecot-ldap.conf.ext: Authenticate & Lookup Mailbox| AD
-    Dovecot -->|Maildir Storage / Quota Enforcement| VMail[(/home/vmail Storage)]
+    Dovecot -->|Maildir Storage / Quota Enforcement| VMail[("Storage /home/vmail")]
 ```
 
 ### 📋 Active Directory (AD) Configuration Rules
@@ -95,20 +95,20 @@ The container is designed to be **out-of-the-box ready** while supporting seamle
 
 ```mermaid
 graph TD
-    subgraph Container Startup (setup.sh)
-        A{Check /etc/letsencrypt/live/HOST_NAME/fullchain.pem}
-        A -->|Not Found| B[Execute /make_fake_cert.sh]
-        B --> C[Generate Self-Signed Fake Certificate]
-        C --> D[Postfix & Dovecot SSL Services Start Immediately]
-        A -->|Found| E[Directly Load Official Let's Encrypt Certificate]
+    subgraph SG1 ["Container Startup (setup.sh)"]
+        A{"Check /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|Not Found| B["Execute /make_fake_cert.sh"]
+        B --> C["Generate Self-Signed Fake Certificate"]
+        C --> D["Postfix & Dovecot SSL Services Start Immediately"]
+        A -->|Found| E["Directly Load Official Let's Encrypt Certificate"]
         E --> D
     end
 
-    subgraph Host Maintenance (Production SSL via DNS-01)
-        F[Administrator runs Certbot DNS-01 on Host] --> G[Obtain Real Wildcard / SAN Certificate]
-        G --> H[Store in Host /etc/letsencrypt]
-        H -->|Volume Mapping| I[Container Accesses Updated Certificate]
-        I --> J[Reload Services inside Container]
+    subgraph SG2 ["Host Maintenance (Production SSL via DNS-01)"]
+        F["Administrator runs Certbot DNS-01 on Host"] --> G["Obtain Real Wildcard / SAN Certificate"]
+        G --> H["Store in Host /etc/letsencrypt"]
+        H -->|Volume Mapping| I["Container Accesses Updated Certificate"]
+        I --> J["Reload Services inside Container"]
     end
 ```
 

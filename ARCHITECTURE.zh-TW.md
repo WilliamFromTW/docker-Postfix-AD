@@ -20,18 +20,18 @@
 
 ```mermaid
 graph TD
-    Client[郵件客戶端 / 外部 SMTP] -->|SMTP :25/:465/:587| Postfix[Postfix MTA]
-    Client -->|IMAP/POP3 :993/:995| Dovecot[Dovecot IMAP/POP3]
+    Client["郵件客戶端 / 外部 SMTP"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
+    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph Active Directory DC [Windows Active Directory]
-        AD[(AD LDAP 伺服器 :389)]
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP 伺服器 :389")]
     end
 
     Postfix -->|ldap-users.cf: 查驗收件人與本地信箱| AD
     Postfix -->|ldap-aliases.cf: 解析群組別名| AD
     Postfix -->|ldap-local_only.cf: 檢查內部網域限制| AD
     Dovecot -->|dovecot-ldap.conf.ext: 帳號密碼認證與信箱查詢| AD
-    Dovecot -->|Maildir 儲存 / Quota 配額控管| VMail[(/home/vmail 儲存空間)]
+    Dovecot -->|Maildir 儲存 / Quota 配額控管| VMail[("儲存空間 /home/vmail")]
 ```
 
 ### 📋 Active Directory (AD) 欄位設定規範
@@ -95,20 +95,20 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph 容器啟動階段 (setup.sh)
-        A{檢查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem}
-        A -->|不存在| B[自動執行 /make_fake_cert.sh]
-        B --> C[產生自簽 Fake 測試憑證]
-        C --> D[Postfix 與 Dovecot SSL 服務立即無痛啟動]
-        A -->|已存在| E[直接載入正式 Let's Encrypt 憑證]
+    subgraph SG1 ["容器啟動階段 (setup.sh)"]
+        A{"檢查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|不存在| B["自動執行 /make_fake_cert.sh"]
+        B --> C["產生自簽 Fake 測試憑證"]
+        C --> D["Postfix 與 Dovecot SSL 服務立即無痛啟動"]
+        A -->|已存在| E["直接載入正式 Let's Encrypt 憑證"]
         E --> D
     end
 
-    subgraph 宿主機維運 (事後透過 DNS-01 申請正式憑證)
-        F[管理者於宿主機執行 Certbot DNS-01] --> G[向 Let's Encrypt 取得正式萬用/主機憑證]
-        G --> H[存入宿主機 /etc/letsencrypt]
-        H -->|Volume 映射| I[容器即時讀取最新正式憑證]
-        I --> J[於容器內重新載入服務: postfix & dovecot reload]
+    subgraph SG2 ["宿主機維運 (事後透過 DNS-01 申請正式憑證)"]
+        F["管理者於宿主機執行 Certbot DNS-01"] --> G["向 Let's Encrypt 取得正式萬用/主機憑證"]
+        G --> H["存入宿主機 /etc/letsencrypt"]
+        H -->|Volume 映射| I["容器即時讀取最新正式憑證"]
+        I --> J["於容器內重新載入服務: postfix & dovecot reload"]
     end
 ```
 

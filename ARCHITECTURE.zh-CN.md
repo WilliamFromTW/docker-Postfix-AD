@@ -20,18 +20,18 @@
 
 ```mermaid
 graph TD
-    Client[邮件客户端 / 外部 SMTP] -->|SMTP :25/:465/:587| Postfix[Postfix MTA]
-    Client -->|IMAP/POP3 :993/:995| Dovecot[Dovecot IMAP/POP3]
+    Client["邮件客户端 / 外部 SMTP"] -->|SMTP :25/:465/:587| Postfix["Postfix MTA"]
+    Client -->|IMAP/POP3 :993/:995| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph Active Directory DC [Windows Active Directory]
-        AD[(AD LDAP 服务器 :389)]
+    subgraph AD_DC ["Windows Active Directory"]
+        AD[("AD LDAP 服务器 :389")]
     end
 
     Postfix -->|ldap-users.cf: 查验收件人与本地邮箱| AD
     Postfix -->|ldap-aliases.cf: 解析组别名| AD
     Postfix -->|ldap-local_only.cf: 检查内部域名限制| AD
     Dovecot -->|dovecot-ldap.conf.ext: 账号密码认证与邮箱查询| AD
-    Dovecot -->|Maildir 存储 / Quota 配额管控| VMail[(/home/vmail 存储空间)]
+    Dovecot -->|Maildir 存储 / Quota 配额管控| VMail[("存储空间 /home/vmail")]
 ```
 
 ### 📋 Active Directory (AD) 字段配置规范
@@ -95,20 +95,20 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph 容器启动阶段 (setup.sh)
-        A{检查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem}
-        A -->|不存在| B[自动执行 /make_fake_cert.sh]
-        B --> C[生成自签 Fake 测试证书]
-        C --> D[Postfix 与 Dovecot SSL 服务立即无痛启动]
-        A -->|已存在| E[直接载入正式 Let's Encrypt 证书]
+    subgraph SG1 ["容器启动阶段 (setup.sh)"]
+        A{"检查 /etc/letsencrypt/live/HOST_NAME/fullchain.pem"}
+        A -->|不存在| B["自动执行 /make_fake_cert.sh"]
+        B --> C["生成自签 Fake 测试证书"]
+        C --> D["Postfix 与 Dovecot SSL 服务立即无痛启动"]
+        A -->|已存在| E["直接载入正式 Let's Encrypt 证书"]
         E --> D
     end
 
-    subgraph 宿主机运维 (事后通过 DNS-01 申请正式证书)
-        F[管理员在宿主机执行 Certbot DNS-01] --> G[向 Let's Encrypt 获取正式通配符/主机证书]
-        G --> H[存入宿主机 /etc/letsencrypt]
-        H -->|Volume 映射| I[容器即时读取最新正式证书]
-        I --> J[在容器内重新载入服务: postfix & dovecot reload]
+    subgraph SG2 ["宿主机运维 (事后通过 DNS-01 申请正式证书)"]
+        F["管理员在宿主机执行 Certbot DNS-01"] --> G["向 Let's Encrypt 获取正式通配符/主机证书"]
+        G --> H["存入宿主机 /etc/letsencrypt"]
+        H -->|Volume 映射| I["容器即时读取最新正式证书"]
+        I --> J["在容器内重新载入服务: postfix & dovecot reload"]
     end
 ```
 
