@@ -265,6 +265,7 @@ def main():
         sieve_lines.extend([
             'vacation',
             f'  :days {DEFAULT_DAYS}',
+            f'  :from "{from_addr}"',
             f'  :subject "{escaped_subj}"',
             f'  "{escaped_body}";',
             'keep;'
@@ -281,6 +282,7 @@ def main():
             ') {',
             '  vacation',
             f'    :days {DEFAULT_DAYS}',
+            f'    :from "{from_addr}"',
             f'    :subject "{escaped_subj}"',
             f'    "{escaped_body}";',
             '}',
