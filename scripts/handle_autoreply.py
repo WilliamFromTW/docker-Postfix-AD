@@ -287,55 +287,26 @@ def main():
         "owner": from_addr,
         "subject": reply_subject,
         "body": body,
-        "is_always_on": is_always_on
+        "is_always_on": is_always_on,
+        "start_ts": start_dt.timestamp() if start_dt else None,
+        "end_ts": end_dt.timestamp() if end_dt else None
     }
     with open(cfg_file, "w", encoding="utf-8") as f:
         json.dump(cfg_data, f, ensure_ascii=False, indent=2)
 
-    # Build Sieve Script with 15-Second Delayed Async Pipe & Bot Protection
-    sieve_lines = [
-        'require ["vnd.dovecot.pipe", "copy", "date", "relational"];',
-        '',
-        '# Smart Filter: Do not auto-reply to noreply, bots, DMARC reports, or bounces',
-        'if not anyof (',
-        '  header :matches "From" ["*noreply*", "*no-reply*", "*donotreply*", "*mailer-daemon*", "*postmaster*", "*dmarc*", "*bounce*", "*notification*"],',
-        '  header :matches "Sender" ["*noreply*", "*no-reply*", "*donotreply*", "*mailer-daemon*", "*postmaster*", "*dmarc*", "*bounce*", "*notification*"],',
-        '  header :matches "Precedence" ["bulk", "list", "junk", "auto_reply"],',
-        '  header :matches "Auto-Submitted" ["auto-generated", "auto-replied"],',
-        '  header :contains "Content-Type" "multipart/report"',
-        ') {'
-    ]
+    # Clean user Sieve Script
+    sieve_content = "# Auto-Reply Enabled (Managed via Global Sieve & send_delayed_vacation.py)\nrequire [\"fileinto\"];\nkeep;\n"
 
     if is_always_on or not (start_dt and end_dt):
-        sieve_lines.extend([
-            '  pipe :copy "send_delayed_vacation.py";',
-            '}',
-            'keep;'
-        ])
         time_desc = "即刻生效，直到寄信停用" if is_chinese else "Active immediately until turned off"
         time_notif_short = "即刻生效" if is_chinese else "Active immediately"
     else:
-        iso_start = f"{start_dt.strftime('%Y-%m-%dT%H:%M:%S')}{TZ_OFFSET_STR}"
-        iso_end = f"{end_dt.strftime('%Y-%m-%dT%H:%M:%S')}{TZ_OFFSET_STR}"
-
-        sieve_lines.extend([
-            '  if allof (',
-            f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "ge" "iso8601" "{iso_start}",',
-            f'    currentdate :zone "{TZ_SIEVE_ZONE}" :value "le" "iso8601" "{iso_end}"',
-            '  ) {',
-            '    pipe :copy "send_delayed_vacation.py";',
-            '  }',
-            '}',
-            'keep;'
-        ])
         if is_chinese:
             time_desc = f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} 至 {end_dt.strftime('%Y-%m-%d %H:%M:%S')} (UTC+8 台北時間)"
             time_notif_short = f"{start_dt.strftime('%Y-%m-%d')} 至 {end_dt.strftime('%Y-%m-%d')}"
         else:
             time_desc = f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} to {end_dt.strftime('%Y-%m-%d %H:%M:%S')} (UTC+8 Taipei Time)"
             time_notif_short = f"{start_dt.strftime('%Y-%m-%d')} to {end_dt.strftime('%Y-%m-%d')}"
-
-    sieve_content = "\n".join(sieve_lines) + "\n"
 
     with open(sieve_file, "w", encoding="utf-8") as f:
         f.write(sieve_content)

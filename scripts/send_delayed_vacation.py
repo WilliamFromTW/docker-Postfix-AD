@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 15-Second Delayed Auto-Reply (Vacation) Worker for Postfix + Dovecot Pigeonhole Sieve.
+Triggered by global sieve_before script.
 Detaches immediately via double-fork so Dovecot LMTP delivery is never blocked.
 Sleeps for 15 seconds in background, then sends the auto-reply email via sendmail.
 """
@@ -9,13 +10,14 @@ Sleeps for 15 seconds in background, then sends the auto-reply email via sendmai
 import sys
 import os
 import time
+import json
 import re
 import email
 from email.header import decode_header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formatdate
+from datetime import datetime
 import subprocess
-import json
 
 DELAY_SECONDS = 15
 RATE_LIMIT_HOURS = 24
@@ -121,12 +123,10 @@ def main():
     except Exception:
         sys.exit(0)
 
-    if len(sys.argv) > 1 and sys.argv[1].strip():
-        owner_email = sys.argv[1].lower().strip()
-    else:
-        delivered_to = msg.get("Delivered-To", "") or msg.get("X-Original-To", "") or msg.get("Envelope-To", "") or msg.get("To", "")
-        _, owner_email = parseaddr(decode_mime_words(delivered_to))
-        owner_email = owner_email.lower().strip()
+    # Determine recipient (owner)
+    delivered_to = msg.get("Delivered-To", "") or msg.get("X-Original-To", "") or msg.get("Envelope-To", "") or msg.get("To", "")
+    _, owner_email = parseaddr(decode_mime_words(delivered_to))
+    owner_email = owner_email.lower().strip()
 
     if not owner_email:
         sys.exit(0)
@@ -135,6 +135,7 @@ def main():
     _, sender_email = parseaddr(from_header)
     sender_email = sender_email.lower().strip()
 
+    # Don't auto-reply to self
     if not sender_email or sender_email == owner_email:
         sys.exit(0)
 
@@ -160,6 +161,15 @@ def main():
     if not cfg.get("enabled", False):
         sys.exit(0)
 
+    # Validate active date window
+    if not cfg.get("is_always_on", False):
+        start_ts = cfg.get("start_ts")
+        end_ts = cfg.get("end_ts")
+        now_ts = time.time()
+        if start_ts and end_ts:
+            if not (start_ts <= now_ts <= end_ts):
+                sys.exit(0)
+
     # Check 24-hour rate limit
     if not check_and_update_rate_limit(sieve_dir, sender_email):
         sys.exit(0)
@@ -168,16 +178,14 @@ def main():
     reply_body = cfg.get("body", "您好：我目前休假/公出中，將於銷假後儘速處理您的郵件。")
     orig_msg_id = msg.get("Message-ID", "")
 
-    # Double-Fork to detach immediately and release Dovecot LMTP
+    # Double-Fork to detach immediately and release Dovecot LMTP in < 0.005s
     try:
         pid = os.fork()
         if pid > 0:
-            # Parent exits immediately with code 0 (Dovecot LMTP finishes instantly)
             sys.exit(0)
     except OSError:
         sys.exit(0)
 
-    # First child process
     os.setsid()
     try:
         pid = os.fork()
@@ -186,8 +194,6 @@ def main():
     except OSError:
         sys.exit(0)
 
-    # Daemon child process
-    # Redirect standard file descriptors
     try:
         sys.stdout.flush()
         sys.stderr.flush()
@@ -198,7 +204,6 @@ def main():
     except Exception:
         pass
 
-    # Execute 15-second delayed auto-reply in background
     background_delayed_task(owner_email, sender_email, reply_subject, reply_body, orig_msg_id)
 
 if __name__ == "__main__":
