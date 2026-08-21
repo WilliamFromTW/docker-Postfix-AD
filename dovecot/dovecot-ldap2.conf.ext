@@ -1,5 +1,5 @@
 ldap_version = 3
-auth_bind = yes
+auth_bind = no
 
 # This tells Dovecot to search all entries that fall below the base entry.
 # If it were set to "onelevel", Dovecot would search only entries one levely.
@@ -17,7 +17,6 @@ hosts = HOST_IP:389
 base= SEARCH_BASE 
 dn = BIND_DN
 dnpass = BIND_PW
-#pass_filter     = (&(mail=%u)(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
-user_filter     = (&(samaccountname=%u)(objectClass=person))
+user_filter     = (&(objectClass=*)(|(mail=%u)(userPrincipalName=%u)(samaccountname=%n)(samaccountname=%u)))
 
 

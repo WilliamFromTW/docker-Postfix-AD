@@ -17,6 +17,6 @@ base= SEARCH_BASE
 dn = BIND_DN
 dnpass = BIND_PW
 #pass_filter     = (&(mail=%u)(objectClass=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
-pass_filter     = (&(samaccountname=%u)(objectClass=person))
+pass_filter     = (&(objectClass=*)(|(samaccountname=%u)(samaccountname=%n)(userPrincipalName=%u)(mail=%u)))
 
 
