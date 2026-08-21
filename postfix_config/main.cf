@@ -832,3 +832,6 @@ smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, defer_u
 smtpd_forbid_bare_newline = yes
 address_verify_map = lmdb:$data_directory/verify_cache
 compatibility_level=3.6
+default_database_type = lmdb
+alias_maps = lmdb:/etc/aliases
+alias_database = lmdb:/etc/aliases
