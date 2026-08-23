@@ -35,12 +35,12 @@ graph TD
     Dovecot -->|Maildir 儲存 / Quota 配額控管| VMail[("儲存空間 /home/vmail")]
 ```
 
-### 📋 Active Directory (AD) 欄位設定規範
-1. **帳號名稱必須為小寫**：
-   - AD 中的使用者登入帳號（sAMAccountName）**必須建立為全小寫**（如 `520001` 或 `john`），因為 Dovecot 查詢時固定會轉為小寫送出查詢。
+### 📋 Active Directory (AD) / OpenLDAP 欄位設定與驗證規範
+1. **帳號驗證強制使用純帳號（`sAMAccountName` / `uid`）**：
+   - 使用者在收發信軟體（Outlook、Thunderbird、手機）設定帳號時，**帳號欄位必須填寫純工號或 AD/LDAP 帳號**（如 `520001` 或 `john`，全小寫），**嚴格禁止使用含 `@網域` 或 Email 格式登入**。
 2. **電子郵件地址（`mail` 屬性）**：
-   - 請於 AD 使用者屬性中的 `mail` 欄位填寫完整的 Email 地址（例如 `john@smile.taipei`）。
-   - 登入帳號名稱可與電子郵件地址完全不同。
+   - 請於 AD/LDAP 使用者屬性中的 `mail` 欄位填寫完整的 Email 地址（例如 `john@smile.taipei`）。
+   - 登入帳號名稱與電子郵件地址完全獨立分離。外部來信會依據 `mail` 屬性精準投遞至 `/home/vmail/john@smile.taipei`。
 3. **群組別名（`ALIASES`）**：
    - 在 AD 建立「群組」，並將別名 Email 填入群組的 `mail` 屬性（如 `sales@smile.taipei`），接著將成員帳號加入此群組即可。
 4. **限制僅限本地網域寄收（`local_only`）**：

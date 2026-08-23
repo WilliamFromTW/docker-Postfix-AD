@@ -35,12 +35,12 @@ graph TD
     Dovecot -->|Lưu trữ Maildir / Quản lý Quota| VMail[("Lưu trữ /home/vmail")]
 ```
 
-### 📋 Quy tắc cấu hình Active Directory (AD)
-1. **Tên tài khoản bắt buộc viết chữ thường**:
-   - Tên đăng nhập người dùng (sAMAccountName) trong AD **bắt buộc phải viết bằng chữ thường** (ví dụ: `520001` hoặc `john`). Dovecot tự động chuyển tên đăng nhập thành chữ thường khi gửi truy vấn LDAP.
+### 📋 Quy chuẩn cấu hình trường Active Directory (AD) / OpenLDAP & Chính sách xác thực
+1. **Xác thực đăng nhập bắt buộc dùng tên tài khoản thuần túy (`sAMAccountName` / `uid`)**:
+   - Khi cấu hình phần mềm email (Outlook, Thunderbird, điện thoại), **trường tên đăng nhập bắt buộc phải điền mã nhân viên hoặc tài khoản AD/LDAP** (`sAMAccountName` hoặc `uid`, ví dụ: `520001` hoặc `john`, viết thường). **Nghiêm cấm đăng nhập bằng định dạng chứa `@domain` hoặc địa chỉ email**.
 2. **Địa chỉ Email (Thuộc tính `mail`)**:
-   - Nhập địa chỉ email vào thuộc tính `mail` của User trong AD (ví dụ: `john@smile.taipei`).
-   - Tên đăng nhập và địa chỉ email có thể hoàn toàn khác nhau.
+   - Vui lòng điền địa chỉ email đầy đủ (ví dụ: `john@smile.taipei`) vào trường `mail` của người dùng AD/LDAP.
+   - Tên tài khoản đăng nhập và địa chỉ email hoàn toàn độc lập. Thư bên ngoài gửi đến sẽ được định tuyến theo thuộc tính `mail` vào `/home/vmail/john@smile.taipei`.
 3. **Bí danh nhóm (`ALIASES`)**:
    - Tạo một Group trong AD, điền địa chỉ email bí danh vào thuộc tính `mail` của Group (ví dụ: `sales@smile.taipei`), sau đó thêm các tài khoản thành viên vào Group này.
 4. **Giới hạn chỉ gửi nhận nội bộ (`local_only`)**:

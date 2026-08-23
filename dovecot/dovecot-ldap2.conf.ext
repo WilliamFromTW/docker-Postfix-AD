@@ -17,6 +17,6 @@ hosts = HOST_IP:389
 base= SEARCH_BASE 
 dn = BIND_DN
 dnpass = BIND_PW
-user_filter     = (&(objectClass=*)(|(mail=%u)(userPrincipalName=%u)(samaccountname=%n)(samaccountname=%u)))
+user_filter     = (&(objectClass=*)(|(mail=%u)(userPrincipalName=%u)(samaccountname=%u)(uid=%u)))
 
 

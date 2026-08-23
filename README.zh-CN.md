@@ -15,7 +15,7 @@
 ---
 
 ## 🚀 主要特性
-- **账号与邮箱可独立分离**：登录账号名称可与电子邮件地址不同（例如：账号 `520001`，邮箱 `william@smile.taipei`）。
+- **账号与邮箱可独立分离**：登录账号名称必须为纯账号/工号（`sAMAccountName` / `uid`，例如：账号 `520001`，邮箱 `william@smile.taipei`），严格禁止使用含 `@域名` 或 Email 地址登录。
 - **微软 Active Directory LDAP 认证**：兼容 Windows Server 2008R2、2012R2、2016、2019、2022。
 - **Postfix 邮件传输代理 (MTA)**。
 - **Dovecot IMAP / POP3 / LMTP 服务器**。

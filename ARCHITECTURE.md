@@ -35,12 +35,12 @@ graph TD
     Dovecot -->|Maildir Storage / Quota Enforcement| VMail[("Storage /home/vmail")]
 ```
 
-### 📋 Active Directory (AD) Configuration Rules
-1. **Account Name Casing**:
-   - Account login names in AD **MUST be lower-case** (e.g., `520001` or `john`). Dovecot automatically converts login usernames to lower-case for LDAP queries.
-2. **Email Address (`mail` Attribute)**:
-   - In AD Users and Computers, set the user's email address in the `mail` attribute (e.g., `john@example.com`).
-   - The login username and the email address can be completely different.
+### 📋 Active Directory (AD) / OpenLDAP Field Specification & Auth Policy
+1. **Login Authentication Restricted to Pure Username (`sAMAccountName` / `uid`)**:
+   - When configuring mail clients (Outlook, Thunderbird, mobile devices), **the username field must be the pure account/employee ID** (`sAMAccountName` or `uid`, e.g. `520001` or `john`, in lowercase). **Logging in with `@domain` or email address is strictly prohibited**.
+2. **Email Address (`mail` attribute)**:
+   - Enter the full email address (e.g. `john@smile.taipei`) in the `mail` attribute.
+   - Login account and email address are completely independent. Incoming messages are routed via the `mail` attribute to `/home/vmail/john@smile.taipei`.
 3. **Group Aliases (`ALIASES`)**:
    - Create an AD Group, set its `mail` attribute to the desired alias (e.g., `sales@example.com`), and add recipient user accounts as members of this group.
 4. **Local Domain Only Restriction (`local_only`)**:

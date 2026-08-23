@@ -15,7 +15,7 @@
 ---
 
 ## 🚀 Tính năng nổi bật
-- **Tài khoản đăng nhập độc lập với Email**: Tên đăng nhập có thể khác với địa chỉ email (ví dụ: tài khoản: `520001`, email: `william@smile.taipei`).
+- **Tài khoản đăng nhập độc lập với Email**: Tên đăng nhập phải là tên tài khoản/mã nhân viên thuần túy (`sAMAccountName` / `uid`, ví dụ: tài khoản: `520001`, email: `william@smile.taipei`). Nghiêm cấm đăng nhập bằng địa chỉ email hoặc tên miền `@domain`.
 - **Xác thực Microsoft Active Directory LDAP**: Tương thích Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Máy chủ Dovecot IMAP / POP3 / LMTP**.

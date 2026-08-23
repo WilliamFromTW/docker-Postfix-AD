@@ -15,7 +15,7 @@
 ---
 
 ## 🚀 主要特色
-- **帳號與信箱可獨立分離**：登入帳號名稱可與電子郵件地址不同（例如：帳號 `520001`，信箱 `william@smile.taipei`）。
+- **帳號與信箱可獨立分離**：登入帳號名稱必須為純帳號/工號（`sAMAccountName` / `uid`，例如：帳號 `520001`，信箱 `william@smile.taipei`），嚴格禁止使用含 `@網域` 或 Email 地址登入。
 - **微軟 Active Directory LDAP 認證**：相容 Windows Server 2008R2、2012R2、2016、2019、2022。
 - **Postfix 郵件傳輸代理 (MTA)**。
 - **Dovecot IMAP / POP3 / LMTP 伺服器**。

@@ -15,7 +15,7 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 ---
 
 ## 🚀 Key Features
-- **Independent Account & Email**: Login account name can be distinct from email address (e.g., account: `520001`, email: `william@smile.taipei`).
+- **Independent Account & Email**: Login account name must be the pure username/employee ID (`sAMAccountName` / `uid`, e.g., account: `520001`, email: `william@smile.taipei`). Logging in with `@domain` or email address is strictly prohibited.
 - **Microsoft Active Directory LDAP Auth**: Compatible with Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Dovecot IMAP / POP3 / LMTP Server**.

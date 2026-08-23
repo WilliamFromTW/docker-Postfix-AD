@@ -35,12 +35,12 @@ graph TD
     Dovecot -->|Maildir 存储 / Quota 配额管控| VMail[("存储空间 /home/vmail")]
 ```
 
-### 📋 Active Directory (AD) 字段配置规范
-1. **账号名称必须为小写**：
-   - AD 中的用户登录账号（sAMAccountName）**必须创建为全小写**（如 `520001` 或 `john`），因为 Dovecot 查询时固定会转为小写发送查询。
+### 📋 Active Directory (AD) / OpenLDAP 字段设置与验证规范
+1. **账号验证强制使用纯账号（`sAMAccountName` / `uid`）**：
+   - 用户在收发信软件（Outlook、Thunderbird、手机）设置账号时，**账号字段必须填写纯工号或 AD/LDAP 账号**（如 `520001` 或 `john`，全小写），**严格禁止使用含 `@域名` 或 Email 格式登录**。
 2. **电子邮件地址（`mail` 属性）**：
-   - 请在 AD 用户属性中的 `mail` 字段填写完整的 Email 地址（例如 `john@smile.taipei`）。
-   - 登录账号名称可与电子邮件地址完全不同。
+   - 请于 AD/LDAP 用户属性中的 `mail` 字段填写完整的 Email 地址（例如 `john@smile.taipei`）。
+   - 登录账号名称与电子邮件地址完全独立分离。外部来信会依据 `mail` 属性精准投递至 `/home/vmail/john@smile.taipei`。
 3. **组别名（`ALIASES`）**：
    - 在 AD 创建“组”，并将别名 Email 填入组的 `mail` 属性（如 `sales@smile.taipei`），接着将成员账号加入该组即可。
 4. **限制仅限本地域名收发（`local_only`）**：
