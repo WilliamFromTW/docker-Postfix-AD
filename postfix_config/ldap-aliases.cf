@@ -1,6 +1,5 @@
-server_host = ldaps://HOST_IP:636
+server_host = HOST_IP
 search_base = SEARCH_BASE
-tls_require_cert = no
 #scope = sub
 query_filter = (memberOf:1.2.840.113556.1.4.1941:=CN=%s,ALIASES)
 result_attribute = mail

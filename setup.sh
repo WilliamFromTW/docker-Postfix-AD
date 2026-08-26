@@ -31,6 +31,25 @@ if [ -n "${SEARCH_BASE}" ]; then
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/postfix/saslauthd.conf 
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/dovecot/dovecot-ldap.conf.ext 
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/dovecot/dovecot-ldap2.conf.ext 
+# -------------------------------------------------------------
+# LDAP / LDAPS (Port 389 / 636 TLS) 連線模式配置
+# -------------------------------------------------------------
+ENABLE_LDAPS=${ENABLE_LDAPS:-false}
+
+if [ "${ENABLE_LDAPS,,}" = "true" ] || [ "${ENABLE_LDAPS}" = "1" ]; then
+  echo "Enabling LDAPS (Port 636 / TLS)..."
+  # 1. Postfix LDAP 改為 LDAPS 636 + tls_require_cert = no
+  sed -i "s/server_host = HOST_IP/server_host = ldaps:\/\/HOST_IP:636\ntls_require_cert = no/g" /etc/postfix/ldap-users.cf
+  sed -i "s/server_host = HOST_IP/server_host = ldaps:\/\/HOST_IP:636\ntls_require_cert = no/g" /etc/postfix/ldap-aliases.cf
+  sed -i "s/server_host = HOST_IP/server_host = ldaps:\/\/HOST_IP:636\ntls_require_cert = no/g" /etc/postfix/ldap-local_only.cf
+  sed -i "s/server_host = HOST_IP/server_host = ldaps:\/\/HOST_IP:636\ntls_require_cert = no/g" /etc/postfix/ldap-local_only2.cf
+  
+  # 2. Dovecot LDAP 改為 uris = ldaps://HOST_IP:636 + tls_require_cert = never
+  sed -i "s/hosts = HOST_IP:389/uris = ldaps:\/\/HOST_IP:636\ntls_require_cert = never/g" /etc/dovecot/dovecot-ldap.conf.ext
+  sed -i "s/hosts = HOST_IP:389/uris = ldaps:\/\/HOST_IP:636\ntls_require_cert = never/g" /etc/dovecot/dovecot-ldap2.conf.ext
+  
+  # 3. SASL 改為 ldaps://HOST_IP:636/ + ldap_ssl: yes + ldap_tls_check_peer: no
+  sed -i "s/ldap_servers: ldap:\/\/HOST_IP:389\//ldap_servers: ldaps:\/\/HOST_IP:636\/\nldap_ssl: yes\nldap_tls_check_peer: no/g" /etc/postfix/saslauthd.conf
 fi
 
 if [ -n "${HOST_IP}" ]; then

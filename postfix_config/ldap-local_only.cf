@@ -1,7 +1,6 @@
-server_host = ldaps://HOST_IP:636
+server_host = HOST_IP
 search_base = SEARCH_BASE
 version = 3
-tls_require_cert = no
 query_filter = (&(description=*local_only*)(&(objectclass=*)(mail=%s)))
 result_attribute = mail  #Account from DC
 result_filter = dunno

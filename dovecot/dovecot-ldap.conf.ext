@@ -12,8 +12,7 @@ deref           = never
 
 pass_attrs      = userPassword=password
 default_pass_scheme = CRYPT
-uris = ldaps://HOST_IP:636
-tls_require_cert = never
+hosts = HOST_IP:389
 base= SEARCH_BASE 
 dn = BIND_DN
 dnpass = BIND_PW

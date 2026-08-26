@@ -14,9 +14,9 @@ Tài liệu này cung cấp cái nhìn kỹ thuật chuyên sâu về kiến tr�
 
 ---
 
-## 🏛️ 1. Mô Hình Tích Hợp Active Directory (LDAPS)
-
-Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiếp với **Microsoft Active Directory** hoặc **OpenLDAP** qua giao thức LDAPS mã hóa TLS trên cổng 636.
+## 🏛️ 1. Mô Hình Tích Hợp Active Directory / LDAP
+ 
+Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiếp với **Microsoft Active Directory** hoặc **OpenLDAP**. Kết nối mặc định qua cổng 389, hỗ trợ chuyển sang cổng 636 (LDAPS TLS) thông qua `ENABLE_LDAPS=true`.
 
 ```mermaid
 graph TD
@@ -25,7 +25,7 @@ graph TD
     Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
-        AD[("AD LDAPS Server :636")]
+        AD[("AD / LDAP Server :389 / :636")]
     end
 
     Postfix -->|ldap-users.cf: Kiểm tra người nhận & Hòm thư| AD

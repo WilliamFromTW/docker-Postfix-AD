@@ -14,9 +14,9 @@
 
 ---
 
-## 🏛️ 1. 全局架构与 Active Directory (LDAPS) 整合模型
+## 🏛️ 1. 全局架构与 Active Directory / LDAP 整合模型
 
-本容器将 **Postfix** (MTA 传输代理) 与 **Dovecot** (IMAP/POP3 服务) 通过 LDAPS 加密协议（Port 636 / TLS）直接与 **微软 Windows Active Directory** 或 **OpenLDAP** 深度整合。
+本容器将 **Postfix** (MTA 传输代理) 与 **Dovecot** (IMAP/POP3 服务) 与 **微软 Windows Active Directory** 或 **OpenLDAP** 深度整合。连接默认采用标准 Port 389，并支持通过 `ENABLE_LDAPS=true` 切换为 Port 636 (LDAPS TLS 加密传输)。
 
 ```mermaid
 graph TD
@@ -25,7 +25,7 @@ graph TD
     Client -->|"IMAP/POP3 :993/:995 (收信访问)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
-        AD[("AD LDAPS 服务器 :636")]
+        AD[("AD / LDAP 服务器 :389 / :636")]
     end
 
     Postfix -->|ldap-users.cf: 查验收件人与本地邮箱| AD

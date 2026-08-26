@@ -16,7 +16,7 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 
 ## 🚀 Key Features
 - **Independent Account & Email**: Login account name must be the pure username/employee ID (`sAMAccountName` / `uid`, e.g., account: `520001`, email: `william@smile.taipei`). Logging in with `@domain` or email address is strictly prohibited.
-- **Active Directory / OpenLDAP LDAPS Auth (Port 636)**: Secure TLS encrypted authentication. Compatible with Windows Server 2008R2~2025, NethServer 8, Synology AD, and OpenLDAP.
+- **Active Directory / OpenLDAP Auth**: Defaults to standard Port 389, with optional `ENABLE_LDAPS=true` for Port 636 LDAPS TLS encryption. Compatible with Windows Server 2008R2~2025, NethServer 8, Synology AD, and OpenLDAP.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Dovecot IMAP / POP3 / LMTP Server**.
 - **Email-Driven Smart Auto-Reply & Vacation Responder**: Sieve-powered automatic replies triggered via email commands without requiring a Webmail GUI.

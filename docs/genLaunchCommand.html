@@ -147,6 +147,15 @@
               </div>
             </div>
 
+            <div class="col-md-6 d-flex align-items-center">
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="inputEnableLdaps">
+                <label class="form-check-label" for="inputEnableLdaps" data-i18n="enableLdaps">
+                  Enable LDAPS TLS Encryption (Port 636) (ENABLE_LDAPS)
+                </label>
+              </div>
+            </div>
+
             <div class="col-12 mt-4 text-center">
               <button class="btn btn-primary btn-lg px-5" type="submit" data-i18n="btnGen">🚀 Generate Configs</button>
             </div>
@@ -198,6 +207,7 @@
           timeZone: "Time Zone",
           tzLink: "List of Time Zones",
           enableQuota: "Enable Mailbox Quota Limit (ENABLE_QUOTA)",
+          enableLdaps: "Enable LDAPS TLS Encryption (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 Generate Configs",
           outputFormat: "Output Format:",
           optCompose: "🐳 Docker Compose (YAML)",
@@ -237,6 +247,7 @@
           timeZone: "時區 (Time Zone)",
           tzLink: "查看時區列表 (List of Time Zones)",
           enableQuota: "啟用信箱配額限制 (ENABLE_QUOTA)",
+          enableLdaps: "啟用 LDAPS TLS 加密連線 (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 產生設定 (Generate)",
           outputFormat: "輸出格式：",
           optCompose: "🐳 Docker Compose (YAML)",
@@ -276,6 +287,7 @@
           timeZone: "时区 (Time Zone)",
           tzLink: "查看时区列表 (List of Time Zones)",
           enableQuota: "启用邮箱配额限制 (ENABLE_QUOTA)",
+          enableLdaps: "启用 LDAPS TLS 加密连接 (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 生成配置 (Generate)",
           outputFormat: "输出格式：",
           optCompose: "🐳 Docker Compose (YAML)",
@@ -298,23 +310,24 @@
         vi: {
           docTitle: "Công cụ tạo cấu hình Postfix + Rspamd + Active Directory",
           navGenerator: "⚡ Công cụ tạo cấu hình",
-          navArchitecture: "🏛️ Kiến Trúc Hệ Thống",
+          navArchitecture: "🏛️ Kiến trúc hệ thống",
           navGithub: "🐙 GitHub",
-          mainHeading: "Công cụ tạo cấu hình Container & Docker Compose",
-          generatorSubTitle: "Tạo tệp docker-compose.yaml hoặc lệnh CLI khởi chạy Postfix + AD + Rspamd nhanh chóng.",
+          mainHeading: "Công cụ tạo tập lệnh khởi chạy Container & Compose",
+          generatorSubTitle: "Tạo nhanh docker-compose.yaml hoặc lệnh CLI cho Postfix + AD + Rspamd.",
           containerName: "Tên Container (Container Name)",
-          imageTag: "Phiên bản Docker Image (Image Tag)",
+          imageTag: "Phiên bản hình ảnh Docker (Image Tag)",
           adIp: "IP máy chủ AD (Active Directory IP)",
-          searchBase: "AD Search Base",
-          bindDn: "AD Bind DN",
-          aliases: "AD Aliases (tùy chọn)",
+          searchBase: "Cơ sở tìm kiếm AD (Search Base)",
+          bindDn: "Tài khoản liên kết AD DN (Bind DN)",
+          aliases: "Bí danh nhóm AD (Aliases, tùy chọn)",
           domain: "Tên miền Email (Email Domain)",
-          mailServerName: "Tên máy chủ Mail FQDN (Server Name)",
-          spamEmail: "Hộp thư rác (SPAM_EMAIL, tùy chọn)",
-          permitNetwork: "Mạng tin cậy (Permit Networks, tùy chọn)",
+          mailServerName: "Tên đầy đủ của máy chủ Mail (Server FQDN)",
+          spamEmail: "Hòm thư thư rác (SPAM_EMAIL, tùy chọn)",
+          permitNetwork: "Dải mạng tin cậy (Permit Networks, tùy chọn)",
           timeZone: "Múi giờ (Time Zone)",
-          tzLink: "Xem danh sách múi giờ (Time Zones)",
+          tzLink: "Xem danh sách múi giờ (List of Time Zones)",
           enableQuota: "Bật giới hạn dung lượng hòm thư (ENABLE_QUOTA)",
+          enableLdaps: "Bật mã hóa LDAPS TLS (Cổng 636) (ENABLE_LDAPS)",
           btnGen: "🚀 Tạo cấu hình (Generate)",
           outputFormat: "Định dạng xuất:",
           optCompose: "🐳 Docker Compose (YAML)",
@@ -398,9 +411,13 @@
         var permitNetwork = $("#inputPermitNetwork").val().trim();
         var timeZone = $("#inputTimeZone").val().trim() || "Asia/Taipei";
         var enableQuota = $("#inputEnableQuota").is(":checked") ? "true" : "false";
+        var enableLdaps = $("#inputEnableLdaps").is(":checked") ? "true" : "false";
 
         // Docker / Podman CLI 額外選項
         var cliOptional = "";
+        if (enableLdaps === "true") {
+          cliOptional += " -e ENABLE_LDAPS='true' \\\n";
+        }
         if (aliases !== "") {
           cliOptional += " -e ALIASES='" + aliases + "' \\\n";
         }
@@ -485,6 +502,9 @@
           "      - TZ='" + timeZone + "'\n" +
           "      - ENABLE_QUOTA='" + enableQuota + "'\n";
         
+        if (enableLdaps === "true") {
+          composeEnv += "      - ENABLE_LDAPS='true'\n";
+        }
         if (spamEmail !== "") {
           composeEnv += "      - SPAM_EMAIL='" + spamEmail + "'\n";
         }

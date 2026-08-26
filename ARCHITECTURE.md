@@ -14,9 +14,9 @@ This document provides an in-depth technical overview of the **docker-Postfix-AD
 
 ---
 
-## 🏛️ 1. Overall Architecture & Active Directory (LDAPS) Integration Model
+## 🏛️ 1. Overall Architecture & Active Directory / LDAP Integration Model
  
-The container integrates **Postfix** (MTA) and **Dovecot** (IMAP/POP3) with **Microsoft Active Directory** or **OpenLDAP** via secure LDAPS protocol over Port 636 (TLS).
+The container integrates **Postfix** (MTA) and **Dovecot** (IMAP/POP3) with **Microsoft Active Directory** or **OpenLDAP**. It connects via standard Port 389 by default, and supports switching to Port 636 (LDAPS TLS encryption) via `ENABLE_LDAPS=true`.
 
 ```mermaid
 graph TD
@@ -25,7 +25,7 @@ graph TD
     Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
     
     subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
-        AD[("AD LDAPS Service :636")]
+        AD[("AD / LDAP Service :389 / :636")]
     end
 
     Postfix -->|ldap-users.cf: Verify Recipient & Local Mailbox| AD
