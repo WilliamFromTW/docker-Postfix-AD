@@ -16,7 +16,7 @@
 
 ## 🚀 主要特性
 - **账号与邮箱可独立分离**：登录账号名称必须为纯账号/工号（`sAMAccountName` / `uid`，例如：账号 `520001`，邮箱 `william@smile.taipei`），严格禁止使用含 `@域名` 或 Email 地址登录。
-- **微软 Active Directory LDAP 认证**：兼容 Windows Server 2008R2、2012R2、2016、2019、2022。
+- **Active Directory / OpenLDAP LDAPS 认证 (Port 636)**：安全 TLS 加密传输，兼容 Windows Server 2008R2~2025、NethServer 8、群晖 AD 与 OpenLDAP。
 - **Postfix 邮件传输代理 (MTA)**。
 - **Dovecot IMAP / POP3 / LMTP 服务器**。
 - **Email 驱动智能自动回复 (Auto-Reply / Vacation)**：支持通过邮件指令设置休假与公出自动回复，无 Webmail 亦可轻松使用。

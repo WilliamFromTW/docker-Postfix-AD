@@ -13,7 +13,8 @@ deref           = never
 #這段很特別, 可以將AD的任何屬性傳送到整個dovecot的變數, 例如底下就呈現將AD的mail屬性, 傳送給sieve與sieve_dir這兩個變數, 而這兩個變數利用 %$ 這個來承接, 請注意原本設定參數還是必須有,只是數值被取代
 user_attrs      = =home=/home/vmail/%{ldap:mail}, =mail=maildir:/home/vmail/%{ldap:mail}/Maildir, =sieve=/home/vmail/%{ldap:mail}/sieve/dovecot.sieve, =sieve_dir=/home/vmail/%{ldap:mail}/sieve, =uid=1001, =gid=1001
 default_pass_scheme = CRYPT
-hosts = HOST_IP:389
+uris = ldaps://HOST_IP:636
+tls_require_cert = never
 base= SEARCH_BASE 
 dn = BIND_DN
 dnpass = BIND_PW

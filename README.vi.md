@@ -16,7 +16,7 @@
 
 ## 🚀 Tính năng nổi bật
 - **Tài khoản đăng nhập độc lập với Email**: Tên đăng nhập phải là tên tài khoản/mã nhân viên thuần túy (`sAMAccountName` / `uid`, ví dụ: tài khoản: `520001`, email: `william@smile.taipei`). Nghiêm cấm đăng nhập bằng địa chỉ email hoặc tên miền `@domain`.
-- **Xác thực Microsoft Active Directory LDAP**: Tương thích Windows Server 2008R2, 2012R2, 2016, 2019, 2022.
+- **Xác thực Active Directory / OpenLDAP LDAPS (Port 636)**: Mã hóa TLS an toàn. Tương thích Windows Server 2008R2~2025, NethServer 8, Synology AD, và OpenLDAP.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Máy chủ Dovecot IMAP / POP3 / LMTP**.
 - **Tự động trả lời email thông minh (Auto-Reply / Vacation)**: Hỗ trợ thiết lập báo nghỉ phép và phản hồi tự động bằng lệnh email mà không cần giao diện Webmail.

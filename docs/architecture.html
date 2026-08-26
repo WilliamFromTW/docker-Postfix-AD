@@ -91,10 +91,10 @@
       <!-- Section 1: Active Directory Integration -->
       <div class="card shadow-sm mb-4 section-anchor" id="sec-ad">
         <div class="card-header bg-white py-3">
-          <span class="card-header-title text-primary" data-i18n="sec1Title">1. Active Directory (LDAP) Integration Model</span>
+          <span class="card-header-title text-primary" data-i18n="sec1Title">1. Active Directory (LDAPS) Integration Model</span>
         </div>
         <div class="card-body">
-          <p data-i18n="sec1Desc">Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.</p>
+          <p data-i18n="sec1Desc">Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers or OpenLDAP over LDAPS (Port 636 / TLS) for recipient validation, user authentication, and alias resolution.</p>
           
           <div class="mermaid-box my-3" id="diagram-ad-container">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -269,8 +269,8 @@ Body: I am on business trip.
           navGithub: "🐙 GitHub",
           mainTitle: "System Architecture & Technical Guide",
           subTitle: "In-depth overview of Active Directory LDAP integration, Rspamd filtering pipeline, Let's Encrypt automated SSL, OpenDKIM signing, and Email-Driven Auto-Reply.",
-          sec1Title: "1. Active Directory (LDAP) Integration Model",
-          sec1Desc: "Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers over LDAP (Port 389) for recipient validation, user authentication, and alias resolution.",
+          sec1Title: "1. Active Directory (LDAPS) Integration Model",
+          sec1Desc: "Postfix and Dovecot communicate directly with Microsoft Windows Active Directory Domain Controllers or OpenLDAP over LDAPS (Port 636 / TLS) for recipient validation, user authentication, and alias resolution.",
           adRulesTitle: "Active Directory Configuration Rules:",
           adRule1: "<strong>Account Login:</strong> Logon username <u>must be pure sAMAccountName / uid</u> (e.g. <code>520001</code> or <code>john</code>). Logging in with <code>@domain</code> or email address is strictly prohibited.",
           adRule2: "<strong>Email Address (<code>mail</code> attribute):</strong> Fill in the full email address in the user's <code>mail</code> attribute (e.g. <code>john@example.com</code>). Logon account and email are completely independent.",
@@ -302,8 +302,8 @@ Body: I am on business trip.
     Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
     Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP Service :389")]
+    subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
+        AD[("AD LDAPS Service :636")]
     end
 
     Postfix -->|"ldap-users.cf: Verify Recipient & Local Mailbox"| AD
@@ -370,8 +370,8 @@ Body: I am on business trip.
           navGithub: "🐙 GitHub 專案庫",
           mainTitle: "系統架構與技術維運指南",
           subTitle: "詳細剖析 Active Directory LDAP 整合、Rspamd 郵件安全過濾管道、Let's Encrypt 自動化憑證機制、OpenDKIM 數位簽章與 Email 驅動自動回覆。",
-          sec1Title: "1. Active Directory (LDAP) 整合模型",
-          sec1Desc: "Postfix 與 Dovecot 透過 LDAP 協定（Port 389）直接向微軟 Active Directory 進行收件人驗證、帳號密碼認證及群組別名解析。",
+          sec1Title: "1. Active Directory (LDAPS) 整合模型",
+          sec1Desc: "Postfix 與 Dovecot 透過 LDAPS 加密協定（Port 636 / TLS）直接向微軟 Active Directory 或 OpenLDAP 進行收件人驗證、帳號密碼認證及群組別名解析。",
           adRulesTitle: "Active Directory 欄位設定規範：",
           adRule1: "<strong>帳號登入驗證：</strong> 登入帳號<u>必須為純工號或 AD/LDAP 帳號</u>（如 <code>520001</code> 或 <code>john</code>，全小寫），嚴格禁止使用含 <code>@網域</code> 或 Email 地址登入。",
           adRule2: "<strong>Email 地址（<code>mail</code> 屬性）：</strong> 請於 AD/LDAP 使用者屬性的 <code>mail</code> 欄位填寫完整電子郵件（如 <code>john@smile.taipei</code>），登入帳號與 Email 完全獨立分離。",
@@ -403,8 +403,8 @@ Body: I am on business trip.
     Client["郵件用戶端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (驗證寄信)"| Postfix
     Client -->|"IMAP/POP3 :993/:995 (收信存取)"| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP 伺服器 :389")]
+    subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
+        AD[("AD LDAPS 伺服器 :636")]
     end
 
     Postfix -->|"ldap-users.cf: 查驗收件人與本地信箱"| AD
@@ -471,8 +471,8 @@ Body: I am on business trip.
           navGithub: "🐙 GitHub 项目库",
           mainTitle: "系统架构与技术运维指南",
           subTitle: "详细剖析 Active Directory LDAP 整合、Rspamd 邮件安全过滤管道、Let's Encrypt 自动化证书机制、OpenDKIM 数字签名与 Email 驱动自动回复。",
-          sec1Title: "1. Active Directory (LDAP) 整合模型",
-          sec1Desc: "Postfix 与 Dovecot 通过 LDAP 协议（Port 389）直接向微软 Active Directory 进行收件人验证、账号密码认证及组别名解析。",
+          sec1Title: "1. Active Directory (LDAPS) 整合模型",
+          sec1Desc: "Postfix 与 Dovecot 通过 LDAPS 加密协议（Port 636 / TLS）直接向微软 Active Directory 或 OpenLDAP 进行收件人验证、账号密码认证及组别名解析。",
           adRulesTitle: "Active Directory 字段配置规范：",
           adRule1: "<strong>账号登录验证：</strong> 登录账号<u>必须为纯工号或 AD/LDAP 账号</u>（如 <code>520001</code> 或 <code>john</code>，全小写），严格禁止使用含 <code>@域名</code> 或 Email 地址登录。",
           adRule2: "<strong>Email 地址（<code>mail</code> 属性）：</strong> 请在 AD/LDAP 用户属性的 <code>mail</code> 字段填写完整电子邮件（如 <code>john@smile.taipei</code>），登录账号与 Email 完全独立分离。",
@@ -504,8 +504,8 @@ Body: I am on business trip.
     Client["邮件客户端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (验证发信)"| Postfix
     Client -->|"IMAP/POP3 :993/:995 (收信访问)"| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP 服务器 :389")]
+    subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
+        AD[("AD LDAPS 服务器 :636")]
     end
 
     Postfix -->|"ldap-users.cf: 查验收件人与本地邮箱"| AD
@@ -572,8 +572,8 @@ Body: I am on business trip.
           navGithub: "🐙 GitHub",
           mainTitle: "Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật",
           subTitle: "Tổng quan chuyên sâu về tích hợp Active Directory LDAP, quy trình lọc Rspamd, tự động hóa SSL Let's Encrypt, chữ ký số OpenDKIM và tự động trả lời thư qua Email.",
-          sec1Title: "1. Mô Hình Tích Hợp Active Directory (LDAP)",
-          sec1Desc: "Postfix và Dovecot kết nối trực tiếp với máy chủ Windows Active Directory Domain Controller qua cổng LDAP 389 để xác thực người nhận, hòm thư và bí danh nhóm.",
+          sec1Title: "1. Mô Hình Tích Hợp Active Directory (LDAPS)",
+          sec1Desc: "Postfix và Dovecot kết nối trực tiếp với máy chủ Windows Active Directory Domain Controller hoặc OpenLDAP qua cổng LDAPS 636 (TLS) để xác thực người nhận, hòm thư và bí danh nhóm.",
           adRulesTitle: "Quy tắc cấu hình Active Directory:",
           adRule1: "<strong>Xác thực đăng nhập:</strong> Tên đăng nhập <u>bắt buộc phải là mã tài khoản/nhân viên thuần túy</u> (ví dụ: <code>520001</code> hoặc <code>john</code>, viết thường), nghiêm cấm đăng nhập bằng <code>@domain</code> hoặc email.",
           adRule2: "<strong>Địa chỉ Email (thuộc tính <code>mail</code>):</strong> Nhập email đầy đủ vào thuộc tính <code>mail</code> trong AD. Tên đăng nhập và email hoàn toàn độc lập.",
@@ -605,8 +605,8 @@ Body: I am on business trip.
     Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
     Client -->|"IMAP/POP3 :993/:995 (Nhận & Đọc thư)"| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP Server :389")]
+    subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
+        AD[("AD LDAPS Server :636")]
     end
 
     Postfix -->|"ldap-users.cf: Kiểm tra người nhận & Hòm thư"| AD

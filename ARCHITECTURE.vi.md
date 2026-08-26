@@ -14,18 +14,18 @@ Tài liệu này cung cấp cái nhìn kỹ thuật chuyên sâu về kiến tr�
 
 ---
 
-## 🏛️ 1. Kiến Trúc Tổng Thể & Tích Hợp Active Directory (LDAP)
+## 🏛️ 1. Mô Hình Tích Hợp Active Directory (LDAPS)
 
-Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiếp với **Microsoft Active Directory** qua giao thức LDAP trên cổng 389.
+Container tích hợp **Postfix** (MTA) và **Dovecot** (IMAP/POP3) trực tiếp với **Microsoft Active Directory** hoặc **OpenLDAP** qua giao thức LDAPS mã hóa TLS trên cổng 636.
 
 ```mermaid
 graph TD
-    RemoteMTA["Máy chủ Mail bên ngoài (Remote MTA)"] -->|"SMTP :25 (Truyền tải Server-to-Server)"| Postfix["Postfix MTA"]
-    Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
-    Client -->|"IMAP/POP3 :993/:995 (Nhận & Đọc thư)"| Dovecot["Dovecot IMAP/POP3"]
+    RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
+    Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
+    Client -->|"IMAP/POP3 :993/:995 (Mail Retrieval)"| Dovecot["Dovecot IMAP/POP3"]
     
-    subgraph AD_DC ["Windows Active Directory"]
-        AD[("AD LDAP Server :389")]
+    subgraph AD_DC ["Windows Active Directory / OpenLDAP"]
+        AD[("AD LDAPS Server :636")]
     end
 
     Postfix -->|ldap-users.cf: Kiểm tra người nhận & Hòm thư| AD

@@ -145,6 +145,16 @@ if [ -f "/etc/dovecot/sieve/global/autoreply_handler.sieve" ]; then
   chown -R vmail:vmail /etc/dovecot/sieve
 fi
 
+# -------------------------------------------------------------
+# OpenLDAP 用戶端全域 TLS 憑證相容性配置 (支援 AD / NethServer 8 自簽憑證)
+# -------------------------------------------------------------
+mkdir -p /etc/openldap
+if [ -f "/etc/openldap/ldap.conf" ]; then
+  grep -q "TLS_REQCERT" /etc/openldap/ldap.conf || echo "TLS_REQCERT never" >> /etc/openldap/ldap.conf
+else
+  echo "TLS_REQCERT never" > /etc/openldap/ldap.conf
+fi
+
 echo $TZ > /etc/timezone
 chown clamupdate:clamupdate /var/lib/clamav
 chmod 755 /var/lib/clamav
