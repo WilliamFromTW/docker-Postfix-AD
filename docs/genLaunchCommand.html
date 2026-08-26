@@ -402,13 +402,13 @@
         // Docker / Podman CLI 額外選項
         var cliOptional = "";
         if (aliases !== "") {
-          cliOptional += ' -e ALIASES="' + aliases + '" \\\n';
+          cliOptional += " -e ALIASES='" + aliases + "' \\\n";
         }
         if (permitNetwork !== "") {
-          cliOptional += ' -e MY_NETWORKS="' + permitNetwork.replace(/\//g, "\\/") + '" \\\n';
+          cliOptional += " -e MY_NETWORKS='" + permitNetwork.replace(/\//g, "\\/") + "' \\\n";
         }
         if (spamEmail !== "") {
-          cliOptional += ' -e SPAM_EMAIL="' + spamEmail + '" \\\n';
+          cliOptional += " -e SPAM_EMAIL='" + spamEmail + "' \\\n";
         }
 
         // 1. Docker Run 指令
@@ -431,14 +431,14 @@
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
           " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
-          " -e DOMAIN_NAME=\"" + domain + "\" \\\n" +
-          " -e HOST_NAME=\"" + mailServerName + "\" \\\n" +
-          " -e HOST_IP=\"" + adIp + "\" \\\n" +
-          " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
-          " -e BIND_DN=\"" + bindDn + "\" \\\n" +
+          " -e DOMAIN_NAME='" + domain + "' \\\n" +
+          " -e HOST_NAME='" + mailServerName + "' \\\n" +
+          " -e HOST_IP='" + adIp + "' \\\n" +
+          " -e SEARCH_BASE='" + searchBase + "' \\\n" +
+          " -e BIND_DN='" + bindDn + "' \\\n" +
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
-          " -e TZ=\"" + timeZone + "\" \\\n" +
-          " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
+          " -e TZ='" + timeZone + "' \\\n" +
+          " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
           cliOptional +
           " -d --restart always --net=host \\\n " +
           image + "\n";
@@ -463,36 +463,36 @@
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
           " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
-          " -e DOMAIN_NAME=\"" + domain + "\" \\\n" +
-          " -e HOST_NAME=\"" + mailServerName + "\" \\\n" +
-          " -e HOST_IP=\"" + adIp + "\" \\\n" +
-          " -e SEARCH_BASE=\"" + searchBase + "\" \\\n" +
-          " -e BIND_DN=\"" + bindDn + "\" \\\n" +
+          " -e DOMAIN_NAME='" + domain + "' \\\n" +
+          " -e HOST_NAME='" + mailServerName + "' \\\n" +
+          " -e HOST_IP='" + adIp + "' \\\n" +
+          " -e SEARCH_BASE='" + searchBase + "' \\\n" +
+          " -e BIND_DN='" + bindDn + "' \\\n" +
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
-          " -e TZ=\"" + timeZone + "\" \\\n" +
-          " -e ENABLE_QUOTA=\"" + enableQuota + "\" \\\n" +
+          " -e TZ='" + timeZone + "' \\\n" +
+          " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
           cliOptional +
           " --label=disable -d --restart always --net=host \\\n " +
           podmanImage + "\n";
 
         // 3. Docker Compose YAML
-        var composeEnv = "      - DOMAIN_NAME=" + domain + "\n" +
-          "      - HOST_NAME=" + mailServerName + "\n" +
-          "      - HOST_IP=" + adIp + "\n" +
-          "      - SEARCH_BASE=" + searchBase + "\n" +
-          "      - BIND_DN=" + bindDn + "\n" +
+        var composeEnv = "      - DOMAIN_NAME='" + domain + "'\n" +
+          "      - HOST_NAME='" + mailServerName + "'\n" +
+          "      - HOST_IP='" + adIp + "'\n" +
+          "      - SEARCH_BASE='" + searchBase + "'\n" +
+          "      - BIND_DN='" + bindDn + "'\n" +
           "      - BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>'\n" +
-          "      - TZ=" + timeZone + "\n" +
-          "      - ENABLE_QUOTA=" + enableQuota + "\n";
+          "      - TZ='" + timeZone + "'\n" +
+          "      - ENABLE_QUOTA='" + enableQuota + "'\n";
         
         if (spamEmail !== "") {
-          composeEnv += "      - SPAM_EMAIL=" + spamEmail + "\n";
+          composeEnv += "      - SPAM_EMAIL='" + spamEmail + "'\n";
         }
         if (aliases !== "") {
-          composeEnv += "      - ALIASES=" + aliases + "\n";
+          composeEnv += "      - ALIASES='" + aliases + "'\n";
         }
         if (permitNetwork !== "") {
-          composeEnv += "      - MY_NETWORKS=" + permitNetwork + "\n";
+          composeEnv += "      - MY_NETWORKS='" + permitNetwork + "'\n";
         }
 
         var composeYaml = "version: '3.8'\n\n" +
