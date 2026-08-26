@@ -56,13 +56,14 @@ if [ -n "${BIND_DN}" ]; then
 fi
 
 if [ -n "${BIND_PW}" ]; then
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/postfix/ldap-users.cf
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/postfix/ldap-aliases.cf
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/postfix/ldap-local_only.cf
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/postfix/ldap-local_only2.cf
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/postfix/saslauthd.conf
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/dovecot/dovecot-ldap.conf.ext 
- sed -i "s/BIND_PW/${BIND_PW}/g" /etc/dovecot/dovecot-ldap2.conf.ext 
+ SAFE_BIND_PW=$(printf '%s\n' "${BIND_PW}" | sed -e 's/[\/&]/\\&/g')
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/postfix/ldap-users.cf
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/postfix/ldap-aliases.cf
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/postfix/ldap-local_only.cf
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/postfix/ldap-local_only2.cf
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/postfix/saslauthd.conf
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/dovecot/dovecot-ldap.conf.ext 
+ sed -i "s/BIND_PW/${SAFE_BIND_PW}/g" /etc/dovecot/dovecot-ldap2.conf.ext 
 fi
 
 if [ -n "${ALIASES}" ]; then

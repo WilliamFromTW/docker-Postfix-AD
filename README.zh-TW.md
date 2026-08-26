@@ -69,7 +69,7 @@ services:
       - HOST_IP=192.168.1.1
       - SEARCH_BASE=DC=test,DC=com
       - BIND_DN=CN=ldap,CN=Users,DC=test,DC=com
-      - BIND_PW=your_bind_dn_password
+      - BIND_PW='your_bind_dn_password'
       - TZ=Asia/Taipei
       - ENABLE_QUOTA=true
       - SPAM_EMAIL=spam@test.com
@@ -132,7 +132,7 @@ docker run --name mailserver \
   -e HOST_IP="192.168.1.1" \
   -e SEARCH_BASE="DC=test,DC=com" \
   -e BIND_DN="CN=ldap,CN=Users,DC=test,DC=com" \
-  -e BIND_PW="your_bind_dn_password" \
+  -e BIND_PW='your_bind_dn_password' \
   -e TZ="Asia/Taipei" \
   -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
