@@ -31,6 +31,7 @@ if [ -n "${SEARCH_BASE}" ]; then
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/postfix/saslauthd.conf 
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/dovecot/dovecot-ldap.conf.ext 
  sed -i "s/SEARCH_BASE/${SEARCH_BASE}/g" /etc/dovecot/dovecot-ldap2.conf.ext 
+fi
 # -------------------------------------------------------------
 # LDAP / LDAPS (Port 389 / 636 TLS) 連線模式配置
 # -------------------------------------------------------------
