@@ -405,7 +405,7 @@
           cliOptional += " -e ALIASES='" + aliases + "' \\\n";
         }
         if (permitNetwork !== "") {
-          cliOptional += " -e MY_NETWORKS='" + permitNetwork.replace(/\//g, "\\/") + "' \\\n";
+          cliOptional += " -e MY_NETWORKS='" + permitNetwork + "' \\\n";
         }
         if (spamEmail !== "") {
           cliOptional += " -e SPAM_EMAIL='" + spamEmail + "' \\\n";

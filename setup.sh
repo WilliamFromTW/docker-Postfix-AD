@@ -73,7 +73,8 @@ else
 fi
 
 if [ -n "${MY_NETWORKS}" ]; then
- sed -i "s/MY_NETWORKS/${MY_NETWORKS}/g" /etc/postfix/main.cf
+ SAFE_MY_NETWORKS=$(printf '%s\n' "${MY_NETWORKS}" | sed -e 's/[\/&]/\\&/g')
+ sed -i "s/MY_NETWORKS/${SAFE_MY_NETWORKS}/g" /etc/postfix/main.cf
 else
  sed -i "s/\,MY_NETWORKS/ /g" /etc/postfix/main.cf
 fi
