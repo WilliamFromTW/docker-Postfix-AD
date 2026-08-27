@@ -162,11 +162,11 @@
         </ul>
         
         <!-- Language Switcher -->
-        <div class="d-flex align-items-center">
-          <i class="fa-solid fa-globe text-light me-2"></i>
-          <select id="langSelect" class="form-select form-select-sm lang-switcher-select bg-light">
-            <option value="zh-TW">繁體中文 (台灣)</option>
+        <div class="d-flex align-items-center gap-2">
+          <label for="selectLang" class="text-white-50 small mb-0 fw-bold">🌐 Language:</label>
+          <select id="selectLang" class="form-select form-select-sm lang-switcher-select bg-light" onchange="changeLanguage(this.value)">
             <option value="en">English (US)</option>
+            <option value="zh-TW" selected>繁體中文 (台灣)</option>
             <option value="zh-CN">简体中文</option>
             <option value="vi">Tiếng Việt</option>
           </select>
@@ -188,9 +188,9 @@
           </p>
         </div>
         <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-          <span class="badge badge-soft badge-soft-success me-1"><i class="fa-solid fa-check-circle me-1"></i>Zero-Bounce</span>
-          <span class="badge badge-soft badge-soft-info me-1"><i class="fa-solid fa-bug-slash me-1"></i>ClamAV Ready</span>
-          <span class="badge badge-soft badge-soft-warning"><i class="fa-solid fa-filter me-1"></i>MultiMap</span>
+          <span class="badge badge-soft badge-soft-success me-1" data-i18n="badgeZb"><i class="fa-solid fa-check-circle me-1"></i>Zero-Bounce</span>
+          <span class="badge badge-soft badge-soft-info me-1" data-i18n="badgeClamav"><i class="fa-solid fa-bug-slash me-1"></i>ClamAV Ready</span>
+          <span class="badge badge-soft badge-soft-warning" data-i18n="badgeMultimap"><i class="fa-solid fa-filter me-1"></i>MultiMap</span>
         </div>
       </div>
     </div>
@@ -245,19 +245,19 @@
               <i class="fa-solid fa-key fa-2x me-3 text-primary"></i>
               <div>
                 <strong data-i18n="loginInfoTitle">預設登入資訊：</strong><br>
-                <span data-i18n="loginUrlLabel">網址：</span> <code>http://&lt;伺服器IP&gt;:11334</code>（若宿主機配置反向代理或 SSL，亦可為 <code>https://&lt;網域&gt;:11334</code>）<br>
+                <span data-i18n="loginUrlLabel">網址：</span> <code>http://&lt;伺服器IP&gt;:11334</code>（<span data-i18n="loginUrlNote">若宿主機配置反向代理或 SSL，亦可為</span> <code>https://&lt;網域&gt;:11334</code>）<br>
                 <span data-i18n="loginPwLabel">預設管理員密碼：</span> <code class="text-danger fw-bold fs-6">kafeiou.pw</code>
               </div>
             </div>
 
-            <h5 class="fw-bold mt-4" data-i18n="changePwTitle"><i class="fa-solid fa-lock text-warning me-2"></i>如何修改 Web 控制台管理員密碼？</h5>
+            <h5 class="fw-bold mt-4"><i class="fa-solid fa-lock text-warning me-2"></i><span data-i18n="changePwTitle">如何修改 Web 控制台管理員密碼？</span></h5>
             <p data-i18n="changePwDesc">為了資安考量，建議在生產環境中將預設密碼修改為自訂強密碼：</p>
 
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="card h-100 bg-light border-0">
                   <div class="card-body">
-                    <h6 class="fw-bold text-dark"><span class="badge bg-primary me-2">步驟 1</span><span data-i18n="step1PwTitle">產生密碼加密雜湊 (Hash)</span></h6>
+                    <h6 class="fw-bold text-dark"><span class="badge bg-primary me-2" data-i18n="badgeStep1">步驟 1</span><span data-i18n="step1PwTitle">產生密碼加密雜湊 (Hash)</span></h6>
                     <p class="small text-muted mb-2" data-i18n="step1PwDesc">在宿主機執行以下指令產生安全 PBKDF2 雜湊：</p>
                     <div class="position-relative">
                       <pre><code>docker exec -it mailserver rspamadm pw --encrypt -p 'YourNewPassword'</code></pre>
@@ -270,10 +270,10 @@
               <div class="col-md-6">
                 <div class="card h-100 bg-light border-0">
                   <div class="card-body">
-                    <h6 class="fw-bold text-dark"><span class="badge bg-primary me-2">步驟 2</span><span data-i18n="step2PwTitle">更新設定檔並即時重載</span></h6>
-                    <p class="small text-muted mb-2" data-i18n="step2PwDesc">編輯 <code>rspamd/local.d/worker-controller.inc</code> 填入雜湊並重載（免重啟容器）：</p>
+                    <h6 class="fw-bold text-dark"><span class="badge bg-primary me-2" data-i18n="badgeStep2">步驟 2</span><span data-i18n="step2PwTitle">更新設定檔並即時重載</span></h6>
+                    <p class="small text-muted mb-2" data-i18n="step2PwDesc">編輯 local.d/worker-controller.inc 填入雜湊並重載（免重啟容器）：</p>
                     <div class="position-relative">
-                      <pre><code># 1. 寫入 password "$2$...";
+                      <pre><code data-i18n="codeStep2Snippet"># 1. 寫入 password "$2$...";
 # 2. 執行即時重載：
 docker exec -it mailserver rspamadm control reload</code></pre>
                       <button class="btn btn-sm btn-outline-light btn-copy" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i></button>
@@ -356,53 +356,53 @@ docker exec -it mailserver rspamadm control reload</code></pre>
               <table class="table table-bordered table-hover table-custom align-middle">
                 <thead>
                   <tr>
-                    <th style="width: 22%;" data-i18n="thRuleType">規則類型 / 名冊名稱</th>
-                    <th style="width: 28%;" data-i18n="thTargetFile">底層名冊檔案 (Maps)</th>
-                    <th style="width: 15%;" data-i18n="thScoreAction">評分 / 動作</th>
-                    <th style="width: 35%;" data-i18n="thExample">實戰設定範例</th>
+                    <th style="width: 25%;" data-i18n="thRuleType">規則類型 / 名冊名稱</th>
+                    <th style="width: 25%;" data-i18n="thTargetFile">底層名冊檔案 (Maps)</th>
+                    <th style="width: 20%;" data-i18n="thScoreAction">評分 / 動作</th>
+                    <th style="width: 30%;" data-i18n="thExample">實戰設定範例</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong class="text-success"><i class="fa-solid fa-globe me-1"></i>網域白名單</strong><br><small class="text-muted">LOCAL_WL_DOMAIN</small></td>
+                    <td><span data-i18n="ruleDomainWl"><strong class="text-success"><i class="fa-solid fa-globe me-1"></i>網域白名單</strong></span><br><small class="text-muted">LOCAL_WL_DOMAIN</small></td>
                     <td><code>override.d/local_wl_domain.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-success">白名單放行</span></td>
+                    <td><span class="badge badge-soft badge-soft-success" data-i18n="actionDomainWl">白名單放行</span></td>
                     <td><code>google.com<br>microsoft.com<br>important-partner.com.tw</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>寄件者 Email 白名單</strong><br><small class="text-muted">LOCAL_WL_FROM</small></td>
+                    <td><span data-i18n="ruleFromWl"><strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>寄件者 Email 白名單</strong></span><br><small class="text-muted">LOCAL_WL_FROM</small></td>
                     <td><code>override.d/local_wl_from.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-success">白名單放行</span></td>
+                    <td><span class="badge badge-soft badge-soft-success" data-i18n="actionFromWl">白名單放行</span></td>
                     <td><code>boss@partner-company.com<br>vip-service@bank.com.tw</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>來源 IP / 網段白名單</strong><br><small class="text-muted">LOCAL_WL_IP</small></td>
+                    <td><span data-i18n="ruleIpWl"><strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>來源 IP / 網段白名單</strong></span><br><small class="text-muted">LOCAL_WL_IP</small></td>
                     <td><code>override.d/local_wl_ip.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-success">白名單放行</span></td>
+                    <td><span class="badge badge-soft badge-soft-success" data-i18n="actionIpWl">白名單放行</span></td>
                     <td><code>10.192.130.0/24<br>192.168.1.100<br>203.0.113.50</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>網域黑名單</strong><br><small class="text-muted">CUSTOM_BLOCK_HEADER</small></td>
+                    <td><span data-i18n="ruleDomainBl"><strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>網域黑名單</strong></span><br><small class="text-muted">CUSTOM_BLOCK_HEADER</small></td>
                     <td><code>override.d/blacklist.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-danger">+40.0 分 (隔離)</span></td>
+                    <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionDomainBl">+40.0 分 (隔離)</span></td>
                     <td><code>phishing-scam.xyz<br>spammer-network.top</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>惡意寄件者黑名單</strong><br><small class="text-muted">LOCAL_BL_FROM</small></td>
+                    <td><span data-i18n="ruleFromBl"><strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>惡意寄件者黑名單</strong></span><br><small class="text-muted">LOCAL_BL_FROM</small></td>
                     <td><code>override.d/local_bl_from.map.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-danger">+40.0 分 (隔離)</span></td>
+                    <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionFromBl">+40.0 分 (隔離)</span></td>
                     <td><code>service@fake-bank-alert.com<br>lottery-winner@promo.net</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>主旨絕對阻擋 (正則)</strong><br><small class="text-muted">W_SPAM_SUBJECT_DENY</small></td>
+                    <td><span data-i18n="ruleSubjectDeny"><strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>主旨絕對阻擋 (正則)</strong></span><br><small class="text-muted">W_SPAM_SUBJECT_DENY</small></td>
                     <td><code>override.d/w_spam_subject_deny.inc</code></td>
-                    <td><span class="badge badge-soft badge-soft-danger">+100.0 分 (絕對隔離)</span></td>
+                    <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionSubjectDeny">+100.0 分 (絕對隔離)</span></td>
                     <td><code>/線上百家樂/i<br>/發票中獎通知.*請點擊/i<br>/Bitcoin.*Transfer/i</code></td>
                   </tr>
                   <tr>
-                    <td><strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>危險副檔名 (含壓縮檔)</strong><br><small class="text-muted">BAD_ATTACHMENT</small></td>
+                    <td><span data-i18n="ruleBadExt"><strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>危險副檔名 (含壓縮檔)</strong></span><br><small class="text-muted">BAD_ATTACHMENT</small></td>
                     <td><code>local.d/bad_extensions.map</code></td>
-                    <td><span class="badge badge-soft badge-soft-warning">+15.0 分 (隔離)</span></td>
+                    <td><span class="badge badge-soft badge-soft-warning" data-i18n="actionBadExt">+15.0 分 (隔離)</span></td>
                     <td><code>exe<br>bat<br>vbs<br>scr<br>js<br>cmd<br>ps1</code></td>
                   </tr>
                 </tbody>
@@ -439,7 +439,7 @@ docker exec -it mailserver rspamadm control reload</code></pre>
                   可於 Web 控制台「Scan / Learn」貼上信件進行訓練，或透過指令批次學習：
                 </p>
                 <div class="position-relative">
-                  <pre><code># 訓練正常郵件 (Ham)
+                  <pre><code data-i18n="codeBayesSnippet"># 訓練正常郵件 (Ham)
 docker exec -it mailserver rspamc learn_ham /path/to/clean_mail.eml
 
 # 訓練垃圾郵件 (Spam)
@@ -479,6 +479,10 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
                     <td><strong data-i18n="cmdStat">查看統計與規則命中計數器</strong></td>
                     <td><code>docker exec -it mailserver rspamc stat</code></td>
                   </tr>
+                  <tr>
+                    <td><strong data-i18n="cmdSymbolsTitle">手動掃描測試單封信件</strong></td>
+                    <td><code>docker exec -it mailserver rspamc symbols &lt; /path/to/mail.eml</code></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -516,15 +520,18 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
     });
 
     // Multi-language dictionary
-    const i18n = {
+    const translations = {
       "zh-TW": {
         docTitle: "Rspamd 郵件安全防護與 Web 控制台指南 - docker-Postfix-AD",
-        navGenerator: "⚡ 線上設定產生器",
-        navArchitecture: "🏛️ 系統架構指南",
-        navRspamd: "🛡️ Rspamd 防護指南",
-        navGithub: "🐙 GitHub 專案庫",
+        navGenerator: '<i class="fa-solid fa-bolt me-1"></i>線上設定產生器',
+        navArchitecture: '<i class="fa-solid fa-landmark me-1"></i>系統架構指南',
+        navRspamd: '<i class="fa-solid fa-shield-virus me-1"></i>Rspamd 防護指南',
+        navGithub: '<i class="fa-brands fa-github me-1"></i>GitHub',
         mainTitle: "Rspamd 郵件安全防護與 Web 控制台維運指南",
         subTitle: "深度解析 Rspamd 垃圾郵件過濾、零退信安全隔離 (SPAM_EMAIL)、Web UI 線上名冊維護、危險附件深度解包與 ClamAV 防毒聯防。",
+        badgeZb: '<i class="fa-solid fa-check-circle me-1"></i>Zero-Bounce 零退信',
+        badgeClamav: '<i class="fa-solid fa-bug-slash me-1"></i>ClamAV 防毒聯防',
+        badgeMultimap: '<i class="fa-solid fa-filter me-1"></i>MultiMap 規則',
         tab1Title: "1. Web 控制台與密碼管理",
         tab2Title: "2. 零退信與 SPAM_EMAIL 隔離救援",
         tab3Title: "3. 黑白名單與規則管理 (Web UI)",
@@ -533,13 +540,19 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         sec1Intro: "Rspamd 內建全功能 Web 控制台，管理員可即時監看收發信流量、命中規則統計、動態編輯黑白名單、手動掃描測試與進行貝氏機器學習。",
         loginInfoTitle: "預設登入資訊：",
         loginUrlLabel: "網址：",
+        loginUrlNote: "若宿主機配置反向代理或 SSL，亦可為",
         loginPwLabel: "預設管理員密碼：",
         changePwTitle: "如何修改 Web 控制台管理員密碼？",
         changePwDesc: "為了資安考量，建議在生產環境中將預設密碼修改為自訂強密碼：",
+        badgeStep1: "步驟 1",
         step1PwTitle: "產生密碼加密雜湊 (Hash)",
         step1PwDesc: "在宿主機執行以下指令產生安全 PBKDF2 雜湊：",
+        badgeStep2: "步驟 2",
         step2PwTitle: "更新設定檔並即時重載",
         step2PwDesc: "編輯 local.d/worker-controller.inc 填入雜湊並重載（免重啟容器）：",
+        codeStep2Snippet: `# 1. 寫入 password "$2$...";
+# 2. 執行即時重載：
+docker exec -it mailserver rspamadm control reload`,
         sec2Header: "零退信 (Zero-Bounce) 與 SPAM_EMAIL 安全隔離救援機制",
         sec2Intro: "本專案捨棄傳統直接拒收退信（5xx Reject）的危險作法，採用「加註標頭 ➔ 靜默重定向至集中隔離信箱」的防護架構，既防止發信者探測，又能 100% 救回遭誤判的商務重要信件。",
         zbBenefitsTitle: "零退信架構兩大優勢",
@@ -548,20 +561,39 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         zbB2Title: "誤判信件 100% 可救援：",
         zbB2Desc: "重要客戶信件若因 SPF 設定問題被扣分，不會被系統丟棄或退回，而是安穩躺在隔離信箱中等待網管轉交。",
         adminRescueTitle: "網管如何找回誤判信件？",
-        rescueStep1: "在 Thunderbird、Outlook 或 Webmail 中登入 SPAM_EMAIL 信箱（例如：spam@kafeiou.pw）。",
-        rescueStep2: "檢查帶有 X-Quarantine-Reason: High spam score 的被隔離信件。",
-        rescueStep3: "直接點擊「轉寄 (Forward)」或重新發送給原收件同仁即可！",
+        rescueStep1: "在 Thunderbird、Outlook 或 Webmail 中登入 <strong><code>SPAM_EMAIL</code></strong> 信箱（例如：<code>spam@kafeiou.pw</code>）。",
+        rescueStep2: "檢查帶有 <code>X-Quarantine-Reason: High spam score</code> 的被隔離信件。",
+        rescueStep3: "直接點擊 <strong>「轉寄 (Forward)」</strong> 或重新發送給原收件同仁即可！",
         sec3Header: "黑白名單與過濾名冊維護 (Web UI 線上管理)",
-        sec3Intro: "管理員可直接在 Rspamd Web UI 的「Configuration」➔「Maps」分頁中點選名冊進行線上編輯，儲存後即時生效，無需手動修改後端文字檔案！",
+        sec3Intro: "管理員可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的「Configuration」➔「Maps」</strong> 分頁中點選名冊進行線上編輯，儲存後即時生效，無需手動修改後端文字檔案！",
         thRuleType: "規則類型 / 名冊名稱",
         thTargetFile: "底層名冊檔案 (Maps)",
         thScoreAction: "評分 / 動作",
         thExample: "實戰設定範例",
+        ruleDomainWl: '<strong class="text-success"><i class="fa-solid fa-globe me-1"></i>網域白名單</strong>',
+        actionDomainWl: "白名單放行",
+        ruleFromWl: '<strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>寄件者 Email 白名單</strong>',
+        actionFromWl: "白名單放行",
+        ruleIpWl: '<strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>來源 IP / 網段白名單</strong>',
+        actionIpWl: "白名單放行",
+        ruleDomainBl: '<strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>網域黑名單</strong>',
+        actionDomainBl: "+40.0 分 (隔離)",
+        ruleFromBl: '<strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>惡意寄件者黑名單</strong>',
+        actionFromBl: "+40.0 分 (隔離)",
+        ruleSubjectDeny: '<strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>主旨絕對阻擋 (正則)</strong>',
+        actionSubjectDeny: "+100.0 分 (絕對隔離)",
+        ruleBadExt: '<strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>危險副檔名 (含壓縮檔)</strong>',
+        actionBadExt: "+15.0 分 (隔離)",
         sec4Header: "ClamAV 防毒、貝氏學習與維運指令速查",
         clamavTitle: "ClamAV 防毒掃描聯防",
-        clamavDesc: "Rspamd 透過本機 Socket /var/run/clamd.scan/clamd.sock 直接調用 ClamAV 掃描所有來信附件。病毒碼由 freshclam 定期自動更新，防範勒索軟體與木馬入侵。",
+        clamavDesc: "Rspamd 透過本機 Socket <code>/var/run/clamd.scan/clamd.sock</code> 直接調用 ClamAV 掃描所有來信附件。病毒碼由 <code>freshclam</code> 定期自動更新，防範勒索軟體與木馬入侵。",
         bayesTitle: "貝氏分類器 (Bayes) 機器學習",
         bayesDesc: "可於 Web 控制台「Scan / Learn」貼上信件進行訓練，或透過指令批次學習：",
+        codeBayesSnippet: `# 訓練正常郵件 (Ham)
+docker exec -it mailserver rspamc learn_ham /path/to/clean_mail.eml
+
+# 訓練垃圾郵件 (Spam)
+docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml`,
         cheatSheetTitle: "管理員日常維運指令速查表",
         thGoal: "維運需求",
         thCommand: "終端機執行指令",
@@ -570,6 +602,7 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         cmdTest: "檢查 Rspamd 設定檔語法正確性",
         cmdLogs: "即時監看 Rspamd 掃描日誌",
         cmdStat: "查看統計與規則命中計數器",
+        cmdSymbolsTitle: "手動掃描測試單封信件",
         diagramQuarantine: `sequenceDiagram
     participant Sender as 外部寄件者 / 垃圾郵件
     participant Postfix as Postfix SMTP
@@ -587,12 +620,15 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
       },
       "en": {
         docTitle: "Rspamd Mail Security & Web Management Guide - docker-Postfix-AD",
-        navGenerator: "⚡ Config Generator",
-        navArchitecture: "🏛️ Architecture Guide",
-        navRspamd: "🛡️ Rspamd Security",
-        navGithub: "🐙 GitHub",
+        navGenerator: '<i class="fa-solid fa-bolt me-1"></i>Config Generator',
+        navArchitecture: '<i class="fa-solid fa-landmark me-1"></i>Architecture Guide',
+        navRspamd: '<i class="fa-solid fa-shield-virus me-1"></i>Rspamd Security',
+        navGithub: '<i class="fa-brands fa-github me-1"></i>GitHub',
         mainTitle: "Rspamd Mail Security & Web Management Guide",
         subTitle: "In-depth overview of Rspamd spam filtering, Zero-Bounce Quarantine (SPAM_EMAIL), Web UI Map management, Deep Archive Inspection, and ClamAV Antivirus integration.",
+        badgeZb: '<i class="fa-solid fa-check-circle me-1"></i>Zero-Bounce Policy',
+        badgeClamav: '<i class="fa-solid fa-bug-slash me-1"></i>ClamAV Antivirus',
+        badgeMultimap: '<i class="fa-solid fa-filter me-1"></i>MultiMap Rules',
         tab1Title: "1. Web UI & Password",
         tab2Title: "2. Zero-Bounce Quarantine",
         tab3Title: "3. Whitelist & Blacklist (Web UI)",
@@ -601,13 +637,19 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         sec1Intro: "Rspamd includes a full-featured Web UI providing real-time metrics, online rule adjustments, map maintenance, scan tests, and Bayesian machine learning tools.",
         loginInfoTitle: "Default Login Credentials:",
         loginUrlLabel: "URL:",
+        loginUrlNote: "If reverse proxy or SSL is configured on host, also available via",
         loginPwLabel: "Default Admin Password:",
         changePwTitle: "How to Change the Web UI Administrator Password?",
         changePwDesc: "For production security, it is highly recommended to change the default password to a strong custom password:",
+        badgeStep1: "Step 1",
         step1PwTitle: "Generate Password Hash",
         step1PwDesc: "Run the following command on the host to generate a secure PBKDF2 hash:",
+        badgeStep2: "Step 2",
         step2PwTitle: "Update Config & Reload",
         step2PwDesc: "Edit local.d/worker-controller.inc with the hash and reload (no container restart required):",
+        codeStep2Snippet: `# 1. Write password "$2$...";
+# 2. Reload immediately:
+docker exec -it mailserver rspamadm control reload`,
         sec2Header: "Zero-Bounce Quarantine & SPAM_EMAIL Retrieval Mechanism",
         sec2Intro: "This project adopts a 'Header Tagging ➔ Silent Quarantine' model instead of immediate 5xx Rejections. This prevents dictionary probing and ensures 100% false-positive recoverability.",
         zbBenefitsTitle: "Key Benefits of Zero-Bounce Architecture",
@@ -616,20 +658,39 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         zbB2Title: "100% False-Positive Recoverability:",
         zbB2Desc: "Legitimate emails with slight SPF issues are never dropped or bounced; they remain safely in the quarantine mailbox awaiting administrative rescue.",
         adminRescueTitle: "How Admins Rescue Quarantined Emails:",
-        rescueStep1: "Log in to the SPAM_EMAIL account (e.g. spam@kafeiou.pw) using Thunderbird, Outlook, or Webmail.",
-        rescueStep2: "Locate messages with X-Quarantine-Reason: High spam score.",
-        rescueStep3: "Click 'Forward' or 'Resend' to deliver the email to the original recipient!",
+        rescueStep1: "Log in to the <strong><code>SPAM_EMAIL</code></strong> account (e.g. <code>spam@kafeiou.pw</code>) using Thunderbird, Outlook, or Webmail.",
+        rescueStep2: "Locate messages with <code>X-Quarantine-Reason: High spam score</code>.",
+        rescueStep3: "Click <strong>'Forward'</strong> or 'Resend' to deliver the email to the original recipient!",
         sec3Header: "Whitelists & Blacklists Management (Web UI)",
-        sec3Intro: "Admins can manage map lists directly via the Rspamd Web UI under 'Configuration' ➔ 'Maps'. Changes take effect immediately upon saving!",
+        sec3Intro: "Admins can manage map lists directly via the <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) under 'Configuration' ➔ 'Maps'</strong>. Changes take effect immediately upon saving!",
         thRuleType: "Rule Type / Map Name",
         thTargetFile: "Underlying Map File",
         thScoreAction: "Score / Action",
         thExample: "Practical Configuration Example",
+        ruleDomainWl: '<strong class="text-success"><i class="fa-solid fa-globe me-1"></i>Domain Whitelist</strong>',
+        actionDomainWl: "Whitelisted",
+        ruleFromWl: '<strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>Sender Email Whitelist</strong>',
+        actionFromWl: "Whitelisted",
+        ruleIpWl: '<strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>IP / Subnet Whitelist</strong>',
+        actionIpWl: "Whitelisted",
+        ruleDomainBl: '<strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>Domain Blacklist</strong>',
+        actionDomainBl: "+40.0 pts (Quarantine)",
+        ruleFromBl: '<strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>Sender Blacklist</strong>',
+        actionFromBl: "+40.0 pts (Quarantine)",
+        ruleSubjectDeny: '<strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Subject Deny (Regex)</strong>',
+        actionSubjectDeny: "+100.0 pts (Absolute Quarantine)",
+        ruleBadExt: '<strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>Dangerous Extensions (Deep Archive)</strong>',
+        actionBadExt: "+15.0 pts (Quarantine)",
         sec4Header: "ClamAV Antivirus, Bayes Learning & Command Cheatsheet",
         clamavTitle: "ClamAV Antivirus Inspection",
-        clamavDesc: "Rspamd calls ClamAV via local socket /var/run/clamd.scan/clamd.sock to scan all incoming attachments. Signatures are automatically updated by freshclam.",
+        clamavDesc: "Rspamd calls ClamAV via local socket <code>/var/run/clamd.scan/clamd.sock</code> to scan all incoming attachments. Signatures are automatically updated by <code>freshclam</code>.",
         bayesTitle: "Bayesian Classifier Machine Learning",
         bayesDesc: "Paste raw EML content into the Web UI 'Scan / Learn' tab, or train in batch via CLI:",
+        codeBayesSnippet: `# Learn Clean Email (Ham)
+docker exec -it mailserver rspamc learn_ham /path/to/clean_mail.eml
+
+# Learn Spam Email (Spam)
+docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml`,
         cheatSheetTitle: "Administrator Operational Cheatsheet",
         thGoal: "Operational Goal",
         thCommand: "Terminal Command",
@@ -638,6 +699,7 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         cmdTest: "Validate Rspamd configuration syntax",
         cmdLogs: "Tail live Rspamd scan logs",
         cmdStat: "View statistics and symbol hit counters",
+        cmdSymbolsTitle: "Manually scan and inspect a single EML file",
         diagramQuarantine: `sequenceDiagram
     participant Sender as External Sender / Spammer
     participant Postfix as Postfix SMTP
@@ -655,12 +717,15 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
       },
       "zh-CN": {
         docTitle: "Rspamd 邮件安全防护与 Web 控制台运维指南 - docker-Postfix-AD",
-        navGenerator: "⚡ 在线配置生成器",
-        navArchitecture: "🏛️ 系统架构指南",
-        navRspamd: "🛡️ Rspamd 防护指南",
-        navGithub: "🐙 GitHub 项目库",
+        navGenerator: '<i class="fa-solid fa-bolt me-1"></i>在线配置生成器',
+        navArchitecture: '<i class="fa-solid fa-landmark me-1"></i>系统架构指南',
+        navRspamd: '<i class="fa-solid fa-shield-virus me-1"></i>Rspamd 防护指南',
+        navGithub: '<i class="fa-brands fa-github me-1"></i>GitHub',
         mainTitle: "Rspamd 邮件安全防护与 Web 控制台运维指南",
         subTitle: "深度解析 Rspamd 垃圾邮件过滤、零退信安全隔离 (SPAM_EMAIL)、Web UI 在线名册维护、危险附件深度解包与 ClamAV 防病毒联防。",
+        badgeZb: '<i class="fa-solid fa-check-circle me-1"></i>Zero-Bounce 零退信',
+        badgeClamav: '<i class="fa-solid fa-bug-slash me-1"></i>ClamAV 防病毒联防',
+        badgeMultimap: '<i class="fa-solid fa-filter me-1"></i>MultiMap 规则',
         tab1Title: "1. Web 控制台与密码管理",
         tab2Title: "2. 零退信与 SPAM_EMAIL 隔离救援",
         tab3Title: "3. 黑白名单与规则管理 (Web UI)",
@@ -669,13 +734,19 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         sec1Intro: "Rspamd 内置全功能 Web 控制台，管理员可实时监控收发信流量、命中规则统计、动态编辑黑白名单、手动扫描测试与进行贝叶斯机器学习。",
         loginInfoTitle: "默认登录信息：",
         loginUrlLabel: "网址：",
+        loginUrlNote: "若宿主机配置反向代理或 SSL，亦可为",
         loginPwLabel: "默认管理员密码：",
         changePwTitle: "如何修改 Web 控制台管理员密码？",
         changePwDesc: "为了安全起见，建议在生产环境中将默认密码修改为自定义强密码：",
+        badgeStep1: "步骤 1",
         step1PwTitle: "生成密码加密哈希 (Hash)",
         step1PwDesc: "在宿主机执行以下指令生成安全 PBKDF2 哈希：",
+        badgeStep2: "步骤 2",
         step2PwTitle: "更新配置文件并实时重载",
         step2PwDesc: "编辑 local.d/worker-controller.inc 填入哈希并重载（免重启容器）：",
+        codeStep2Snippet: `# 1. 写入 password "$2$...";
+# 2. 执行即时重载：
+docker exec -it mailserver rspamadm control reload`,
         sec2Header: "零退信 (Zero-Bounce) 与 SPAM_EMAIL 安全隔离救援机制",
         sec2Intro: "本专案放弃传统直接拒收退信（5xx Reject）的危险做法，采用“加注标头 ➔ 静默重定向至集中隔离邮箱”的防护架构，既防止发信者探测，又能 100% 救回遭误判的商务重要邮件。",
         zbBenefitsTitle: "零退信架构两大优势",
@@ -684,20 +755,39 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         zbB2Title: "误判邮件 100% 可救援：",
         zbB2Desc: "重要客户邮件若因 SPF 设置问题被扣分，不会被系统丢弃或退回，而是安稳躺在隔离邮箱中等待网管转交。",
         adminRescueTitle: "网管如何找回误判邮件？",
-        rescueStep1: "在 Thunderbird、Outlook 或 Webmail 中登录 SPAM_EMAIL 邮箱（例如：spam@kafeiou.pw）。",
-        rescueStep2: "检查带有 X-Quarantine-Reason: High spam score 的被隔离邮件。",
-        rescueStep3: "直接点击“转发 (Forward)”或重新发送给原收件同仁即可！",
+        rescueStep1: "在 Thunderbird、Outlook 或 Webmail 中登录 <strong><code>SPAM_EMAIL</code></strong> 邮箱（例如：<code>spam@kafeiou.pw</code>）。",
+        rescueStep2: "检查带有 <code>X-Quarantine-Reason: High spam score</code> 的被隔离邮件。",
+        rescueStep3: "直接点击 <strong>“转发 (Forward)”</strong> 或重新发送给原收件同仁即可！",
         sec3Header: "黑白名单与过滤名册维护 (Web UI 在线管理)",
-        sec3Intro: "管理员可直接在 Rspamd Web UI 的“Configuration”➔“Maps”分页中点击名册进行在线编辑，保存后实时生效，无需手动修改后端文本文件！",
+        sec3Intro: "管理员可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的“Configuration”➔“Maps”</strong> 分页中点击名册进行在线编辑，保存后实时生效，无需手动修改后端文本文件！",
         thRuleType: "规则类型 / 名册名称",
         thTargetFile: "底层名册文件 (Maps)",
         thScoreAction: "评分 / 动作",
         thExample: "实战配置范例",
+        ruleDomainWl: '<strong class="text-success"><i class="fa-solid fa-globe me-1"></i>域名白名单</strong>',
+        actionDomainWl: "白名单放行",
+        ruleFromWl: '<strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>发件人 Email 白名单</strong>',
+        actionFromWl: "白名单放行",
+        ruleIpWl: '<strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>来源 IP / 网段白名单</strong>',
+        actionIpWl: "白名单放行",
+        ruleDomainBl: '<strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>域名黑名单</strong>',
+        actionDomainBl: "+40.0 分 (隔离)",
+        ruleFromBl: '<strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>恶意发件人黑名单</strong>',
+        actionFromBl: "+40.0 分 (隔离)",
+        ruleSubjectDeny: '<strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>主旨绝对阻挡 (正则)</strong>',
+        actionSubjectDeny: "+100.0 分 (绝对隔离)",
+        ruleBadExt: '<strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>危险后缀名 (含压缩包)</strong>',
+        actionBadExt: "+15.0 分 (隔离)",
         sec4Header: "ClamAV 防病毒、贝叶斯学习与运维指令速查",
         clamavTitle: "ClamAV 防病毒扫描联防",
-        clamavDesc: "Rspamd 通过本地 Socket /var/run/clamd.scan/clamd.sock 直接调用 ClamAV 扫描所有来信附件。病毒库由 freshclam 定期自动更新。",
+        clamavDesc: "Rspamd 通过本地 Socket <code>/var/run/clamd.scan/clamd.sock</code> 直接调用 ClamAV 扫描所有来信附件。病毒库由 <code>freshclam</code> 定期自动更新。",
         bayesTitle: "贝叶斯分类器 (Bayes) 机器学习",
         bayesDesc: "可于 Web 控制台“Scan / Learn”粘贴邮件进行训练，或通过指令批量学习：",
+        codeBayesSnippet: `# 训练正常邮件 (Ham)
+docker exec -it mailserver rspamc learn_ham /path/to/clean_mail.eml
+
+# 训练垃圾邮件 (Spam)
+docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml`,
         cheatSheetTitle: "管理员日常运维指令速查表",
         thGoal: "运维需求",
         thCommand: "终端执行指令",
@@ -706,6 +796,7 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         cmdTest: "检查 Rspamd 配置文件语法正确性",
         cmdLogs: "实时监控 Rspamd 扫描日志",
         cmdStat: "查看统计与规则命中计数器",
+        cmdSymbolsTitle: "手动扫描测试单封邮件",
         diagramQuarantine: `sequenceDiagram
     participant Sender as 外部发件人 / 垃圾邮件
     participant Postfix as Postfix SMTP
@@ -723,12 +814,15 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
       },
       "vi": {
         docTitle: "Hướng Dẫn Bảo Mật Rspamd & Web UI - docker-Postfix-AD",
-        navGenerator: "⚡ Công cụ tạo cấu hình",
-        navArchitecture: "🏛️ Kiến Trúc Hệ Thống",
-        navRspamd: "🛡️ Hướng dẫn Rspamd",
-        navGithub: "🐙 GitHub",
+        navGenerator: '<i class="fa-solid fa-bolt me-1"></i>Công cụ tạo cấu hình',
+        navArchitecture: '<i class="fa-solid fa-landmark me-1"></i>Kiến Trúc Hệ Thống',
+        navRspamd: '<i class="fa-solid fa-shield-virus me-1"></i>Hướng dẫn Rspamd',
+        navGithub: '<i class="fa-brands fa-github me-1"></i>GitHub',
         mainTitle: "Hướng Dẫn Bảo Mật Email & Quản Trị Rspamd Web UI",
         subTitle: "Tổng quan chuyên sâu về lọc thư rác Rspamd, Cách ly không trả thư (SPAM_EMAIL), quản lý danh sách qua Web UI, giải nén tệp đính kèm và diệt virus ClamAV.",
+        badgeZb: '<i class="fa-solid fa-check-circle me-1"></i>Chính sách Zero-Bounce',
+        badgeClamav: '<i class="fa-solid fa-bug-slash me-1"></i>Diệt virus ClamAV',
+        badgeMultimap: '<i class="fa-solid fa-filter me-1"></i>Quy tắc MultiMap',
         tab1Title: "1. Web UI & Đổi Mật Khẩu",
         tab2Title: "2. Cách Ly SPAM_EMAIL",
         tab3Title: "3. Danh Sách Trắng/Đen (Web UI)",
@@ -737,13 +831,19 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         sec1Intro: "Rspamd tích hợp sẵn Web UI hiện đại cung cấp giám sát thời gian thực, điều chỉnh quy tắc, quản lý danh sách và công cụ học máy Bayes.",
         loginInfoTitle: "Thông tin đăng nhập mặc định:",
         loginUrlLabel: "Địa chỉ:",
+        loginUrlNote: "Nếu máy chủ cấu hình Reverse Proxy hoặc SSL, cũng có thể truy cập qua",
         loginPwLabel: "Mật khẩu quản trị mặc định:",
         changePwTitle: "Làm thế nào để đổi mật khẩu Web UI?",
         changePwDesc: "Để đảm bảo an toàn, nên đổi mật khẩu mặc định thành mật khẩu mạnh trên máy chủ sản xuất:",
+        badgeStep1: "Bước 1",
         step1PwTitle: "Tạo mã băm mật khẩu (Hash)",
         step1PwDesc: "Chạy lệnh sau trên máy chủ để tạo mã băm PBKDF2 an toàn:",
+        badgeStep2: "Bước 2",
         step2PwTitle: "Cập nhật cấu hình & Nạp lại",
         step2PwDesc: "Sửa local.d/worker-controller.inc và nạp lại cấu hình (không cần khởi động lại container):",
+        codeStep2Snippet: `# 1. Nhập password "$2$...";
+# 2. Nạp lại cấu hình ngay:
+docker exec -it mailserver rspamadm control reload`,
         sec2Header: "Cơ Chế Cách Ly Không Trả Thư & Khôi Phục SPAM_EMAIL",
         sec2Intro: "Dự án sử dụng mô hình gắn thẻ và chuyển hướng cách ly thay vì từ chối 5xx Reject trực tiếp, giúp chống dò quét và đảm bảo 100% khả năng cứu thư nhận diện nhầm.",
         zbBenefitsTitle: "Lợi ích nổi bật của Zero-Bounce",
@@ -752,20 +852,39 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         zbB2Title: "Khôi phục thư nhận diện nhầm 100%:",
         zbB2Desc: "Thư quan trọng nếu bị trừ điểm do lỗi SPF vẫn được lưu an toàn trong hòm thư cách ly.",
         adminRescueTitle: "Cách quản trị viên khôi phục thư:",
-        rescueStep1: "Đăng nhập hòm thư SPAM_EMAIL (ví dụ: spam@kafeiou.pw) trên Thunderbird, Outlook hoặc Webmail.",
-        rescueStep2: "Tìm thư có ghi chú X-Quarantine-Reason: High spam score.",
-        rescueStep3: "Nhấn 'Chuyển tiếp (Forward)' hoặc gửi lại cho nhân viên nhận ban đầu!",
+        rescueStep1: "Đăng nhập hòm thư <strong><code>SPAM_EMAIL</code></strong> (ví dụ: <code>spam@kafeiou.pw</code>) trên Thunderbird, Outlook hoặc Webmail.",
+        rescueStep2: "Tìm thư có ghi chú <code>X-Quarantine-Reason: High spam score</code>.",
+        rescueStep3: "Nhấn <strong>'Chuyển tiếp (Forward)'</strong> hoặc gửi lại cho nhân viên nhận ban đầu!",
         sec3Header: "Quản Lý Danh Sách Trắng/Đen (Trực Tuyến Trên Web UI)",
-        sec3Intro: "Quản trị viên chỉnh sửa danh sách trực tiếp trong 'Configuration' ➔ 'Maps' trên Web UI. Thay đổi có hiệu lực ngay sau khi lưu!",
+        sec3Intro: "Quản trị viên chỉnh sửa danh sách trực tiếp trong <strong>'Configuration' ➔ 'Maps' trên Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>)</strong>. Thay đổi có hiệu lực ngay sau khi lưu!",
         thRuleType: "Loại quy tắc / Tên danh sách",
         thTargetFile: "Tệp cấu hình Maps",
         thScoreAction: "Điểm / Hành động",
         thExample: "Ví dụ cấu hình thực tế",
+        ruleDomainWl: '<strong class="text-success"><i class="fa-solid fa-globe me-1"></i>Danh sách trắng tên miền</strong>',
+        actionDomainWl: "Cho phép đi qua",
+        ruleFromWl: '<strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>Danh sách trắng Email người gửi</strong>',
+        actionFromWl: "Cho phép đi qua",
+        ruleIpWl: '<strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>Danh sách trắng IP / Dải mạng</strong>',
+        actionIpWl: "Cho phép đi qua",
+        ruleDomainBl: '<strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>Danh sách đen tên miền</strong>',
+        actionDomainBl: "+40.0 điểm (Cách ly)",
+        ruleFromBl: '<strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>Danh sách đen người gửi</strong>',
+        actionFromBl: "+40.0 điểm (Cách ly)",
+        ruleSubjectDeny: '<strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Chặn tiêu đề (Regex)</strong>',
+        actionSubjectDeny: "+100.0 điểm (Cách ly tuyệt đối)",
+        ruleBadExt: '<strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>Tệp đính kèm nguy hiểm (Tệp nén)</strong>',
+        actionBadExt: "+15.0 điểm (Cách ly)",
         sec4Header: "Diệt Virus ClamAV, Học Máy Bayes & Tra Cứu Lệnh",
         clamavTitle: "Quét Diệt Mã Độc ClamAV",
-        clamavDesc: "Rspamd gọi ClamAV qua socket /var/run/clamd.scan/clamd.sock để quét toàn bộ tệp đính kèm. Mẫu virus được freshclam cập nhật tự động.",
+        clamavDesc: "Rspamd gọi ClamAV qua socket <code>/var/run/clamd.scan/clamd.sock</code> để quét toàn bộ tệp đính kèm. Mẫu virus được <code>freshclam</code> cập nhật tự động.",
         bayesTitle: "Học Máy Bộ Phân Loại Bayes",
         bayesDesc: "Dán mã nguồn thư EML vào tab 'Scan / Learn' trên Web UI hoặc huấn luyện bằng lệnh CLI:",
+        codeBayesSnippet: `# Huấn luyện thư sạch (Ham)
+docker exec -it mailserver rspamc learn_ham /path/to/clean_mail.eml
+
+# Huấn luyện thư rác (Spam)
+docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml`,
         cheatSheetTitle: "Bảng Tra Cứu Lệnh Quản Trị Nhanh",
         thGoal: "Mục đích",
         thCommand: "Lệnh thực thi",
@@ -774,6 +893,7 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
         cmdTest: "Kiểm tra cú pháp cấu hình",
         cmdLogs: "Xem trực tiếp nhật ký quét",
         cmdStat: "Xem bộ đếm thống kê quy tắc",
+        cmdSymbolsTitle: "Quét kiểm tra thử 1 tệp EML",
         diagramQuarantine: `sequenceDiagram
     participant Sender as Người gửi ngoài / Thư rác
     participant Postfix as Postfix SMTP
@@ -791,45 +911,53 @@ docker exec -it mailserver rspamc learn_spam /path/to/spam_mail.eml</code></pre>
       }
     };
 
+    var currentSeq = 0;
+
+    async function renderDiagram(containerId, chartDefinition) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      var mySeq = ++currentSeq;
+      const uniqueId = "mermaid-quarantine-" + mySeq + "-" + Math.floor(Math.random() * 10000);
+      try {
+        const { svg } = await mermaid.render(uniqueId, chartDefinition);
+        if (mySeq === currentSeq) {
+          el.innerHTML = svg;
+        }
+      } catch (err) {
+        console.error("Mermaid render error:", err);
+      }
+    }
+
     function applyLanguage(lang) {
-      const dict = i18n[lang] || i18n["zh-TW"];
+      if (!translations[lang]) lang = "zh-TW";
+      document.documentElement.lang = lang;
+      const dict = translations[lang];
+
       $("[data-i18n]").each(function() {
-        const key = $(this).data("i18n");
+        const key = $(this).attr("data-i18n");
         if (dict[key]) {
           $(this).html(dict[key]);
         }
       });
       
-      // Render Mermaid Diagram
+      $("#selectLang").val(lang);
       renderDiagram("diagram-quarantine-container", dict.diagramQuarantine);
-      localStorage.setItem("user_lang", lang);
     }
 
-    function renderDiagram(containerId, chartDefinition) {
-      const el = document.getElementById(containerId);
-      if (!el) return;
-      const uniqueId = "mermaid-" + Math.floor(Math.random() * 10000);
-      mermaid.render(uniqueId, chartDefinition).then(({ svg }) => {
-        el.innerHTML = svg;
-      }).catch(err => {
-        console.error("Mermaid render error:", err);
-      });
+    function changeLanguage(lang) {
+      localStorage.setItem("userLanguage", lang);
+      applyLanguage(lang);
     }
 
     $(document).ready(function() {
-      const savedLang = localStorage.getItem("user_lang") || "zh-TW";
-      $("#langSelect").val(savedLang);
+      const savedLang = localStorage.getItem("userLanguage") || "zh-TW";
       applyLanguage(savedLang);
 
-      $("#langSelect").on("change", function() {
-        applyLanguage($(this).val());
-      });
-
-      // Re-render Mermaid when tab is shown
+      // Re-render Mermaid when Tab 2 is shown
       $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         if (e.target.id === 'tab-quarantine-btn') {
-          const currentLang = $("#langSelect").val() || "zh-TW";
-          const dict = i18n[currentLang] || i18n["zh-TW"];
+          const currentLang = $("#selectLang").val() || "zh-TW";
+          const dict = translations[currentLang] || translations["zh-TW"];
           renderDiagram("diagram-quarantine-container", dict.diagramQuarantine);
         }
       });
