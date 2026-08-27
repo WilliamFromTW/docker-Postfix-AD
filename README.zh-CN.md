@@ -142,8 +142,13 @@ docker run --name mailserver \
 
 ---
 
+## 🛡️ Rspamd 邮件安全防护与 Web 控制台指南
+如需了解 Rspamd 垃圾邮件过滤、Web 控制台操作（`http://<IP>:11334`，默认密码 `kafeiou.pw`）、零退信隔离（`SPAM_EMAIL` 救援）、黑白名单名册与危险附件过滤，请参阅专属性的 **[Rspamd 防护指南 (RSPAMD.zh-CN.md)](RSPAMD.zh-CN.md)**。
+
+---
+
 ## 🏛️ 深度系统架构与技术运维指南
-如需深入了解 Active Directory 配置细节、邮件安全过滤流程图与 DKIM/Let's Encrypt 设置手册，请参阅专属的 **[系统架构指南 (ARCHITECTURE.zh-CN.md)](ARCHITECTURE.zh-CN.md)**：
+如需深入了解 Active Directory 整合细节、邮件安全过滤流程图与 DKIM/Let's Encrypt 配置手册，请参阅专属的 **[系统架构指南 (ARCHITECTURE.zh-CN.md)](ARCHITECTURE.zh-CN.md)**：
 - **Active Directory LDAP 配置规范**：账号小写规范、`mail` 属性、`ALIASES` 组别名、`local_only` 限制。
 - **邮件过滤与安全管道**：Postfix + Rspamd + ClamAV + OpenDKIM 处理流程。
 - **SSL/TLS 证书架构**：测试自签证书自动补位机制 (`make_fake_cert.sh`) 与宿主机 Certbot DNS-01 申请教学。

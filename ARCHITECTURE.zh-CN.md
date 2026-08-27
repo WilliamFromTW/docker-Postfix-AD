@@ -87,6 +87,8 @@ sequenceDiagram
   将生成的哈希字符串填入 `/etc/rspamd/local.d/worker-controller.inc`。
 - **垃圾邮件转发 (`SPAM_EMAIL`)**:
   当设置了 `SPAM_EMAIL` 变量时，被判定为垃圾邮件隔离的信件会自动转发至指定邮箱（如 `spam@smile.taipei`）。
+- **完整 Rspamd 配置指南**:
+  关于黑白名单、关键字正则、危险后缀名与隔离邮件救援完整范例，请参阅专属的 **[Rspamd 防护指南 (RSPAMD.zh-CN.md)](RSPAMD.zh-CN.md)**。
 
 ---
 

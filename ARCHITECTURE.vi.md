@@ -87,6 +87,8 @@ sequenceDiagram
   Dán chuỗi băm nhận được vào tệp `/etc/rspamd/local.d/worker-controller.inc`.
 - **Chuyển tiếp thư rác (`SPAM_EMAIL`)**:
   Khi cấu hình biến `SPAM_EMAIL`, các email bị đánh dấu cách ly sẽ tự động được chuyển tiếp đến hòm thư chỉ định (ví dụ: `spam@smile.taipei`).
+- **Hướng Dẫn Rspamd Toàn Diện**:
+  Để biết chi tiết về danh sách trắng/đen, từ khóa biểu thức chính quy, tệp nén độc hại và khôi phục thư cách ly, vui lòng xem **[Hướng dẫn Rspamd (RSPAMD.vi.md)](RSPAMD.vi.md)**.
 
 ---
 

@@ -87,6 +87,8 @@ sequenceDiagram
   Paste the output hash into `/etc/rspamd/local.d/worker-controller.inc`.
 - **Spam Redirection (`SPAM_EMAIL`)**:
   When `SPAM_EMAIL` is configured, emails classified as spam with quarantine action will be automatically redirected to the specified mailbox (e.g., `spam@example.com`).
+- **Comprehensive Rspamd Guide**:
+  For detailed instructions on whitelist/blacklist maps, regex keywords, dangerous extensions, and false-positive rescue, refer to **[Rspamd Security Guide (RSPAMD.md)](RSPAMD.md)**.
 
 ---
 

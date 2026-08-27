@@ -87,6 +87,8 @@ sequenceDiagram
   將產出的雜湊字串貼入 `/etc/rspamd/local.d/worker-controller.inc`。
 - **垃圾郵件轉發 (`SPAM_EMAIL`)**:
   當設定了 `SPAM_EMAIL` 變數時，被判定為垃圾郵件隔離的信件會自動轉發至指定信箱（如 `spam@smile.taipei`）。
+- **完整 Rspamd 設定指南**:
+  關於黑白名單、關鍵字正則、危險副檔名與隔離郵件救援完整範例，請參閱專屬的 **[Rspamd 防護指南 (RSPAMD.zh-TW.md)](RSPAMD.zh-TW.md)**。
 
 ---
 

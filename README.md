@@ -142,8 +142,13 @@ docker run --name mailserver \
 
 ---
 
-## 🏛️ In-Depth Architecture & Operations Guide
-For detailed configuration guidelines and Mermaid workflow diagrams, please refer to the dedicated **[System Architecture Guide (ARCHITECTURE.md)](ARCHITECTURE.md)**:
+## 🛡️ Rspamd Security & Web Management Guide
+For detailed instructions on Rspamd spam filtering, Web UI management (`http://<IP>:11334`, default password: `kafeiou.pw`), Zero-Bounce Quarantine (`SPAM_EMAIL` false-positive rescue), online whitelist/blacklist maps, and deep archive inspection, please refer to the dedicated **[Rspamd Security Guide (RSPAMD.md)](RSPAMD.md)**.
+
+---
+
+## 🏛️ In-Depth Architecture & Maintenance Guide
+For deeper understanding of Active Directory integration details, mail security pipeline flowcharts, and DKIM/Let's Encrypt setup, please refer to the **[System Architecture Guide (ARCHITECTURE.md)](ARCHITECTURE.md)**:
 - **Active Directory LDAP Rules**: Account lowercase rule, `mail` attribute, `ALIASES` group, `local_only` restrictions.
 - **Mail Security Pipeline**: Postfix + Rspamd + ClamAV + OpenDKIM milter inspection flow.
 - **SSL/TLS Certificates**: Out-of-the-box self-signed generator (`make_fake_cert.sh`) & Host Certbot DNS-01 renewal guide.

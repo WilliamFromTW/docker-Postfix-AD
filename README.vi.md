@@ -142,8 +142,13 @@ docker run --name mailserver \
 
 ---
 
-## 🏛️ Hướng Dẫn Kỹ Thuật & Kiến Trúc Chuyên Sâu
-Để tìm hiểu chi tiết về tích hợp Active Directory, quy trình lọc thư và hướng dẫn chứng chỉ Let's Encrypt / DKIM, vui lòng xem tài liệu **[Kiến trúc hệ thống (ARCHITECTURE.vi.md)](ARCHITECTURE.vi.md)**:
+## 🛡️ Hướng Dẫn Bảo Mật Rspamd & Web UI
+Để biết chi tiết về lọc thư rác Rspamd, quản trị Web UI (`http://<IP>:11334`, mật khẩu mặc định: `kafeiou.pw`), cách ly Zero-Bounce (`SPAM_EMAIL`), danh sách trắng/đen và quét tệp đính kèm nén, vui lòng xem **[Hướng dẫn Rspamd (RSPAMD.vi.md)](RSPAMD.vi.md)**.
+
+---
+
+## 🏛️ Kiến Trúc Hệ Thống & Hướng Dẫn Kỹ Thuật
+Để tìm hiểu sâu về tích hợp Active Directory, quy trình lọc thư và thiết lập DKIM/Let's Encrypt, vui lòng tham khảo **[Hướng dẫn Kiến trúc Hệ thống (ARCHITECTURE.vi.md)](ARCHITECTURE.vi.md)**:
 - **Quy tắc cấu hình Active Directory**: Quy tắc chữ thường, thuộc tính `mail`, bí danh `ALIASES`, giới hạn `local_only`.
 - **Quy trình lọc thư & Bảo mật**: Luồng xử lý Postfix + Rspamd + ClamAV + OpenDKIM.
 - **Kiến trúc chứng chỉ SSL/TLS**: Cơ chế tự tạo chứng chỉ tự ký (`make_fake_cert.sh`) và hướng dẫn Certbot DNS-01 trên Host.
