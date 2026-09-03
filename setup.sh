@@ -165,12 +165,13 @@ if [ -f "/etc/dovecot/sieve/global/autoreply_handler.sieve" ]; then
   chown -R vmail:vmail /etc/dovecot/sieve
 fi
 
-# 導出 Ollama 設定供 Sieve 外部腳本讀取（Dovecot sieve_extprograms 預設隔離環境變數）
+# 導出 Ollama 與時區設定供 Sieve 外部腳本讀取（Dovecot sieve_extprograms 預設隔離環境變數）
 cat << EOF > /etc/dovecot/ollama.env
 OLLAMA_HOST="${OLLAMA_HOST}"
 OLLAMA_MODEL="${OLLAMA_MODEL}"
 OLLAMA_TIMEOUT="${OLLAMA_TIMEOUT:-180}"
 DEFAULT_LANG="${DEFAULT_LANG}"
+TZ="${TZ}"
 EOF
 chmod 644 /etc/dovecot/ollama.env
 

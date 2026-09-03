@@ -22,6 +22,11 @@ import urllib.request
 import urllib.error
 
 try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    ZoneInfo = None
+
+try:
     import syslog
     HAS_SYSLOG = True
 except ImportError:
@@ -41,25 +46,61 @@ def log_maillog(msg, priority=None):
             pass
     sys.stderr.write(f"handle_autoreply: {msg}\n")
 
-TZ_OFFSET_STR = "+08:00"
-TZ_SIEVE_ZONE = "+0800"
 VMAIL_BASE = "/home/vmail"
 DEFAULT_DAYS = 1
 
 def get_configured_tz():
-    tz_str = os.environ.get("TZ", "Asia/Taipei").strip()
-    if any(k in tz_str for k in ["Taipei", "Beijing", "Shanghai", "Hong_Kong", "+08", "+0800", "8"]):
-        return timezone(timedelta(hours=8))
-    elif any(k in tz_str for k in ["Vietnam", "Ho_Chi_Minh", "Bangkok", "+07", "+0700", "7"]):
-        return timezone(timedelta(hours=7))
-    elif any(k in tz_str for k in ["Tokyo", "Seoul", "+09", "+0900", "9"]):
-        return timezone(timedelta(hours=9))
-    elif any(k in tz_str for k in ["UTC", "GMT", "0"]):
-        return timezone.utc
-    try:
-        return datetime.now().astimezone().tzinfo
-    except Exception:
-        return timezone(timedelta(hours=8))
+    """
+    Natively adopts the Docker container's configured timezone (from TZ env,
+    /etc/dovecot/ollama.env, /etc/timezone, /proc/1/environ, or /etc/localtime).
+    Supports all IANA timezones and numeric offsets with zero hardcoding.
+    """
+    tz_val = os.environ.get("TZ", "").strip()
+
+    if not tz_val:
+        for fpath in ["/etc/dovecot/ollama.env", "/etc/timezone"]:
+            if os.path.exists(fpath):
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if line.startswith("TZ="):
+                                tz_val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                break
+                            elif line and not line.startswith("#") and fpath == "/etc/timezone":
+                                tz_val = line
+                                break
+                except Exception:
+                    pass
+            if tz_val:
+                break
+
+    if not tz_val and os.path.exists("/proc/1/environ"):
+        try:
+            with open("/proc/1/environ", "rb") as f:
+                content = f.read()
+            for item in content.split(b"\0"):
+                if item.startswith(b"TZ="):
+                    tz_val = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
+                    break
+        except Exception:
+            pass
+
+    if tz_val:
+        if ZoneInfo:
+            try:
+                return ZoneInfo(tz_val)
+            except Exception:
+                pass
+        m = re.match(r"^(?:UTC|GMT)?([+-])(\d{1,2})(?::?(\d{2}))?$", tz_val, re.IGNORECASE)
+        if m:
+            sign = 1 if m.group(1) == "+" else -1
+            hours = int(m.group(2))
+            mins = int(m.group(3)) if m.group(3) else 0
+            return timezone(sign * timedelta(hours=hours, minutes=mins))
+
+    # Natively use container's local timezone
+    return datetime.now().astimezone().tzinfo
 
 def get_ollama_active_model(host):
     """
