@@ -107,9 +107,9 @@ def load_ollama_config():
     if not conf["OLLAMA_MODEL"]:
         conf["OLLAMA_MODEL"] = "qwen2.5:7b"
     try:
-        timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 5.0
+        timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 180.0
     except Exception:
-        timeout = 5.0
+        timeout = 180.0
 
     return conf["OLLAMA_HOST"], conf["OLLAMA_MODEL"], timeout, conf["DEFAULT_LANG"]
 

@@ -77,7 +77,7 @@ services:
       # - MY_NETWORKS=192.168.1.0/24
       # - OLLAMA_HOST=http://192.168.1.100:11434  # 區網獨立 GPU Ollama 伺服器 (支援 4 語系口語請假)
       # - OLLAMA_MODEL=qwen2.5:7b
-      # - OLLAMA_TIMEOUT=5
+      # - OLLAMA_TIMEOUT=180
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail
@@ -110,14 +110,14 @@ docker compose up -d
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(未設定)* | Ollama 伺服器端點，例如 `http://10.192.130.184:11434`。未設定則停用 AI 功能。 |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **欲更換的模型名稱**。可填入伺服器已下載之模型（如 `qwen2.5:3b`、`qwen3.6:27b-q8_0`）。 |
-| `OLLAMA_TIMEOUT` | `5` | AI 推論超時時間（秒）。若使用 27B 等超大模型或純 CPU 運算，建議加大至 `60`~`180`。 |
+| `OLLAMA_TIMEOUT` | `180` | AI 推論超時時間（秒，預設 180 秒）。若使用 GPU 推論通常 3~5 秒即可完成，若為純 CPU 或 27B 大模型建議保留預設 180 秒。 |
 
 **更換模型範例**：
 ```yaml
     environment:
       - OLLAMA_HOST=http://10.192.130.184:11434
-      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- 直接在此填入欲使用的模型名稱
-      - OLLAMA_TIMEOUT=150             # 大模型推論耗時較長，調大超時保護避免 timeout
+      - OLLAMA_MODEL=qwen3.8-200k:latest   # <-- 直接在此填入欲使用的模型名稱
+      - OLLAMA_TIMEOUT=180                # 預設 180 秒超時保護
 ```
 修改存檔後，執行 `docker compose up -d` 即可立即套用新模型！
 
@@ -159,7 +159,7 @@ docker run --name mailserver \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \
-  -e OLLAMA_TIMEOUT="5" \
+  -e OLLAMA_TIMEOUT=180 \
   -d --restart always --net=host \
   inmethod/docker-postfix-ad:latest
 ```

@@ -77,7 +77,7 @@ services:
       # - MY_NETWORKS=192.168.1.0/24
       # - OLLAMA_HOST=http://192.168.1.100:11434  # LAN GPU Ollama server for natural language leave
       # - OLLAMA_MODEL=qwen2.5:7b
-      # - OLLAMA_TIMEOUT=5
+      # - OLLAMA_TIMEOUT=180
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail
@@ -110,14 +110,14 @@ To enable natural language leave requests or switch AI models (e.g. `qwen2.5:7b`
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`). Leaving empty disables AI. |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use**. Set to any model installed on your Ollama server (e.g. `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
-| `OLLAMA_TIMEOUT` | `5` | Request timeout in seconds. For 27B+ models or pure CPU inference, increase to `60`~`180`. |
+| `OLLAMA_TIMEOUT` | `180` | Request timeout in seconds (default: 180s). Usually 3~5s on GPU; 180s recommended for CPU or 27B+ models. |
 
 **Example configuration (`docker-compose.yaml`)**:
 ```yaml
     environment:
       - OLLAMA_HOST=http://10.192.130.184:11434
-      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- Set desired model name here
-      - OLLAMA_TIMEOUT=150             # Increase timeout if using large models on CPU
+      - OLLAMA_MODEL=qwen3.8-200k:latest   # <-- Set desired model name here
+      - OLLAMA_TIMEOUT=180                # Default 180s timeout protection
 ```
 After saving, run `docker compose up -d` to immediately apply changes.
 
@@ -159,7 +159,7 @@ docker run --name mailserver \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \
-  -e OLLAMA_TIMEOUT="5" \
+  -e OLLAMA_TIMEOUT="180" \
   -d --restart always --net=host \
   inmethod/docker-postfix-ad:latest
 ```

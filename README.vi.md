@@ -77,7 +77,7 @@ services:
       # - MY_NETWORKS=192.168.1.0/24
       # - OLLAMA_HOST=http://192.168.1.100:11434  # Máy chủ GPU Ollama LAN (hỗ trợ xin nghỉ phép bằng văn nói)
       # - OLLAMA_MODEL=qwen2.5:7b
-      # - OLLAMA_TIMEOUT=5
+      # - OLLAMA_TIMEOUT=180
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail
@@ -110,14 +110,14 @@ Nếu bạn muốn kích hoạt tính năng xin nghỉ bằng văn nói hoặc t
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Chưa cấu hình)* | Địa chỉ máy chủ Ollama, ví dụ: `http://10.192.130.184:11434`. Để trống sẽ tắt AI. |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **Tên mô hình muốn sử dụng**. Điền tên mô hình đã cài đặt trên máy chủ Ollama (ví dụ: `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
-| `OLLAMA_TIMEOUT` | `5` | Thời gian chờ suy luận AI (giây). Nếu dùng mô hình lớn (như 27B) hoặc chạy bằng CPU, nên tăng lên `60`~`180`. |
+| `OLLAMA_TIMEOUT` | `180` | Thời gian chờ suy luận AI (giây, mặc định: 180s). Nếu dùng GPU thường chỉ mất 3~5 giây, nếu chạy bằng CPU hoặc mô hình 27B+ nên giữ mặc định 180 giây. |
 
 **Ví dụ cấu hình (`docker-compose.yaml`)**:
 ```yaml
     environment:
       - OLLAMA_HOST=http://10.192.130.184:11434
-      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- Điền tên mô hình bạn muốn dùng tại đây
-      - OLLAMA_TIMEOUT=150             # Mô hình lớn chạy lâu hơn, nên tăng thời gian timeout
+      - OLLAMA_MODEL=qwen3.8-200k:latest   # <-- Điền tên mô hình bạn muốn dùng tại đây
+      - OLLAMA_TIMEOUT=180                # Bảo vệ timeout mặc định 180 giây
 ```
 Sau khi lưu, chạy `docker compose up -d` để áp dụng ngay lập tức!
 
@@ -128,25 +128,18 @@ Sau khi lưu, chạy `docker compose up -d` để áp dụng ngay lập tức!
 1. Tạo các Volume lưu trữ:
 ```bash
 docker volume create mailserver_vmail
+docker volume create mailserver_opendkim
 docker volume create mailserver_postfix
 docker volume create mailserver_dovecot
-docker volume create mailserver_log
-docker volume create mailserver_opendkim
 docker volume create mailserver_rspamd_conf
 docker volume create mailserver_rspamd_var
+docker volume create mailserver_log
 ```
 
 2. Khởi chạy container:
 ```bash
-docker run --name mailserver \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v mailserver_vmail:/home/vmail \
-  -v mailserver_opendkim:/etc/opendkim \
-  -v mailserver_postfix:/etc/postfix \
-  -v mailserver_dovecot:/etc/dovecot \
-  -v mailserver_rspamd_conf:/etc/rspamd \
-  -v mailserver_rspamd_var:/var/lib/rspamd \
-  -v mailserver_log:/var/log \
+docker run -d \
+  --name mailserver \
   -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
   -e DOMAIN_NAME="test.com" \
   -e HOST_NAME="mail.test.com" \
@@ -159,7 +152,7 @@ docker run --name mailserver \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \
-  -e OLLAMA_TIMEOUT="5" \
+  -e OLLAMA_TIMEOUT="180" \
   -d --restart always --net=host \
   inmethod/docker-postfix-ad:latest
 ```

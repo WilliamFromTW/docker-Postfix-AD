@@ -77,7 +77,7 @@ services:
       # - MY_NETWORKS=192.168.1.0/24
       # - OLLAMA_HOST=http://192.168.1.100:11434  # 局域网独立 GPU Ollama 服务器 (支持 4 语系口语请假)
       # - OLLAMA_MODEL=qwen2.5:7b
-      # - OLLAMA_TIMEOUT=5
+      # - OLLAMA_TIMEOUT=180
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail
@@ -110,14 +110,14 @@ docker compose up -d
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(未配置)* | Ollama 服务器端点，例如 `http://10.192.130.184:11434`。未配置则停用 AI 功能。 |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **欲更换的模型名称**。可填入服务器已下载之模型（如 `qwen2.5:3b`、`qwen3.6:27b-q8_0`）。 |
-| `OLLAMA_TIMEOUT` | `5` | AI 推理超时时间（秒）。若使用 27B 等超大模型或纯 CPU 运算，建议加大至 `60`~`180`。 |
+| `OLLAMA_TIMEOUT` | `180` | AI 推理超时时间（秒，默认 180 秒）。若使用 GPU 推理通常 3~5 秒即可完成，若为纯 CPU 或 27B 大模型建议保留默认 180 秒。 |
 
 **更换模型范例**：
 ```yaml
     environment:
       - OLLAMA_HOST=http://10.192.130.184:11434
-      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- 直接在此填入欲使用的模型名称
-      - OLLAMA_TIMEOUT=150             # 大模型推理耗时较长，调大超时保护避免 timeout
+      - OLLAMA_MODEL=qwen3.8-200k:latest   # <-- 直接在此填入欲使用的模型名称
+      - OLLAMA_TIMEOUT=180                # 默认 180 秒超时保护
 ```
 修改保存后，执行 `docker compose up -d` 即可立即套用新模型！
 
@@ -138,15 +138,8 @@ docker volume create mailserver_rspamd_var
 
 2. 启动容器：
 ```bash
-docker run --name mailserver \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v mailserver_vmail:/home/vmail \
-  -v mailserver_opendkim:/etc/opendkim \
-  -v mailserver_postfix:/etc/postfix \
-  -v mailserver_dovecot:/etc/dovecot \
-  -v mailserver_rspamd_conf:/etc/rspamd \
-  -v mailserver_rspamd_var:/var/lib/rspamd \
-  -v mailserver_log:/var/log \
+docker run -d \
+  --name mailserver \
   -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
   -e DOMAIN_NAME="test.com" \
   -e HOST_NAME="mail.test.com" \
@@ -159,7 +152,7 @@ docker run --name mailserver \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \
-  -e OLLAMA_TIMEOUT="5" \
+  -e OLLAMA_TIMEOUT="180" \
   -d --restart always --net=host \
   inmethod/docker-postfix-ad:latest
 ```

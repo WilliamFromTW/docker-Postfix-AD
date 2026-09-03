@@ -253,12 +253,12 @@ Bạn có thể thay đổi mô hình LLM được sử dụng trong Ollama bấ
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Chưa cấu hình)* | Địa chỉ API Ollama (ví dụ: `http://10.192.130.184:11434`) |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **Tên mô hình muốn sử dụng** (ví dụ: đổi thành `qwen2.5:3b` hoặc `qwen3.6:27b-q8_0`) |
-| `OLLAMA_TIMEOUT` | `5` | Thời gian chờ (giây). Nếu mô hình lớn hoặc chạy trên CPU, nên tăng lên `60`~`180` |
+| `OLLAMA_TIMEOUT` | `180` | Thời gian chờ (giây, mặc định 180s). Đảm bảo đủ thời gian ngay cả khi chạy thuần bằng CPU hoặc dùng mô hình 27B+. |
 
 * **Khuyến nghị mô hình**:
-  * **Lựa chọn hàng đầu `qwen2.5:7b`**: Khoảng 4.7 GB, chỉ cần GPU 8GB VRAM là nạp trọn vẹn, thời gian suy luận < 1 giây, nhận diện ngày tháng 4 ngôn ngữ cực kỳ chính xác.
+  * **Lựa chọn GPU hàng đầu `qwen3.8-200k:latest` hoặc `qwen2.5:7b`**: Tăng tốc toàn bộ trên GPU, thời gian suy luận chỉ khoảng 1~3 giây, nhận diện 4 ngôn ngữ cực kỳ chính xác.
   * **Lựa chọn siêu nhẹ `qwen2.5:3b`**: Khoảng 1.9 GB, chạy mượt mà trên cả CPU (1~2 giây phản hồi).
-  * **Lưu ý với mô hình siêu lớn**: Các mô hình như `27b` nếu chạy thuần bằng CPU có thể mất từ 1 đến 3 phút cho một câu hỏi, bắt buộc phải tăng `OLLAMA_TIMEOUT` lên `150` trở lên để tránh bị timeout.
+  * **Mô hình lớn & chạy trên CPU**: Cơ chế bảo vệ timeout mặc định 180 giây đảm bảo các mô hình lớn như 27B chạy trên CPU có đủ thời gian hoàn thành suy luận.
 
 #### 1. Bật với Khoảng Thời Gian (Lệnh `#` truyền thống, Múi giờ: UTC+8 / Asia/Taipei)
 - **Người nhận**: Chính mình (`your_email@example.com`)

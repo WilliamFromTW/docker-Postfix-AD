@@ -253,12 +253,12 @@ You can switch the LLM used by Ollama at any time (e.g. `qwen2.5:7b`, `qwen2.5:3
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`) |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use** (e.g. switch to `qwen2.5:3b` or `qwen3.6:27b-q8_0`) |
-| `OLLAMA_TIMEOUT` | `5` | Request timeout in seconds. Increase to `60`~`180` for 27B+ models or CPU inference |
+| `OLLAMA_TIMEOUT` | `180` | Request timeout in seconds (default: 180s). Provides ample time even for pure CPU inference or 27B+ models. |
 
 * **Model Recommendations**:
-  * **Top Recommendation `qwen2.5:7b`**: ~4.7 GB. Fits in 8GB VRAM with < 1s inference and exceptional date/intent extraction across 4 languages.
+  * **GPU Top Recommendation `qwen3.8-200k:latest` or `qwen2.5:7b`**: Full GPU acceleration, ~1~3s inference with exceptional 4-language extraction.
   * **Lightweight Alternative `qwen2.5:3b`**: ~1.9 GB. Ideal for pure CPU or low-resource hosts (1~2s response).
-  * **Large Model Notice**: Models like `27b` running on pure CPU take 1~3 minutes per prompt. Ensure `OLLAMA_TIMEOUT` is set to `150` or higher to prevent timeouts.
+  * **Large Models & CPU Inference**: The default 180s timeout ensures models like 27B running on pure CPU have enough time to complete inference.
 
 #### 1. Enable with Date Range (Legacy `#` Command, Timezone: UTC+8 / Asia/Taipei)
 - **To**: `your_email@example.com`
