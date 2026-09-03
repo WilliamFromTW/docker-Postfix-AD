@@ -1,22 +1,42 @@
 require ["vnd.dovecot.pipe", "copy", "variables", "envelope", "subaddress"];
 
-# 1. 攔截由本人寄給本人的指令信或四語系口語休假/銷假信
-if allof (
-    header :matches "Subject" [
-        "*#*",
-        "*休假*", "*請假*", "*出差*", "*公出*", "*不在*", "*特休*", "*事假*", "*病假*", "*銷假*", "*取消*", "*停用*", "*關閉*",
-        "*请假*", "*年假*", "*销假*", "*关闭*",
-        "*nghỉ phép*", "*nghỉ*", "*đi công tác*", "*công tác*", "*vắng mặt*", "*nghỉ ốm*", "*hủy*", "*tắt*",
-        "*vacation*", "*holiday*", "*leave*", "*out of office*", "*ooo*", "*day off*", "*business trip*", "*cancel*", "*disable*", "*turn off*"
-    ],
-    not header :matches "Subject" [
-        "*【自動回覆通知】*", "*【自动回复通知】*",
-        "*[Auto-Reply Notification]*", "*[Thông báo tự động trả lời]*",
-        "*Re: *", "*Fwd: *"
-    ]
-) {
-    pipe :copy "handle_autoreply.py";
-    keep;
+# 1. 攔截本人寄給本人的指令信或口語休假信 (交由 handle_autoreply.py 進行完整 MIME 解碼與分析)
+# 排除系統自動回覆確認信與回信轉發
+if not header :matches "Subject" [
+    "*【自動回覆通知】*", "*【自动回复通知】*",
+    "*[Auto-Reply Notification]*", "*[Thông báo tự động trả lời]*",
+    "*Re: *", "*Fwd: *"
+] {
+    # 情況 A：主旨包含 # 指令 (ASCII 格式永遠不被 MIME 編碼)
+    if header :matches "Subject" "*#*" {
+        pipe :copy "handle_autoreply.py";
+        keep;
+        stop;
+    }
+    # 情況 B：Envelope 信封寄收件人相同 (From == To，徹底解決客戶端 RFC 2047 MIME 編碼問題)
+    elsif envelope :matches "from" "*" {
+        set "env_from" "${1}";
+        if envelope :matches "to" "*" {
+            set "env_to" "${1}";
+            if string :is :comparator "i;ascii-caseless" "${env_from}" "${env_to}" {
+                pipe :copy "handle_autoreply.py";
+                keep;
+                stop;
+            }
+        }
+    }
+    # 情況 C：Header Address 由本人寄給本人 (From == To)
+    elsif address :matches "from" "*" {
+        set "addr_from" "${1}";
+        if address :matches "to" "*" {
+            set "addr_to" "${1}";
+            if string :is :comparator "i;ascii-caseless" "${addr_from}" "${addr_to}" {
+                pipe :copy "handle_autoreply.py";
+                keep;
+                stop;
+            }
+        }
+    }
 }
 
 # 2. 外部一般來信（全域攔截交由 15 秒非同步延遲發信器處理）
