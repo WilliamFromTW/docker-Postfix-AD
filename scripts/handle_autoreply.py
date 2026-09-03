@@ -46,13 +46,71 @@ TZ_SIEVE_ZONE = "+0800"
 VMAIL_BASE = "/home/vmail"
 DEFAULT_DAYS = 1
 
-# Environment Variables for Ollama
-OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "").strip().rstrip("/")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b").strip()
-try:
-    OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "5").strip())
-except Exception:
-    OLLAMA_TIMEOUT = 5.0
+def load_ollama_config():
+    """
+    Dovecot Pigeonhole sieve_extprograms restricts environment variables passed to child scripts
+    (only HOME, USER, HOST, SENDER, RECIPIENT, ORIG_RECIPIENT are passed).
+    This function discovers OLLAMA_* variables through multiple fallback channels:
+    1. os.environ
+    2. /etc/dovecot/ollama.env / /etc/mailserver_env.json
+    3. /proc/1/environ (Docker container PID 1 environment)
+    """
+    conf = {
+        "OLLAMA_HOST": os.environ.get("OLLAMA_HOST", "").strip().rstrip("/"),
+        "OLLAMA_MODEL": os.environ.get("OLLAMA_MODEL", "").strip(),
+        "OLLAMA_TIMEOUT": os.environ.get("OLLAMA_TIMEOUT", "").strip(),
+    }
+
+    env_files = ["/etc/dovecot/ollama.env", "/etc/mailserver_env.json", "/etc/mailserver.env"]
+    for ef in env_files:
+        if os.path.exists(ef):
+            try:
+                if ef.endswith(".json"):
+                    with open(ef, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        for k in ["OLLAMA_HOST", "OLLAMA_MODEL", "OLLAMA_TIMEOUT"]:
+                            if not conf[k] and k in data and data[k]:
+                                conf[k] = str(data[k]).strip()
+                else:
+                    with open(ef, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or line.startswith("#"):
+                                continue
+                            if "=" in line:
+                                k, v = line.split("=", 1)
+                                k = k.strip()
+                                v = v.strip().strip("'").strip('"')
+                                if k in conf and not conf[k]:
+                                    conf[k] = v
+            except Exception:
+                pass
+
+    if not conf["OLLAMA_HOST"]:
+        try:
+            if os.path.exists("/proc/1/environ"):
+                with open("/proc/1/environ", "rb") as f:
+                    content = f.read()
+                for item in content.split(b"\0"):
+                    if item.startswith(b"OLLAMA_HOST="):
+                        conf["OLLAMA_HOST"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip().rstrip("/")
+                    elif item.startswith(b"OLLAMA_MODEL=") and not conf["OLLAMA_MODEL"]:
+                        conf["OLLAMA_MODEL"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
+                    elif item.startswith(b"OLLAMA_TIMEOUT=") and not conf["OLLAMA_TIMEOUT"]:
+                        conf["OLLAMA_TIMEOUT"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
+        except Exception:
+            pass
+
+    if not conf["OLLAMA_MODEL"]:
+        conf["OLLAMA_MODEL"] = "qwen2.5:7b"
+    try:
+        timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 5.0
+    except Exception:
+        timeout = 5.0
+
+    return conf["OLLAMA_HOST"], conf["OLLAMA_MODEL"], timeout
+
+OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT = load_ollama_config()
 
 VIETNAMESE_CHARS_RE = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]")
 SIMPLIFIED_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -508,6 +566,7 @@ def main():
         sys.exit(0)
 
     log_maillog(f"Received self-sent command email for {from_addr}: Subject='{subject_raw}'", syslog.LOG_INFO if HAS_SYSLOG else None)
+    log_maillog(f"Ollama config: HOST='{OLLAMA_HOST}', MODEL='{OLLAMA_MODEL}', TIMEOUT={OLLAMA_TIMEOUT}s", syslog.LOG_INFO if HAS_SYSLOG else None)
 
     # Detect baseline language
     detected_lang = detect_language(subject_raw + " " + body)
