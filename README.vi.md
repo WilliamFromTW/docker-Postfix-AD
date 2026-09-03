@@ -103,6 +103,24 @@ volumes:
 docker compose up -d
 ```
 
+#### 🤖 Cách Cấu Hình & Thay Đổi Mô Hình Ollama AI (Ollama Model Selection)
+Nếu bạn muốn kích hoạt tính năng xin nghỉ bằng văn nói hoặc thay đổi mô hình AI (ví dụ: chuyển sang `qwen2.5:7b`, `qwen2.5:3b`, `qwen3.6:27b-q8_0`), chỉ cần chỉnh sửa các tham số sau trong phần `environment` của `docker-compose.yaml` (không cần rebuild image):
+
+| Biến môi trường | Mặc định | Mô tả & Khuyến nghị |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | *(Chưa cấu hình)* | Địa chỉ máy chủ Ollama, ví dụ: `http://10.192.130.184:11434`. Để trống sẽ tắt AI. |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | **Tên mô hình muốn sử dụng**. Điền tên mô hình đã cài đặt trên máy chủ Ollama (ví dụ: `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
+| `OLLAMA_TIMEOUT` | `5` | Thời gian chờ suy luận AI (giây). Nếu dùng mô hình lớn (như 27B) hoặc chạy bằng CPU, nên tăng lên `60`~`180`. |
+
+**Ví dụ cấu hình (`docker-compose.yaml`)**:
+```yaml
+    environment:
+      - OLLAMA_HOST=http://10.192.130.184:11434
+      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- Điền tên mô hình bạn muốn dùng tại đây
+      - OLLAMA_TIMEOUT=150             # Mô hình lớn chạy lâu hơn, nên tăng thời gian timeout
+```
+Sau khi lưu, chạy `docker compose up -d` để áp dụng ngay lập tức!
+
 ---
 
 ### Cách 3: Sử dụng lệnh Docker CLI

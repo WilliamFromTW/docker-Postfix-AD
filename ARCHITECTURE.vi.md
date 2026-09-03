@@ -246,6 +246,20 @@ Khi biến môi trường `OLLAMA_HOST` được cấu hình (ví dụ: `http://
 - **Đảm bảo không bịa đặt (Zero Hallucination)**: AI chỉ nhận diện khoảng thời gian và ý định. Nội dung phản hồi ra bên ngoài luôn dùng mẫu chuẩn công ty (hoặc nội dung người dùng tự soạn trong thân thư).
 - **Hạ cấp mượt mà**: Nếu máy chủ GPU ngoại tuyến hoặc hết thời gian chờ (mặc định 5s), hệ thống tự động chuyển về phân tích Regex với lệnh `#` truyền thống.
 
+##### ⚙️ Cách Thay Đổi Mô Hình Ollama & Cấu Hình Biến Môi Trường
+Bạn có thể thay đổi mô hình LLM được sử dụng trong Ollama bất cứ lúc nào (ví dụ: chuyển sang `qwen2.5:7b`, `qwen2.5:3b` hoặc `qwen3.6:27b-q8_0`) bằng cách chỉ định các biến môi trường trong `docker-compose.yaml` hoặc lệnh chạy container:
+
+| Biến môi trường | Mặc định | Mô tả |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | *(Chưa cấu hình)* | Địa chỉ API Ollama (ví dụ: `http://10.192.130.184:11434`) |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | **Tên mô hình muốn sử dụng** (ví dụ: đổi thành `qwen2.5:3b` hoặc `qwen3.6:27b-q8_0`) |
+| `OLLAMA_TIMEOUT` | `5` | Thời gian chờ (giây). Nếu mô hình lớn hoặc chạy trên CPU, nên tăng lên `60`~`180` |
+
+* **Khuyến nghị mô hình**:
+  * **Lựa chọn hàng đầu `qwen2.5:7b`**: Khoảng 4.7 GB, chỉ cần GPU 8GB VRAM là nạp trọn vẹn, thời gian suy luận < 1 giây, nhận diện ngày tháng 4 ngôn ngữ cực kỳ chính xác.
+  * **Lựa chọn siêu nhẹ `qwen2.5:3b`**: Khoảng 1.9 GB, chạy mượt mà trên cả CPU (1~2 giây phản hồi).
+  * **Lưu ý với mô hình siêu lớn**: Các mô hình như `27b` nếu chạy thuần bằng CPU có thể mất từ 1 đến 3 phút cho một câu hỏi, bắt buộc phải tăng `OLLAMA_TIMEOUT` lên `150` trở lên để tránh bị timeout.
+
 #### 1. Bật với Khoảng Thời Gian (Lệnh `#` truyền thống, Múi giờ: UTC+8 / Asia/Taipei)
 - **Người nhận**: Chính mình (`your_email@example.com`)
 - **Tiêu đề**: `#autoreply 2026-08-25 ~ 2026-08-30 Đi công tác / Nghỉ phép` (hoặc `#vacation`)

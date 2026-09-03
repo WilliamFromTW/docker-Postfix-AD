@@ -103,6 +103,24 @@ volumes:
 docker compose up -d
 ```
 
+#### 🤖 How to Configure and Switch Ollama AI Models
+To enable natural language leave requests or switch AI models (e.g. `qwen2.5:7b`, `qwen2.5:3b`, `qwen3.6:27b-q8_0`), adjust the following variables under `environment` in `docker-compose.yaml` (no image rebuild required):
+
+| Environment Variable | Default | Description & Recommendations |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`). Leaving empty disables AI. |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use**. Set to any model installed on your Ollama server (e.g. `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
+| `OLLAMA_TIMEOUT` | `5` | Request timeout in seconds. For 27B+ models or pure CPU inference, increase to `60`~`180`. |
+
+**Example configuration (`docker-compose.yaml`)**:
+```yaml
+    environment:
+      - OLLAMA_HOST=http://10.192.130.184:11434
+      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- Set desired model name here
+      - OLLAMA_TIMEOUT=150             # Increase timeout if using large models on CPU
+```
+After saving, run `docker compose up -d` to immediately apply changes.
+
 ---
 
 ### Option 3: Docker CLI Command

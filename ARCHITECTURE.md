@@ -246,6 +246,20 @@ When `OLLAMA_HOST` is configured (e.g. `http://192.168.1.100:11434`), users can 
 - **Zero AI Hallucination**: AI is strictly limited to extracting date intervals and intent. Outbound reply bodies always use standardized, enterprise-compliant templates (or user's explicitly provided email body).
 - **Graceful Fallback**: If the GPU host is offline or times out (default 5s), it seamlessly falls back to legacy `#` regex matching.
 
+##### ⚙️ How to Switch Ollama Models & Tune Environment Variables
+You can switch the LLM used by Ollama at any time (e.g. `qwen2.5:7b`, `qwen2.5:3b`, or `qwen3.6:27b-q8_0`) by setting the following environment variables in `docker-compose.yaml` or Docker run commands:
+
+| Environment Variable | Default | Description |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`) |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use** (e.g. switch to `qwen2.5:3b` or `qwen3.6:27b-q8_0`) |
+| `OLLAMA_TIMEOUT` | `5` | Request timeout in seconds. Increase to `60`~`180` for 27B+ models or CPU inference |
+
+* **Model Recommendations**:
+  * **Top Recommendation `qwen2.5:7b`**: ~4.7 GB. Fits in 8GB VRAM with < 1s inference and exceptional date/intent extraction across 4 languages.
+  * **Lightweight Alternative `qwen2.5:3b`**: ~1.9 GB. Ideal for pure CPU or low-resource hosts (1~2s response).
+  * **Large Model Notice**: Models like `27b` running on pure CPU take 1~3 minutes per prompt. Ensure `OLLAMA_TIMEOUT` is set to `150` or higher to prevent timeouts.
+
 #### 1. Enable with Date Range (Legacy `#` Command, Timezone: UTC+8 / Asia/Taipei)
 - **To**: `your_email@example.com`
 - **Subject**: `#autoreply 2026-08-25 ~ 2026-08-30 Out of Office / Vacation`

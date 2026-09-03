@@ -103,6 +103,24 @@ volumes:
 docker compose up -d
 ```
 
+#### 🤖 如何設定與更換 Ollama AI 模型 (Ollama Model Selection)
+若欲啟用口語請假或更換 AI 模型（例如切換為 `qwen2.5:7b`、`qwen2.5:3b`、`qwen3.6:27b-q8_0`），直接於 `docker-compose.yaml` 的 `environment` 調整以下參數即可生效（無需重新 Build 映像檔）：
+
+| 環境變數 | 預設值 | 說明與建議 |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | *(未設定)* | Ollama 伺服器端點，例如 `http://10.192.130.184:11434`。未設定則停用 AI 功能。 |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | **欲更換的模型名稱**。可填入伺服器已下載之模型（如 `qwen2.5:3b`、`qwen3.6:27b-q8_0`）。 |
+| `OLLAMA_TIMEOUT` | `5` | AI 推論超時時間（秒）。若使用 27B 等超大模型或純 CPU 運算，建議加大至 `60`~`180`。 |
+
+**更換模型範例**：
+```yaml
+    environment:
+      - OLLAMA_HOST=http://10.192.130.184:11434
+      - OLLAMA_MODEL=qwen3.6:27b-q8_0   # <-- 直接在此填入欲使用的模型名稱
+      - OLLAMA_TIMEOUT=150             # 大模型推論耗時較長，調大超時保護避免 timeout
+```
+修改存檔後，執行 `docker compose up -d` 即可立即套用新模型！
+
 ---
 
 ### 方式三：使用 Docker CLI 指令
