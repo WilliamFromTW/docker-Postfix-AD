@@ -46,6 +46,37 @@ TZ_SIEVE_ZONE = "+0800"
 VMAIL_BASE = "/home/vmail"
 DEFAULT_DAYS = 1
 
+def get_ollama_active_model(host):
+    """
+    Discovers the active or first available model on the Ollama server
+    if no OLLAMA_MODEL was explicitly configured.
+    """
+    if not host:
+        return ""
+    # Check currently running model (/api/ps)
+    try:
+        req = urllib.request.Request(f"{host}/api/ps")
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            running = [m.get("name") for m in data.get("models", []) if m.get("name")]
+            if running:
+                return running[0]
+    except Exception:
+        pass
+
+    # Check installed models (/api/tags)
+    try:
+        req = urllib.request.Request(f"{host}/api/tags")
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            available = [m.get("name") for m in data.get("models", []) if m.get("name")]
+            if available:
+                return available[0]
+    except Exception:
+        pass
+
+    return ""
+
 def load_ollama_config():
     """
     Dovecot Pigeonhole sieve_extprograms restricts environment variables passed to child scripts
@@ -87,7 +118,7 @@ def load_ollama_config():
             except Exception:
                 pass
 
-    if not conf["OLLAMA_HOST"] or not conf["DEFAULT_LANG"]:
+    if not conf["OLLAMA_HOST"] or not conf["OLLAMA_MODEL"] or not conf["DEFAULT_LANG"]:
         try:
             if os.path.exists("/proc/1/environ"):
                 with open("/proc/1/environ", "rb") as f:
@@ -104,8 +135,10 @@ def load_ollama_config():
         except Exception:
             pass
 
-    if not conf["OLLAMA_MODEL"]:
-        conf["OLLAMA_MODEL"] = "qwen2.5:7b"
+    # Do not set any hardcoded model default! If empty, discover from Ollama server
+    if not conf["OLLAMA_MODEL"] and conf["OLLAMA_HOST"]:
+        conf["OLLAMA_MODEL"] = get_ollama_active_model(conf["OLLAMA_HOST"])
+
     try:
         timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 180.0
     except Exception:
@@ -393,6 +426,12 @@ Respond ONLY with valid JSON matching this schema:
         "stream": False,
         "format": "json"
     }
+
+    if not OLLAMA_HOST:
+        return None
+    if not OLLAMA_MODEL:
+        log_maillog(f"Ollama skipped: No model specified in OLLAMA_MODEL and none found on {OLLAMA_HOST}", syslog.LOG_WARNING if HAS_SYSLOG else None)
+        return None
 
     url = f"{OLLAMA_HOST}/api/chat"
     headers = {"Content-Type": "application/json"}

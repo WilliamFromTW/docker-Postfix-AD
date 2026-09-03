@@ -252,7 +252,7 @@ You can switch the LLM used by Ollama at any time (e.g. `qwen2.5:7b`, `qwen2.5:3
 | Environment Variable | Default | Description |
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`) |
-| `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use** (e.g. switch to `qwen2.5:3b` or `qwen3.6:27b-q8_0`) |
+| `OLLAMA_MODEL` | *(Unset / Auto-detected)* | **Model to use** (e.g. `qwen3.8-200k:latest`, `qwen2.5:7b`). No hardcoded default; if empty, dynamically discovers running or installed models on Ollama server. |
 | `OLLAMA_TIMEOUT` | `180` | Request timeout in seconds (default: 180s). Provides ample time even for pure CPU inference or 27B+ models. |
 
 * **Model Recommendations**:

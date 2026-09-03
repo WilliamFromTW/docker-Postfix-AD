@@ -109,7 +109,7 @@ To enable natural language leave requests or switch AI models (e.g. `qwen2.5:7b`
 | Environment Variable | Default | Description & Recommendations |
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Unset)* | Ollama API endpoint (e.g. `http://10.192.130.184:11434`). Leaving empty disables AI. |
-| `OLLAMA_MODEL` | `qwen2.5:7b` | **Name of model to use**. Set to any model installed on your Ollama server (e.g. `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
+| `OLLAMA_MODEL` | *(Unset / Auto-detected)* | **Model to use** (e.g. `qwen3.8-200k:latest`, `qwen2.5:7b`). No hardcoded default; if empty, dynamically discovers running or installed models on Ollama server. |
 | `OLLAMA_TIMEOUT` | `180` | Request timeout in seconds (default: 180s). Usually 3~5s on GPU; 180s recommended for CPU or 27B+ models. |
 
 **Example configuration (`docker-compose.yaml`)**:

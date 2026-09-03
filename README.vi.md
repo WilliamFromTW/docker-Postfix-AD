@@ -109,7 +109,7 @@ Nếu bạn muốn kích hoạt tính năng xin nghỉ bằng văn nói hoặc t
 | Biến môi trường | Mặc định | Mô tả & Khuyến nghị |
 | :--- | :--- | :--- |
 | `OLLAMA_HOST` | *(Chưa cấu hình)* | Địa chỉ máy chủ Ollama, ví dụ: `http://10.192.130.184:11434`. Để trống sẽ tắt AI. |
-| `OLLAMA_MODEL` | `qwen2.5:7b` | **Tên mô hình muốn sử dụng**. Điền tên mô hình đã cài đặt trên máy chủ Ollama (ví dụ: `qwen2.5:3b`, `qwen3.6:27b-q8_0`). |
+| `OLLAMA_MODEL` | *(Chưa cấu hình / Tự phát hiện)* | **Tên mô hình muốn sử dụng** (ví dụ: `qwen3.8-200k:latest`, `qwen2.5:7b`). Không có giá trị mặc định cố định; nếu để trống hệ thống sẽ tự động phát hiện mô hình đang chạy hoặc có sẵn trên Ollama. |
 | `OLLAMA_TIMEOUT` | `180` | Thời gian chờ suy luận AI (giây, mặc định: 180s). Nếu dùng GPU thường chỉ mất 3~5 giây, nếu chạy bằng CPU hoặc mô hình 27B+ nên giữ mặc định 180 giây. |
 
 **Ví dụ cấu hình (`docker-compose.yaml`)**:
