@@ -170,6 +170,7 @@ cat << EOF > /etc/dovecot/ollama.env
 OLLAMA_HOST="${OLLAMA_HOST}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-qwen2.5:7b}"
 OLLAMA_TIMEOUT="${OLLAMA_TIMEOUT:-5}"
+DEFAULT_LANG="${DEFAULT_LANG}"
 EOF
 chmod 644 /etc/dovecot/ollama.env
 

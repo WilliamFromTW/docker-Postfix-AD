@@ -50,7 +50,7 @@ def load_ollama_config():
     """
     Dovecot Pigeonhole sieve_extprograms restricts environment variables passed to child scripts
     (only HOME, USER, HOST, SENDER, RECIPIENT, ORIG_RECIPIENT are passed).
-    This function discovers OLLAMA_* variables through multiple fallback channels:
+    This function discovers OLLAMA_* and DEFAULT_LANG variables through multiple fallback channels:
     1. os.environ
     2. /etc/dovecot/ollama.env / /etc/mailserver_env.json
     3. /proc/1/environ (Docker container PID 1 environment)
@@ -59,6 +59,7 @@ def load_ollama_config():
         "OLLAMA_HOST": os.environ.get("OLLAMA_HOST", "").strip().rstrip("/"),
         "OLLAMA_MODEL": os.environ.get("OLLAMA_MODEL", "").strip(),
         "OLLAMA_TIMEOUT": os.environ.get("OLLAMA_TIMEOUT", "").strip(),
+        "DEFAULT_LANG": os.environ.get("DEFAULT_LANG", os.environ.get("AUTOREPLY_LANG", "")).strip(),
     }
 
     env_files = ["/etc/dovecot/ollama.env", "/etc/mailserver_env.json", "/etc/mailserver.env"]
@@ -68,8 +69,8 @@ def load_ollama_config():
                 if ef.endswith(".json"):
                     with open(ef, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        for k in ["OLLAMA_HOST", "OLLAMA_MODEL", "OLLAMA_TIMEOUT"]:
-                            if not conf[k] and k in data and data[k]:
+                        for k in ["OLLAMA_HOST", "OLLAMA_MODEL", "OLLAMA_TIMEOUT", "DEFAULT_LANG"]:
+                            if not conf.get(k) and k in data and data[k]:
                                 conf[k] = str(data[k]).strip()
                 else:
                     with open(ef, "r", encoding="utf-8") as f:
@@ -86,18 +87,20 @@ def load_ollama_config():
             except Exception:
                 pass
 
-    if not conf["OLLAMA_HOST"]:
+    if not conf["OLLAMA_HOST"] or not conf["DEFAULT_LANG"]:
         try:
             if os.path.exists("/proc/1/environ"):
                 with open("/proc/1/environ", "rb") as f:
                     content = f.read()
                 for item in content.split(b"\0"):
-                    if item.startswith(b"OLLAMA_HOST="):
+                    if item.startswith(b"OLLAMA_HOST=") and not conf["OLLAMA_HOST"]:
                         conf["OLLAMA_HOST"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip().rstrip("/")
                     elif item.startswith(b"OLLAMA_MODEL=") and not conf["OLLAMA_MODEL"]:
                         conf["OLLAMA_MODEL"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
                     elif item.startswith(b"OLLAMA_TIMEOUT=") and not conf["OLLAMA_TIMEOUT"]:
                         conf["OLLAMA_TIMEOUT"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
+                    elif item.startswith(b"DEFAULT_LANG=") and not conf["DEFAULT_LANG"]:
+                        conf["DEFAULT_LANG"] = item.split(b"=", 1)[1].decode("utf-8", errors="ignore").strip()
         except Exception:
             pass
 
@@ -108,24 +111,43 @@ def load_ollama_config():
     except Exception:
         timeout = 5.0
 
-    return conf["OLLAMA_HOST"], conf["OLLAMA_MODEL"], timeout
+    return conf["OLLAMA_HOST"], conf["OLLAMA_MODEL"], timeout, conf["DEFAULT_LANG"]
 
-OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT = load_ollama_config()
+OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT, DEFAULT_LANG = load_ollama_config()
 
 VIETNAMESE_CHARS_RE = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]")
-SIMPLIFIED_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
-SIMPLIFIED_SPECIFIC_CHARS = set("请销关让与于发后并从这进问实门给")
+CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
+
+TRADITIONAL_CHARS = set("開關後發點經會過這還個為國來對說與時麼機學請銷體辦讓總聽見話圖雙處幾萬電廣東車長門專變報業題頭動實導單無愛兒區認氣質視許資標農選計濟調")
+SIMPLIFIED_CHARS = set("开关后发点经会过这还个为国来对说与时么机学请销体办让总听见话图双处几万电广东车长门专变报业题头动实导单无爱儿区认气质视许资标农选计济调")
 
 def detect_language(text, fallback="zh-TW"):
+    """
+    Deterministically detects whether text is Traditional Chinese, Simplified Chinese,
+    Vietnamese, or English. If DEFAULT_LANG is configured, respects user's preference.
+    """
+    if DEFAULT_LANG and DEFAULT_LANG.lower() in ["en", "zh-tw", "zh-cn", "vi"]:
+        # Map case-insensitively
+        m = {"en": "en", "zh-tw": "zh-TW", "zh-cn": "zh-CN", "vi": "vi"}
+        return m.get(DEFAULT_LANG.lower(), fallback)
+
     if not text:
         return fallback
+
     text_lower = text.lower()
-    if VIETNAMESE_CHARS_RE.search(text) or any(w in text_lower for w in ["nghỉ phép", "công tác", "vắng mặt", "trả lời tự động"]):
+    if VIETNAMESE_CHARS_RE.search(text) or any(w in text_lower for w in ["nghỉ phép", "công tác", "vắng mặt", "trả lời tự động", "hủy"]):
         return "vi"
-    if any(c in SIMPLIFIED_SPECIFIC_CHARS for c in text):
+
+    t_count = sum(1 for c in text if c in TRADITIONAL_CHARS)
+    s_count = sum(1 for c in text if c in SIMPLIFIED_CHARS)
+
+    if s_count > t_count:
         return "zh-CN"
-    if SIMPLIFIED_CHINESE_RE.search(text):
+    if t_count > 0:
         return "zh-TW"
+    if CHINESE_RE.search(text):
+        return "zh-TW"
+
     return "en"
 
 def decode_mime_words(s):
@@ -592,13 +614,16 @@ def main():
         # AI Succeeded
         is_vacation = ollama_result.get("is_vacation", False)
         action = str(ollama_result.get("action", "ignore")).lower().strip()
-        ai_lang = str(ollama_result.get("detected_lang", detected_lang)).strip()
-        if ai_lang in ["zh", "zh_tw", "zhtw", "chinese"]:
-            ai_lang = detected_lang if detected_lang in ["zh-TW", "zh-CN"] else "zh-TW"
-        elif ai_lang in ["zh_cn", "zhcn"]:
-            ai_lang = "zh-CN"
-        elif ai_lang not in ["zh-TW", "zh-CN", "vi", "en"]:
-            ai_lang = detected_lang
+        # 確定回覆語系：
+        # 1. 若環境變數有強制指定 DEFAULT_LANG（如 "en" 或 "zh-TW"），一律優先採用
+        # 2. 中文一律以字元特徵庫為準（避免 Qwen 等模型習慣性將中文標記為 zh-CN）
+        if DEFAULT_LANG and DEFAULT_LANG.lower() in ["en", "zh-tw", "zh-cn", "vi"]:
+            m = {"en": "en", "zh-tw": "zh-TW", "zh-cn": "zh-CN", "vi": "vi"}
+            ai_lang = m.get(DEFAULT_LANG.lower(), detected_lang)
+        elif CHINESE_RE.search(subject_raw + " " + body):
+            ai_lang = detect_language(subject_raw + " " + body)
+        else:
+            ai_lang = detect_language(subject_raw + " " + body)
 
         if is_vacation and action in ["disable", "cancel", "stop", "off", "销假", "銷假", "hủy", "delete"]:
             disable_autoreply(from_addr, ai_lang)
