@@ -18,7 +18,7 @@ if not header :matches "Subject" [
         set "env_from" "${1}";
         if envelope :matches "to" "*" {
             set "env_to" "${1}";
-            if string :is :comparator "i;ascii-caseless" "${env_from}" "${env_to}" {
+            if string :is "${env_from}" "${env_to}" {
                 pipe :copy "handle_autoreply.py";
                 keep;
                 stop;
@@ -30,7 +30,7 @@ if not header :matches "Subject" [
         set "addr_from" "${1}";
         if address :matches "to" "*" {
             set "addr_to" "${1}";
-            if string :is :comparator "i;ascii-caseless" "${addr_from}" "${addr_to}" {
+            if string :is "${addr_from}" "${addr_to}" {
                 pipe :copy "handle_autoreply.py";
                 keep;
                 stop;
