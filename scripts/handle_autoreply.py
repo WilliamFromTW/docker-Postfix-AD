@@ -21,6 +21,26 @@ import subprocess
 import urllib.request
 import urllib.error
 
+try:
+    import syslog
+    HAS_SYSLOG = True
+except ImportError:
+    HAS_SYSLOG = False
+
+def log_maillog(msg, priority=None):
+    """
+    Writes log message directly to /var/log/maillog via syslog LOG_MAIL.
+    Falls back gracefully to sys.stderr if syslog is not available (e.g. non-POSIX).
+    """
+    if HAS_SYSLOG:
+        try:
+            p = priority if priority is not None else syslog.LOG_INFO
+            syslog.openlog(ident="handle_autoreply", facility=syslog.LOG_MAIL)
+            syslog.syslog(p, msg)
+        except Exception:
+            pass
+    sys.stderr.write(f"handle_autoreply: {msg}\n")
+
 TZ_OFFSET_STR = "+08:00"
 TZ_SIEVE_ZONE = "+0800"
 VMAIL_BASE = "/home/vmail"
@@ -205,6 +225,7 @@ def disable_autoreply(from_addr, lang="zh-TW"):
     }
     subj, body = notices.get(lang, notices["zh-TW"])
     send_notification(from_addr, subj, body)
+    log_maillog(f"Auto-reply disabled for {from_addr} (lang: {lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
 
 def get_standard_templates(lang, user_name, start_str, end_str):
     templates = {
@@ -297,15 +318,26 @@ Respond ONLY with valid JSON matching this schema:
     headers = {"Content-Type": "application/json"}
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
 
+    t0 = datetime.now()
+    log_maillog(f"Querying Ollama NLU at {OLLAMA_HOST} (model: {OLLAMA_MODEL}, timeout: {OLLAMA_TIMEOUT}s)...", syslog.LOG_INFO if HAS_SYSLOG else None)
+
     try:
         with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
             if resp.status == 200:
+                elapsed = (datetime.now() - t0).total_seconds()
                 resp_data = json.loads(resp.read().decode("utf-8"))
                 msg_content = resp_data.get("message", {}).get("content", "")
                 result = json.loads(msg_content)
+                log_maillog(
+                    f"Ollama inference succeeded in {elapsed:.2f}s: action={result.get('action')}, "
+                    f"is_vacation={result.get('is_vacation')}, start={result.get('start_date')}, "
+                    f"end={result.get('end_date')}, lang={result.get('detected_lang')}",
+                    syslog.LOG_INFO if HAS_SYSLOG else None
+                )
                 return result
     except Exception as e:
-        sys.stderr.write(f"Ollama call failed or timed out ({OLLAMA_HOST}): {e}\n")
+        elapsed = (datetime.now() - t0).total_seconds()
+        log_maillog(f"Ollama call failed or timed out after {elapsed:.2f}s ({OLLAMA_HOST}): {e}", syslog.LOG_WARNING if HAS_SYSLOG else None)
         return None
 
     return None
@@ -443,6 +475,8 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
     }
     subj, notif_text = notifications.get(lang, notifications["zh-TW"])
     send_notification(from_addr, subj, notif_text)
+    engine_name = "Ollama AI" if ai_parsed else "Regex"
+    log_maillog(f"Auto-reply enabled for {from_addr} via {engine_name} ({time_notif_short}, always_on={is_always_on}, lang={lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
 
 def main():
     raw_email = sys.stdin.buffer.read()
@@ -472,6 +506,8 @@ def main():
     # 1. Verify self-sent email (From == To)
     if from_addr != to_addr:
         sys.exit(0)
+
+    log_maillog(f"Received self-sent command email for {from_addr}: Subject='{subject_raw}'", syslog.LOG_INFO if HAS_SYSLOG else None)
 
     # Detect baseline language
     detected_lang = detect_language(subject_raw + " " + body)
@@ -543,6 +579,7 @@ def main():
 
     # 5. Fallback to Legacy Regex
     if legacy_match:
+        log_maillog(f"Matching legacy regex syntax for {from_addr}", syslog.LOG_INFO if HAS_SYSLOG else None)
         param_str = (legacy_match.group(1) or "").strip()
         start_dt = None
         end_dt = None
@@ -567,6 +604,7 @@ def main():
 
     # 6. If Ollama was configured but failed/unreachable, and the user sent a natural language vacation email (no #)
     if ollama_attempted and not ollama_result:
+        log_maillog(f"Ollama NLU unreachable or failed; checking if email requires offline notice for {from_addr}", syslog.LOG_WARNING if HAS_SYSLOG else None)
         # Check if subject matches common vacation words
         vacation_keywords = ["休假", "請假", "请假", "出差", "不在", "nghỉ", "công tác", "vacation", "holiday", "leave", "out of office"]
         if any(k in subject_raw.lower() for k in vacation_keywords):
