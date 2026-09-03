@@ -157,6 +157,9 @@ docker run --name mailserver \
   -e TZ="Asia/Taipei" \
   -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
+  -e OLLAMA_HOST="http://192.168.1.100:11434" \
+  -e OLLAMA_MODEL="qwen2.5:7b" \
+  -e OLLAMA_TIMEOUT="5" \
   -d --restart always --net=host \
   inmethod/docker-postfix-ad:latest
 ```
