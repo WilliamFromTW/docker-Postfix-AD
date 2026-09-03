@@ -591,19 +591,23 @@ def main():
     if ollama_result and isinstance(ollama_result, dict):
         # AI Succeeded
         is_vacation = ollama_result.get("is_vacation", False)
-        action = ollama_result.get("action", "ignore")
-        ai_lang = ollama_result.get("detected_lang", detected_lang)
-        if ai_lang not in ["zh-TW", "zh-CN", "vi", "en"]:
+        action = str(ollama_result.get("action", "ignore")).lower().strip()
+        ai_lang = str(ollama_result.get("detected_lang", detected_lang)).strip()
+        if ai_lang in ["zh", "zh_tw", "zhtw", "chinese"]:
+            ai_lang = detected_lang if detected_lang in ["zh-TW", "zh-CN"] else "zh-TW"
+        elif ai_lang in ["zh_cn", "zhcn"]:
+            ai_lang = "zh-CN"
+        elif ai_lang not in ["zh-TW", "zh-CN", "vi", "en"]:
             ai_lang = detected_lang
 
-        if is_vacation and action == "disable":
+        if is_vacation and action in ["disable", "cancel", "stop", "off", "销假", "銷假", "hủy", "delete"]:
             disable_autoreply(from_addr, ai_lang)
             sys.exit(0)
 
-        if is_vacation and action == "enable":
-            s_date = ollama_result.get("start_date")
-            e_date = ollama_result.get("end_date")
-            
+        s_date = ollama_result.get("start_date")
+        e_date = ollama_result.get("end_date")
+
+        if is_vacation and (action in ["enable", "start", "create", "on", "set"] or (s_date and e_date and action not in ["disable", "ignore"])):
             if s_date and e_date:
                 try:
                     s_dt = datetime.strptime(s_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
@@ -611,7 +615,7 @@ def main():
                     apply_autoreply(from_addr, s_dt, e_dt, is_always_on=False, custom_subject=None, body=body, lang=ai_lang, ai_parsed=True)
                     sys.exit(0)
                 except Exception as ex:
-                    sys.stderr.write(f"Failed to parse dates from AI: {ex}\n")
+                    log_maillog(f"Failed to parse dates from AI: {ex}", syslog.LOG_WARNING if HAS_SYSLOG else None)
             else:
                 # Ambiguous dates: Notify user to specify dates
                 unclear_notices = {
