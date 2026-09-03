@@ -16,7 +16,7 @@ import email
 from email.header import decode_header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formatdate
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 import subprocess
 import urllib.request
 import urllib.error
@@ -45,6 +45,21 @@ TZ_OFFSET_STR = "+08:00"
 TZ_SIEVE_ZONE = "+0800"
 VMAIL_BASE = "/home/vmail"
 DEFAULT_DAYS = 1
+
+def get_configured_tz():
+    tz_str = os.environ.get("TZ", "Asia/Taipei").strip()
+    if any(k in tz_str for k in ["Taipei", "Beijing", "Shanghai", "Hong_Kong", "+08", "+0800", "8"]):
+        return timezone(timedelta(hours=8))
+    elif any(k in tz_str for k in ["Vietnam", "Ho_Chi_Minh", "Bangkok", "+07", "+0700", "7"]):
+        return timezone(timedelta(hours=7))
+    elif any(k in tz_str for k in ["Tokyo", "Seoul", "+09", "+0900", "9"]):
+        return timezone(timedelta(hours=9))
+    elif any(k in tz_str for k in ["UTC", "GMT", "0"]):
+        return timezone.utc
+    try:
+        return datetime.now().astimezone().tzinfo
+    except Exception:
+        return timezone(timedelta(hours=8))
 
 def get_ollama_active_model(host):
     """
@@ -228,17 +243,18 @@ def get_email_body(msg):
     return body.strip()
 
 def parse_date_str(s, default_time=time.min):
-    now = datetime.now()
+    app_tz = get_configured_tz()
+    now = datetime.now(app_tz)
     s = s.strip()
     m = re.match(r"^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$", s)
     if m:
         sec = int(m.group(6)) if m.group(6) else (59 if default_time == time.max else 0)
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), sec)
+        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), sec, tzinfo=app_tz)
 
     m = re.match(r"^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$", s)
     if m:
         t = default_time
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), t.hour, t.minute, t.second)
+        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), t.hour, t.minute, t.second, tzinfo=app_tz)
 
     m = re.match(r"^(\d{1,2})[-/](\d{1,2})$", s)
     if m:
@@ -246,7 +262,7 @@ def parse_date_str(s, default_time=time.min):
         month = int(m.group(1))
         day = int(m.group(2))
         t = default_time
-        return datetime(year, month, day, t.hour, t.minute, t.second)
+        return datetime(year, month, day, t.hour, t.minute, t.second, tzinfo=app_tz)
 
     return None
 
@@ -502,6 +518,8 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
         "is_always_on": is_always_on,
         "start_ts": start_dt.timestamp() if start_dt else None,
         "end_ts": end_dt.timestamp() if end_dt else None,
+        "start_str": start_dt.strftime('%Y-%m-%d %H:%M:%S %z') if start_dt else "",
+        "end_str": end_dt.strftime('%Y-%m-%d %H:%M:%S %z') if end_dt else "",
         "lang": lang,
         "ai_parsed": ai_parsed
     }
@@ -698,8 +716,9 @@ def main():
         if is_vacation and (action in ["enable", "start", "create", "on", "set"] or (s_date and e_date and action not in ["disable", "ignore"])):
             if s_date and e_date:
                 try:
-                    s_dt = datetime.strptime(s_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
-                    e_dt = datetime.strptime(e_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+                    app_tz = get_configured_tz()
+                    s_dt = datetime.strptime(s_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, tzinfo=app_tz)
+                    e_dt = datetime.strptime(e_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=app_tz)
                     apply_autoreply(from_addr, s_dt, e_dt, is_always_on=False, custom_subject=None, body=body, lang=ai_lang, ai_parsed=True)
                     sys.exit(0)
                 except Exception as ex:

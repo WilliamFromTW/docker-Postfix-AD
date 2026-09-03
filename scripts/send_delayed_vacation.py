@@ -16,12 +16,47 @@ import email
 from email.header import decode_header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formatdate
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import subprocess
+
+try:
+    import syslog
+    HAS_SYSLOG = True
+except ImportError:
+    HAS_SYSLOG = False
+
+def log_maillog(msg, priority=None):
+    """
+    Writes log message directly to /var/log/maillog via syslog LOG_MAIL.
+    Falls back gracefully to sys.stderr if syslog is not available.
+    """
+    if HAS_SYSLOG:
+        try:
+            p = priority if priority is not None else syslog.LOG_INFO
+            syslog.openlog(ident="send_delayed_vacation", facility=syslog.LOG_MAIL)
+            syslog.syslog(p, msg)
+        except Exception:
+            pass
+    sys.stderr.write(f"send_delayed_vacation: {msg}\n")
 
 DELAY_SECONDS = 15
 RATE_LIMIT_HOURS = 24
 VMAIL_BASE = "/home/vmail"
+
+def get_configured_tz():
+    tz_str = os.environ.get("TZ", "Asia/Taipei").strip()
+    if any(k in tz_str for k in ["Taipei", "Beijing", "Shanghai", "Hong_Kong", "+08", "+0800", "8"]):
+        return timezone(timedelta(hours=8))
+    elif any(k in tz_str for k in ["Vietnam", "Ho_Chi_Minh", "Bangkok", "+07", "+0700", "7"]):
+        return timezone(timedelta(hours=7))
+    elif any(k in tz_str for k in ["Tokyo", "Seoul", "+09", "+0900", "9"]):
+        return timezone(timedelta(hours=9))
+    elif any(k in tz_str for k in ["UTC", "GMT", "0"]):
+        return timezone.utc
+    try:
+        return datetime.now().astimezone().tzinfo
+    except Exception:
+        return timezone(timedelta(hours=8))
 
 def decode_mime_words(s):
     if not s:
@@ -98,20 +133,27 @@ def send_autoreply_email(owner_email, sender_email, subject, body, orig_msg_id):
     if sendmail_bin:
         try:
             cmd = [sendmail_bin, "-t", "-oi", "-f", owner_email]
-            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-            proc.communicate(input=msg.as_bytes())
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate(input=msg.as_bytes())
+            if proc.returncode == 0:
+                log_maillog(f"Auto-reply email sent successfully to {sender_email} (from {owner_email})")
+            else:
+                log_maillog(f"sendmail returned exit code {proc.returncode}: {stderr.decode(errors='ignore')}", syslog.LOG_ERR if HAS_SYSLOG else None)
         except Exception as e:
-            sys.stderr.write(f"Error sending delayed auto-reply: {e}\n")
+            log_maillog(f"Error executing sendmail: {e}", syslog.LOG_ERR if HAS_SYSLOG else None)
+    else:
+        log_maillog("sendmail binary not found on system", syslog.LOG_ERR if HAS_SYSLOG else None)
 
 def background_delayed_task(owner_email, sender_email, subject, body, orig_msg_id):
     """
     Runs in a detached background daemon process. Sleeps 15s then sends email.
     """
     try:
+        log_maillog(f"Starting {DELAY_SECONDS}s delay before auto-reply to {sender_email}...")
         time.sleep(DELAY_SECONDS)
         send_autoreply_email(owner_email, sender_email, subject, body, orig_msg_id)
     except Exception as e:
-        sys.stderr.write(f"Delayed task error: {e}\n")
+        log_maillog(f"Delayed task error: {e}", syslog.LOG_ERR if HAS_SYSLOG else None)
 
 def main():
     raw_email = sys.stdin.buffer.read()
@@ -123,23 +165,36 @@ def main():
     except Exception:
         sys.exit(0)
 
-    # Determine recipient (owner)
-    delivered_to = msg.get("Delivered-To", "") or msg.get("X-Original-To", "") or msg.get("Envelope-To", "") or msg.get("To", "")
-    _, owner_email = parseaddr(decode_mime_words(delivered_to))
-    owner_email = owner_email.lower().strip()
+    # 1. Determine recipient (mailbox owner)
+    recipient_env = os.environ.get("RECIPIENT", "").strip()
+    if recipient_env:
+        _, owner_email = parseaddr(recipient_env)
+        owner_email = owner_email.lower().strip()
+    else:
+        delivered_to = msg.get("Delivered-To", "") or msg.get("X-Original-To", "") or msg.get("Envelope-To", "") or msg.get("To", "")
+        _, owner_email = parseaddr(decode_mime_words(delivered_to))
+        owner_email = owner_email.lower().strip()
 
     if not owner_email:
         sys.exit(0)
 
-    from_header = decode_mime_words(msg.get("From", ""))
-    _, sender_email = parseaddr(from_header)
-    sender_email = sender_email.lower().strip()
+    # 2. Determine sender
+    sender_env = os.environ.get("SENDER", "").strip()
+    if sender_env:
+        _, sender_email = parseaddr(sender_env)
+        sender_email = sender_email.lower().strip()
+    else:
+        from_header = decode_mime_words(msg.get("From", ""))
+        _, sender_email = parseaddr(from_header)
+        sender_email = sender_email.lower().strip()
 
-    # Don't auto-reply to self
+    # Don't auto-reply to empty sender or self
     if not sender_email or sender_email == owner_email:
         sys.exit(0)
 
-    # Check Sieve storage directory for this user
+    log_maillog(f"Incoming email intercepted for auto-reply evaluation: from='{sender_email}', to='{owner_email}'")
+
+    # 3. Check Sieve storage directory for this user
     sieve_dir = os.path.join(VMAIL_BASE, owner_email, "sieve")
     if not os.path.exists(sieve_dir):
         local_part = owner_email.split("@")[0]
@@ -147,7 +202,7 @@ def main():
         if not os.path.exists(sieve_dir):
             sys.exit(0)
 
-    # Read config generated by handle_autoreply.py
+    # 4. Read config generated by handle_autoreply.py
     cfg_path = os.path.join(sieve_dir, "autoreply_config.json")
     if not os.path.exists(cfg_path):
         sys.exit(0)
@@ -159,24 +214,34 @@ def main():
         sys.exit(0)
 
     if not cfg.get("enabled", False):
+        log_maillog(f"Auto-reply is disabled for {owner_email}")
         sys.exit(0)
 
-    # Validate active date window
+    # 5. Validate active date window
     if not cfg.get("is_always_on", False):
         start_ts = cfg.get("start_ts")
         end_ts = cfg.get("end_ts")
         now_ts = time.time()
         if start_ts and end_ts:
             if not (start_ts <= now_ts <= end_ts):
+                app_tz = get_configured_tz()
+                log_maillog(
+                    f"Auto-reply inactive for {owner_email}: current time "
+                    f"({datetime.fromtimestamp(now_ts, app_tz).strftime('%Y-%m-%d %H:%M:%S %z')}) "
+                    f"is outside vacation window [{cfg.get('start_str', start_ts)} ~ {cfg.get('end_str', end_ts)}]"
+                )
                 sys.exit(0)
 
-    # Check 24-hour rate limit
+    # 6. Check 24-hour rate limit
     if not check_and_update_rate_limit(sieve_dir, sender_email):
+        log_maillog(f"Auto-reply rate limited for {sender_email} (already sent within 24 hours)")
         sys.exit(0)
 
     reply_subject = cfg.get("subject", "【自動回覆】休假中 / Out of Office")
     reply_body = cfg.get("body", "您好：我目前休假/公出中，將於銷假後儘速處理您的郵件。")
     orig_msg_id = msg.get("Message-ID", "")
+
+    log_maillog(f"Auto-reply criteria met for {owner_email} -> {sender_email}. Forking {DELAY_SECONDS}s delayed worker...")
 
     # Double-Fork to detach immediately and release Dovecot LMTP in < 0.005s
     try:

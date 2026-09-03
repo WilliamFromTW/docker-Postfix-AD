@@ -184,7 +184,12 @@ else
   echo "TLS_REQCERT never" > /etc/openldap/ldap.conf
 fi
 
-echo $TZ > /etc/timezone
+if [ -n "$TZ" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+  ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  echo "$TZ" > /etc/timezone
+elif [ -n "$TZ" ]; then
+  echo "$TZ" > /etc/timezone
+fi
 chown clamupdate:clamupdate /var/lib/clamav
 chmod 755 /var/lib/clamav
 sudo mkdir -p /run/clamd.scan
