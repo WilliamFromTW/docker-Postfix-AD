@@ -207,31 +207,51 @@ For environments without a Webmail GUI, the system provides a smart **Email-Driv
 
 ```mermaid
 graph TD
-    User["User (Any Email Client)"] -->|"Send Command to Self (From == To, Subject: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"LMTP Delivery (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["User (Send to self: From == To)"] -->|"# tag or oral keywords (4 languages)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP Delivery"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"Intercept Command"| Handler["Parser Script (handle_autoreply.py)"]
-    Handler -->|"Parse Date Range & Body"| SieveGen["Generate /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"sievec Compile"| Binary[".svbin Bytecode"]
-    Handler -->|"Send Confirmation Email"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["handle_autoreply.py"]
+    Handler --> CheckOllama{"OLLAMA_HOST Configured & Healthy?"}
+    
+    CheckOllama -->|"Yes"| Ollama["Ollama Local GPU Server (JSON NLU)"]
+    CheckOllama -->|"No / Timeout"| FallbackRegex["Legacy Regex Parser (#)"]
+    
+    Ollama --> ResultCheck{"Parsed Result"}
+    ResultCheck -->|"action: disable"| DoDisable["Clear Sieve & Send Disabled Notice"]
+    ResultCheck -->|"start & end dates"| ApplyConfig["Generate dovecot.sieve & config.json"]
+    ResultCheck -->|"unclear dates"| NotifyUnclear["Send Unclear Dates Notice"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["sievec Compile (.svbin)"]
+    Sievec --> SendSuccess["Send Confirmation Notification Email"]
 
     RemoteSender["External Sender"] -->|"Send Email"| Postfix
     Postfix -->|"LMTP Delivery"| Dovecot
-    Dovecot -->|"Read dovecot.sieve"| CheckDate{"Within Active Date Range?"}
-    CheckDate -->|"Yes (and not replied in 24h)"| AutoReply["Auto-Reply Vacation Response to Sender"]
+    Dovecot -->|"Check dovecot.sieve & 15s Delay"| CheckDate{"Within Active Date Range?"}
+    CheckDate -->|"Yes (<= 1 reply per 24h)"| AutoReply["Send Standard Non-AI Response"]
     CheckDate -->|"No"| Inbox["Deliver to Maildir Inbox"]
 ```
 
 ### 📩 How Users Enable / Disable Auto-Reply
-Users simply send an email **to themselves** from their desktop/mobile email client:
 
-#### 1. Enable with Date Range (Timezone: UTC+8 / Asia/Taipei)
+Users simply send an email **to themselves (From == To)** from any desktop/mobile email client:
+
+#### 0. 🤖 Local Ollama AI Natural Language Leave Mode (LAN GPU Server, 4 Languages)
+When `OLLAMA_HOST` is configured (e.g. `http://192.168.1.100:11434`), users can naturally phrase their out-of-office intentions without memorizing commands:
+- **English**: Subject `Out of office until next Monday` or `Tomorrow on leave`
+- **Traditional Chinese**: Subject `我下週三到五休假去日本` or `明天下午請假去看牙醫`
+- **Simplified Chinese**: Subject `我下周一到周三出差北京` or `明天请假一天`
+- **Vietnamese**: Subject `Tôi xin nghỉ phép từ thứ 4 đến thứ 6 tuần sau` or `Ngày mai tôi đi công tác`
+- **Oral Cancellation**: Simply send an email saying `Cancel out of office`, `我銷假了`, or `Tôi đã đi làm lại` to immediately disable the auto-responder!
+- **Zero AI Hallucination**: AI is strictly limited to extracting date intervals and intent. Outbound reply bodies always use standardized, enterprise-compliant templates (or user's explicitly provided email body).
+- **Graceful Fallback**: If the GPU host is offline or times out (default 5s), it seamlessly falls back to legacy `#` regex matching.
+
+#### 1. Enable with Date Range (Legacy `#` Command, Timezone: UTC+8 / Asia/Taipei)
 - **To**: `your_email@example.com`
 - **Subject**: `#autoreply 2026-08-25 ~ 2026-08-30 Out of Office / Vacation`
 - **Body**: Fill in your custom out-of-office message, delegate contact info, or emergency phone numbers.
 - *System automatically activates on 2026-08-25 00:00:00 and expires on 2026-08-30 23:59:59 (UTC+8).*
 
-#### 2. Enable Indefinitely (Until Turned Off)
 - **Subject**: `#autoreply on Out of Office`
 - **Body**: Custom message.
 

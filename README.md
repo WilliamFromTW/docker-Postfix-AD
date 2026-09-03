@@ -19,7 +19,7 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 - **Active Directory / OpenLDAP Auth**: Defaults to standard Port 389, with optional `ENABLE_LDAPS=true` for Port 636 LDAPS TLS encryption. Compatible with Windows Server 2008R2~2025, NethServer 8, Synology AD, and OpenLDAP.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Dovecot IMAP / POP3 / LMTP Server**.
-- **Email-Driven Smart Auto-Reply & Vacation Responder**: Sieve-powered automatic replies triggered via email commands without requiring a Webmail GUI.
+- **Email-Driven Smart Auto-Reply & Vacation Responder**: Sieve-powered automatic replies triggered via traditional email commands or local Ollama LLM natural language phrasing (4 languages: zh-TW, zh-CN, vi, en) without requiring a Webmail GUI.
 - **OpenDKIM**: Email signature verification & signing.
 - **Rspamd**: High-performance spam filter with Web UI.
 - **ClamAV**: Antivirus scanner integration.
@@ -75,6 +75,9 @@ services:
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
+      # - OLLAMA_HOST=http://192.168.1.100:11434  # LAN GPU Ollama server for natural language leave
+      # - OLLAMA_MODEL=qwen2.5:7b
+      # - OLLAMA_TIMEOUT=5
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail

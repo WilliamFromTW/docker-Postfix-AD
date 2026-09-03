@@ -1,10 +1,19 @@
 require ["vnd.dovecot.pipe", "copy", "variables", "envelope", "subaddress"];
 
-# 1. 攔截由本人寄給本人的指令信 (#autoreply / #vacation / #休假 / #不在 / #出差 / #請假)
+# 1. 攔截由本人寄給本人的指令信或四語系口語休假/銷假信
 if allof (
-    header :matches "Subject" "*#*",
-    header :matches "Subject" ["*#autoreply*", "*#vacation*", "*#休假*", "*#不在*", "*#出差*", "*#請假*"],
-    not header :matches "Subject" ["*【自動回覆通知】*", "*[Auto-Reply Notification]*", "*Re: *", "*Fwd: *"]
+    header :matches "Subject" [
+        "*#*",
+        "*休假*", "*請假*", "*出差*", "*公出*", "*不在*", "*特休*", "*事假*", "*病假*", "*銷假*", "*取消*", "*停用*", "*關閉*",
+        "*请假*", "*年假*", "*销假*", "*关闭*",
+        "*nghỉ phép*", "*nghỉ*", "*đi công tác*", "*công tác*", "*vắng mặt*", "*nghỉ ốm*", "*hủy*", "*tắt*",
+        "*vacation*", "*holiday*", "*leave*", "*out of office*", "*ooo*", "*day off*", "*business trip*", "*cancel*", "*disable*", "*turn off*"
+    ],
+    not header :matches "Subject" [
+        "*【自動回覆通知】*", "*【自动回复通知】*",
+        "*[Auto-Reply Notification]*", "*[Thông báo tự động trả lời]*",
+        "*Re: *", "*Fwd: *"
+    ]
 ) {
     pipe :copy "handle_autoreply.py";
     keep;

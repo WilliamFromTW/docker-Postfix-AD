@@ -159,6 +159,30 @@
               </div>
             </div>
 
+            <!-- Ollama AI Settings Section -->
+            <div class="col-12 mt-3">
+              <div class="card bg-light border-0 shadow-sm p-3">
+                <h6 class="fw-bold text-primary mb-2">
+                  <i class="fa-solid fa-robot me-1"></i><span data-i18n="ollamaSectionTitle">Ollama 本機端 AI 口語請假助理設定 (選填)</span>
+                </h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="inputOllamaHost" class="form-label" data-i18n="ollamaHost">Ollama 主機網址 (OLLAMA_HOST)</label>
+                    <input type="text" class="form-control" id="inputOllamaHost" data-i18n-placeholder="placeholderOllamaHost" placeholder="http://192.168.1.100:11434">
+                    <div class="form-text text-muted" data-i18n="ollamaHostHelp">區網獨立 GPU 伺服器網址，留空則維持純傳統 Regex 請假設定</div>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="inputOllamaModel" class="form-label" data-i18n="ollamaModel">AI 模型名稱 (OLLAMA_MODEL)</label>
+                    <input type="text" class="form-control" id="inputOllamaModel" value="qwen2.5:7b" placeholder="qwen2.5:7b">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="inputOllamaTimeout" class="form-label" data-i18n="ollamaTimeout">連線超時秒數 (OLLAMA_TIMEOUT)</label>
+                    <input type="number" class="form-control" id="inputOllamaTimeout" value="5" min="1" max="60">
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="col-12 mt-4 text-center">
               <button class="btn btn-primary btn-lg px-5" type="submit" data-i18n="btnGen">🚀 Generate Configs</button>
             </div>
@@ -229,7 +253,13 @@
           placeholderDomain: "test.com",
           placeholderMailServer: "mail.test.com",
           placeholderSpam: "spam@test.com",
-          placeholderPermitNetwork: "192.168.1.0/24"
+          placeholderPermitNetwork: "192.168.1.0/24",
+          ollamaSectionTitle: "Ollama Local AI Out-of-Office Assistant (Optional)",
+          ollamaHost: "Ollama Host URL (OLLAMA_HOST)",
+          ollamaHostHelp: "LAN independent GPU server URL. Leave empty to use legacy regex auto-reply only.",
+          ollamaModel: "AI Model Name (OLLAMA_MODEL)",
+          ollamaTimeout: "Timeout Seconds (OLLAMA_TIMEOUT)",
+          placeholderOllamaHost: "http://192.168.1.100:11434"
         },
         "zh-TW": {
           docTitle: "Postfix 郵件伺服器 + Rspamd + Active Directory 設定產生器",
@@ -270,7 +300,13 @@
           placeholderDomain: "test.com",
           placeholderMailServer: "mail.test.com",
           placeholderSpam: "spam@test.com",
-          placeholderPermitNetwork: "192.168.1.0/24"
+          placeholderPermitNetwork: "192.168.1.0/24",
+          ollamaSectionTitle: "Ollama 本機端 AI 口語請假助理設定 (選填)",
+          ollamaHost: "Ollama 主機網址 (OLLAMA_HOST)",
+          ollamaHostHelp: "區網獨立 GPU 伺服器網址，留空則維持純傳統 Regex 請假設定",
+          ollamaModel: "AI 模型名稱 (OLLAMA_MODEL)",
+          ollamaTimeout: "連線超時秒數 (OLLAMA_TIMEOUT)",
+          placeholderOllamaHost: "http://192.168.1.100:11434"
         },
         "zh-CN": {
           docTitle: "Postfix 邮件服务器 + Rspamd + Active Directory 配置生成器",
@@ -311,7 +347,13 @@
           placeholderDomain: "test.com",
           placeholderMailServer: "mail.test.com",
           placeholderSpam: "spam@test.com",
-          placeholderPermitNetwork: "192.168.1.0/24"
+          placeholderPermitNetwork: "192.168.1.0/24",
+          ollamaSectionTitle: "Ollama 本地端 AI 口语请假助理配置 (选填)",
+          ollamaHost: "Ollama 主机网址 (OLLAMA_HOST)",
+          ollamaHostHelp: "局域网独立 GPU 服务器网址，留空则维持纯传统 Regex 请假配置",
+          ollamaModel: "AI 模型名称 (OLLAMA_MODEL)",
+          ollamaTimeout: "连接超时秒数 (OLLAMA_TIMEOUT)",
+          placeholderOllamaHost: "http://192.168.1.100:11434"
         },
         vi: {
           docTitle: "Công cụ tạo cấu hình Postfix + Rspamd + Active Directory",
@@ -352,7 +394,13 @@
           placeholderDomain: "test.com",
           placeholderMailServer: "mail.test.com",
           placeholderSpam: "spam@test.com",
-          placeholderPermitNetwork: "192.168.1.0/24"
+          placeholderPermitNetwork: "192.168.1.0/24",
+          ollamaSectionTitle: "Cấu hình trợ lý nghỉ phép AI cục bộ Ollama (Tùy chọn)",
+          ollamaHost: "Địa chỉ máy chủ Ollama (OLLAMA_HOST)",
+          ollamaHostHelp: "Địa chỉ máy chủ GPU độc lập trong mạng LAN. Để trống để sử dụng Regex truyền thống.",
+          ollamaModel: "Tên mô hình AI (OLLAMA_MODEL)",
+          ollamaTimeout: "Thời gian chờ giây (OLLAMA_TIMEOUT)",
+          placeholderOllamaHost: "http://192.168.1.100:11434"
         }
       };
 
@@ -419,6 +467,9 @@
         var timeZone = $("#inputTimeZone").val().trim() || "Asia/Taipei";
         var enableQuota = $("#inputEnableQuota").is(":checked") ? "true" : "false";
         var enableLdaps = $("#inputEnableLdaps").is(":checked") ? "true" : "false";
+        var ollamaHost = $("#inputOllamaHost").val().trim();
+        var ollamaModel = $("#inputOllamaModel").val().trim() || "qwen2.5:7b";
+        var ollamaTimeout = $("#inputOllamaTimeout").val().trim() || "5";
 
         // Docker / Podman CLI 額外選項
         var cliOptional = "";
@@ -433,6 +484,11 @@
         }
         if (spamEmail !== "") {
           cliOptional += " -e SPAM_EMAIL='" + spamEmail + "' \\\n";
+        }
+        if (ollamaHost !== "") {
+          cliOptional += " -e OLLAMA_HOST='" + ollamaHost + "' \\\n";
+          cliOptional += " -e OLLAMA_MODEL='" + ollamaModel + "' \\\n";
+          cliOptional += " -e OLLAMA_TIMEOUT='" + ollamaTimeout + "' \\\n";
         }
 
         // 1. Docker Run 指令
@@ -520,6 +576,11 @@
         }
         if (permitNetwork !== "") {
           composeEnv += "      - MY_NETWORKS='" + permitNetwork + "'\n";
+        }
+        if (ollamaHost !== "") {
+          composeEnv += "      - OLLAMA_HOST='" + ollamaHost + "'\n";
+          composeEnv += "      - OLLAMA_MODEL='" + ollamaModel + "'\n";
+          composeEnv += "      - OLLAMA_TIMEOUT='" + ollamaTimeout + "'\n";
         }
 
         var composeYaml = "version: '3.8'\n\n" +

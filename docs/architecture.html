@@ -243,7 +243,7 @@ Body: Hello, I am currently out of office until Aug 30.</code></pre>
               </div>
             </div>
             <div class="col-md-6">
-              <div class="p-3 bg-white border rounded">
+              <div class="p-3 bg-white border rounded h-100">
                 <h6 class="fw-bold text-success" data-i18n="arMode2Title">⚡ Always On / Turn Off Mode</h6>
                 <p class="small text-muted mb-2" data-i18n="arMode2Desc">Turn on indefinitely or cancel immediately.</p>
                 <pre class="m-0 small"><code># Turn on:
@@ -252,6 +252,26 @@ Body: I am on business trip.
 
 # Turn off immediately:
 <span class="text-danger fw-bold">Subject: #autoreply off</span></code></pre>
+              </div>
+            </div>
+            <div class="col-12 mt-3">
+              <div class="p-3 bg-white border rounded shadow-sm">
+                <h6 class="fw-bold text-primary" data-i18n="arModeAiTitle">🤖 Local Ollama AI Natural Language Leave Mode (4 Languages)</h6>
+                <p class="small text-muted mb-2" data-i18n="arModeAiDesc">Send email to yourself with natural phrasing. Ollama calculates exact dates and maps to standard templates without hallucination.</p>
+                <div class="row g-2 small">
+                  <div class="col-md-6">
+                    <strong>🇹🇼 繁體中文 / 🇨🇳 簡體中文:</strong>
+                    <pre class="m-0 p-2 bg-light rounded"><code>Subject: 我下週三到五休假去日本
+Subject: 明天下午請假去看牙醫
+Subject: 我銷假了 (口頭取消自動回覆)</code></pre>
+                  </div>
+                  <div class="col-md-6">
+                    <strong>🇻🇳 Tiếng Việt / 🇺🇸 English:</strong>
+                    <pre class="m-0 p-2 bg-light rounded"><code>Subject: Tôi xin nghỉ phép từ thứ 4 đến thứ 6
+Subject: Out of office until next Monday
+Subject: Cancel vacation (Oral cancellation)</code></pre>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -301,6 +321,8 @@ Body: I am on business trip.
           arMode1Desc: "Send email to yourself with date range. Automatically expires when period ends.",
           arMode2Title: "⚡ Always On / Turn Off Mode",
           arMode2Desc: "Turn on indefinitely or cancel immediately.",
+          arModeAiTitle: "🤖 Local Ollama AI Natural Language Leave Mode (4 Languages)",
+          arModeAiDesc: "Send email to yourself with natural phrasing. Ollama calculates exact dates and maps to standard templates without hallucination.",
           diagramAd: `graph TD
     RemoteMTA["Remote Mail Server (Remote MTA)"] -->|"SMTP :25 (Server-to-Server Relay)"| Postfix["Postfix MTA"]
     Client["Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Authenticated Submission)"| Postfix
@@ -353,18 +375,28 @@ Body: I am on business trip.
         I --> J["Reload Services inside Container: postfix reload & dovecot reload"]
     end`,
           diagramAutoreply: `graph TD
-    User["User (Any Email Client)"] -->|"Send Command to Self (From == To, Subject: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"LMTP Delivery (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["User (Send to self: From == To)"] -->|"# tag or oral keywords (4 languages)"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP Delivery"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"Intercept Command"| Handler["Parser Script (handle_autoreply.py)"]
-    Handler -->|"Parse Date Range & Body"| SieveGen["Generate /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"sievec Compile"| Binary[".svbin Bytecode"]
-    Handler -->|"Send Confirmation Email"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["handle_autoreply.py"]
+    Handler --> CheckOllama{"OLLAMA_HOST Configured & Healthy?"}
+    
+    CheckOllama -->|"Yes"| Ollama["Ollama Local GPU Server (JSON NLU)"]
+    CheckOllama -->|"No / Timeout"| FallbackRegex["Legacy Regex Parser (#)"]
+    
+    Ollama --> ResultCheck{"Parsed Result"}
+    ResultCheck -->|"action: disable"| DoDisable["Clear Sieve & Send Disabled Notice"]
+    ResultCheck -->|"start & end dates"| ApplyConfig["Generate dovecot.sieve & config.json"]
+    ResultCheck -->|"unclear dates"| NotifyUnclear["Send Unclear Dates Notice"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["sievec Compile (.svbin)"]
+    Sievec --> SendSuccess["Send Confirmation Notification Email"]
 
     RemoteSender["External Sender"] -->|"Send Email"| Postfix
     Postfix -->|"LMTP Delivery"| Dovecot
-    Dovecot -->|"Read dovecot.sieve"| CheckDate{"Within Active Date Range?"}
-    CheckDate -->|"Yes (and not replied in 24h)"| AutoReply["Auto-Reply Vacation Response to Sender"]
+    Dovecot -->|"Check dovecot.sieve & 15s Delay"| CheckDate{"Within Active Date Range?"}
+    CheckDate -->|"Yes (<= 1 reply per 24h)"| AutoReply["Send Standard Non-AI Response"]
     CheckDate -->|"No"| Inbox["Deliver to Maildir Inbox"]`
         },
         "zh-TW": {
@@ -403,6 +435,8 @@ Body: I am on business trip.
           arMode1Desc: "發信給自己並指定起訖日期，時間結束後自動失效，免手動關閉。",
           arMode2Title: "⚡ 常開模式 / 立即停用",
           arMode2Desc: "支援無期限常開與隨時發信停用。",
+          arModeAiTitle: "🤖 Ollama 本機端 AI 四語系口語請假模式",
+          arModeAiDesc: "寄信給自己隨手口語請假，由獨立 GPU 伺服器精確推算起訖時間，套用安全樣板零幻覺！",
           diagramAd: `graph TD
     RemoteMTA["外部郵件伺服器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 傳輸)"| Postfix["Postfix MTA"]
     Client["郵件用戶端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (驗證寄信)"| Postfix
@@ -455,18 +489,28 @@ Body: I am on business trip.
         I --> J["於容器內重新載入服務: postfix & dovecot reload"]
     end`,
           diagramAutoreply: `graph TD
-    User["使用者 (任何郵件客戶端)"] -->|"發送指令信 (From == To, 主旨: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["使用者 (寄信給自己: From == To)"] -->|"# 指令或四語系口語關鍵字"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"攔截指令信"| Handler["解析腳本 (handle_autoreply.py)"]
-    Handler -->|"解析日期區間與回信內文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"sievec 編譯"| Binary[".svbin 二進位規則"]
-    Handler -->|"發送設定結果確認信"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["解析腳本 (handle_autoreply.py)"]
+    Handler --> CheckOllama{"是否有設定 OLLAMA_HOST 且連線正常？"}
+    
+    CheckOllama -->|"是"| Ollama["Ollama 區網 GPU 伺服器 (JSON 意圖辨識)"]
+    CheckOllama -->|"否 / 超時"| FallbackRegex["傳統 Regex 解析器 (# 指令)"]
+    
+    Ollama --> ResultCheck{"AI 解析結果"}
+    ResultCheck -->|"action: disable"| DoDisable["清除 Sieve 並寄送停用通知信"]
+    ResultCheck -->|"成功辨識起訖日"| ApplyConfig["生成 dovecot.sieve 與 config.json"]
+    ResultCheck -->|"日期模糊/無日期"| NotifyUnclear["寄送補充日期提醒信"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["sievec 編譯 (.svbin 二進位規則)"]
+    Sievec --> SendSuccess["發送設定結果確認信給本人"]
 
     RemoteSender["外部寄件者"] -->|"發送信件"| Postfix
     Postfix -->|"LMTP 派送"| Dovecot
-    Dovecot -->|"讀取 dovecot.sieve 判定"| CheckDate{"是否在生效區間內？"}
-    CheckDate -->|"是 (且24hr內未回過)"| AutoReply["自動發送 Vacation 回信給外部寄件者"]
+    Dovecot -->|"檢查 dovecot.sieve 與 15 秒延遲"| CheckDate{"是否在生效區間內？"}
+    CheckDate -->|"是 (且 24 小時內未回過)"| AutoReply["自動發送標準固定樣板回覆 (非 AI 生成)"]
     CheckDate -->|"否"| Inbox["正常存入 Maildir 收件匣"]`
         },
         "zh-CN": {
@@ -505,6 +549,8 @@ Body: I am on business trip.
           arMode1Desc: "发信给自己并指定起讫日期，时间结束后自动失效，免手动关闭。",
           arMode2Title: "⚡ 常开模式 / 立即停用",
           arMode2Desc: "支持无期限常开与随时发信停用。",
+          arModeAiTitle: "🤖 Ollama 本地端 AI 四语系口语请假模式",
+          arModeAiDesc: "发信给自己随手口语请假，由独立 GPU 服务器精确推算起讫时间，套用安全样板零幻觉！",
           diagramAd: `graph TD
     RemoteMTA["外部邮件服务器 (Remote MTA)"] -->|"SMTP :25 (Server-to-Server 传输)"| Postfix["Postfix MTA"]
     Client["邮件客户端 (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (验证发信)"| Postfix
@@ -557,18 +603,28 @@ Body: I am on business trip.
         I --> J["在容器内重新载入服务: postfix & dovecot reload"]
     end`,
           diagramAutoreply: `graph TD
-    User["用户 (任何邮件客户端)"] -->|"发送指令信 (From == To, 主题: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["用户 (发信给自己: From == To)"] -->|"# 指令或四语系口语关键字"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"拦截指令信"| Handler["解析脚本 (handle_autoreply.py)"]
-    Handler -->|"解析日期区间与回复正文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"sievec 编译"| Binary[".svbin 二进制规则"]
-    Handler -->|"发送配置结果确认信"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["解析脚本 (handle_autoreply.py)"]
+    Handler --> CheckOllama{"是否有配置 OLLAMA_HOST 且连接正常？"}
+    
+    CheckOllama -->|"是"| Ollama["Ollama 局域网 GPU 服务器 (JSON 意图识别)"]
+    CheckOllama -->|"否 / 超时"| FallbackRegex["传统 Regex 解析器 (# 指令)"]
+    
+    Ollama --> ResultCheck{"AI 解析结果"}
+    ResultCheck -->|"action: disable"| DoDisable["清除 Sieve 并发送停用通知信"]
+    ResultCheck -->|"成功识别起讫日"| ApplyConfig["生成 dovecot.sieve 与 config.json"]
+    ResultCheck -->|"日期模糊/无日期"| NotifyUnclear["发送补充日期提醒信"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["sievec 编译 (.svbin 二进制规则)"]
+    Sievec --> SendSuccess["发送配置结果确认信给本人"]
 
     RemoteSender["外部发件人"] -->|"发送邮件"| Postfix
     Postfix -->|"LMTP 派送"| Dovecot
-    Dovecot -->|"读取 dovecot.sieve 判定"| CheckDate{"是否在生效区间内？"}
-    CheckDate -->|"是 (且24hr内未回复过)"| AutoReply["自动发送 Vacation 回复给外部发件人"]
+    Dovecot -->|"检查 dovecot.sieve 与 15 秒延迟"| CheckDate{"是否在生效区间内？"}
+    CheckDate -->|"是 (且 24 小时内未回复过)"| AutoReply["自动发送标准固定样板回复 (非 AI 生成)"]
     CheckDate -->|"否"| Inbox["正常存入 Maildir 收件箱"]`
         },
         vi: {
@@ -607,6 +663,8 @@ Body: I am on business trip.
           arMode1Desc: "Gửi thư cho chính mình kèm khoảng thời gian. Tự động hết hạn khi hết thời gian.",
           arMode2Title: "⚡ Chế độ Luôn bật / Tắt ngay",
           arMode2Desc: "Bật vô thời hạn hoặc tắt bất cứ lúc nào.",
+          arModeAiTitle: "🤖 Chế độ xin nghỉ phép bằng ngôn ngữ tự nhiên qua Ollama AI cục bộ (4 ngôn ngữ)",
+          arModeAiDesc: "Gửi email cho chính mình bằng văn nói tự nhiên, máy chủ GPU độc lập sẽ tính toán chính xác ngày và áp dụng mẫu an toàn không lo AI bịa đặt!",
           diagramAd: `graph TD
     RemoteMTA["Máy chủ Mail bên ngoài (Remote MTA)"] -->|"SMTP :25 (Truyền tải Server-to-Server)"| Postfix["Postfix MTA"]
     Client["Ứng dụng Email Client (Client / MUA)"] -->|"SMTPS/Submission :465/:587 (Gửi thư xác thực)"| Postfix
@@ -659,19 +717,29 @@ Body: I am on business trip.
         I --> J["Tải lại dịch vụ trong Container: postfix & dovecot reload"]
     end`,
           diagramAutoreply: `graph TD
-    User["Người dùng (Mọi ứng dụng Mail Client)"] -->|"Gửi lệnh cho chính mình (From == To, Tiêu đề: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"Phân phối LMTP (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["Người dùng (Gửi cho chính mình: From == To)"] -->|"Thẻ # hoặc từ khóa văn nói (4 ngôn ngữ)"| Postfix["Postfix MTA"]
+    Postfix -->|"Phân phối LMTP"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"Chặn bắt lệnh"| Handler["Script xử lý (handle_autoreply.py)"]
-    Handler -->|"Phân tích khoảng thời gian & Nội dung"| SieveGen["Tạo /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"Biên dịch sievec"| Binary["Mã nhị phân .svbin"]
-    Handler -->|"Gửi thư xác nhận thiết lập"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["Script xử lý (handle_autoreply.py)"]
+    Handler --> CheckOllama{"Đã cấu hình OLLAMA_HOST & Kết nối tốt?"}
+    
+    CheckOllama -->|"Đúng"| Ollama["Máy chủ GPU Ollama LAN (Nhận diện JSON NLU)"]
+    CheckOllama -->|"Không / Hết giờ"| FallbackRegex["Trình phân tích Regex cũ (#)"]
+    
+    Ollama --> ResultCheck{"Kết quả phân tích AI"}
+    ResultCheck -->|"action: disable"| DoDisable["Xóa Sieve & Gửi thư thông báo đã tắt"]
+    ResultCheck -->|"Xác định được ngày"| ApplyConfig["Tạo dovecot.sieve & config.json"]
+    ResultCheck -->|"Ngày chưa rõ"| NotifyUnclear["Gửi thư yêu cầu bổ sung ngày"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["Biên dịch sievec (.svbin)"]
+    Sievec --> SendSuccess["Gửi thư xác nhận thiết lập cho người dùng"]
 
     RemoteSender["Người gửi bên ngoài"] -->|"Gửi thư"| Postfix
     Postfix -->|"Phân phối LMTP"| Dovecot
-    Dovecot -->|"Đọc dovecot.sieve kiểm tra"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
-    CheckDate -->|"Đúng (và chưa trả lời trong 24h)"| AutoReply["Tự động gửi thư phản hồi Vacation"]
-    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir bình thường"]`
+    Dovecot -->|"Kiểm tra dovecot.sieve & Độ trễ 15 giây"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
+    CheckDate -->|"Đúng (<= 1 phản hồi/24h)"| AutoReply["Tự động gửi phản hồi mẫu chuẩn (Không dùng AI)"]
+    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir"]`
         }
       };
 

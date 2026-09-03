@@ -19,7 +19,7 @@
 - **Active Directory / OpenLDAP 认证**：默认采用标准 Port 389，支持配置 `ENABLE_LDAPS=true` 切换为 Port 636 (LDAPS TLS 加密)，兼容 Windows Server 2008R2~2025、NethServer 8、群晖 AD 与 OpenLDAP。
 - **Postfix 邮件传输代理 (MTA)**。
 - **Dovecot IMAP / POP3 / LMTP 服务器**。
-- **Email 驱动智能自动回复 (Auto-Reply / Vacation)**：支持通过邮件指令设置休假与公出自动回复，无 Webmail 亦可轻松使用。
+- **Email 驱动智能自动回复 (Auto-Reply / Vacation)**：支持通过传统邮件指令或局域网独立 GPU Ollama 本地端 AI 口语设置休假/销假（支持简中、繁中、越文、英文），无 Webmail 亦可轻松使用。
 - **OpenDKIM**：邮件数字签名与验证。
 - **Rspamd**：高性能垃圾邮件过滤引擎与 Web 控制台。
 - **ClamAV**：内置防病毒扫描。
@@ -75,6 +75,9 @@ services:
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
+      # - OLLAMA_HOST=http://192.168.1.100:11434  # 局域网独立 GPU Ollama 服务器 (支持 4 语系口语请假)
+      # - OLLAMA_MODEL=qwen2.5:7b
+      # - OLLAMA_TIMEOUT=5
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail

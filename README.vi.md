@@ -19,7 +19,7 @@
 - **Xác thực Active Directory / OpenLDAP**: Mặc định cổng 389, hỗ trợ tùy chọn `ENABLE_LDAPS=true` để mã hóa TLS qua cổng LDAPS 636. Tương thích Windows Server 2008R2~2025, NethServer 8, Synology AD, và OpenLDAP.
 - **Postfix Mail Transfer Agent (MTA)**.
 - **Máy chủ Dovecot IMAP / POP3 / LMTP**.
-- **Tự động trả lời email thông minh (Auto-Reply / Vacation)**: Hỗ trợ thiết lập báo nghỉ phép và phản hồi tự động bằng lệnh email mà không cần giao diện Webmail.
+- **Tự động trả lời email thông minh (Auto-Reply / Vacation)**: Hỗ trợ thiết lập báo nghỉ phép và phản hồi tự động bằng lệnh email truyền thống hoặc ngôn ngữ tự nhiên qua Ollama AI cục bộ (4 ngôn ngữ: Tiếng Việt, Tiếng Anh, Tiếng Trung phồn thể/giản thể) mà không cần giao diện Webmail.
 - **OpenDKIM**: Ký và xác thực chữ ký số email.
 - **Rspamd**: Bộ lọc thư rác hiệu suất cao với giao diện Web UI.
 - **ClamAV**: Tích hợp quét mã độc/virus.
@@ -75,6 +75,9 @@ services:
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
+      # - OLLAMA_HOST=http://192.168.1.100:11434  # Máy chủ GPU Ollama LAN (hỗ trợ xin nghỉ phép bằng văn nói)
+      # - OLLAMA_MODEL=qwen2.5:7b
+      # - OLLAMA_TIMEOUT=5
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - mailserver_vmail:/home/vmail

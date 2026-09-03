@@ -207,25 +207,46 @@ graph TD
 
 ```mermaid
 graph TD
-    User["用户 (任何邮件客户端)"] -->|"发送指令信 (From == To, 主题: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"LMTP 派送 (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["用户 (发信给自己: From == To)"] -->|"# 指令或四语系口语关键字"| Postfix["Postfix MTA"]
+    Postfix -->|"LMTP 派送"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"拦截指令信"| Handler["解析脚本 (handle_autoreply.py)"]
-    Handler -->|"解析日期区间与回复正文"| SieveGen["生成 /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"sievec 编译"| Binary[".svbin 二进制规则"]
-    Handler -->|"发送配置结果确认信"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["解析脚本 (handle_autoreply.py)"]
+    Handler --> CheckOllama{"是否有配置 OLLAMA_HOST 且连接正常？"}
+    
+    CheckOllama -->|"是"| Ollama["Ollama 局域网 GPU 服务器 (JSON 意图识别)"]
+    CheckOllama -->|"否 / 超时"| FallbackRegex["传统 Regex 解析器 (# 指令)"]
+    
+    Ollama --> ResultCheck{"AI 解析结果"}
+    ResultCheck -->|"action: disable"| DoDisable["清除 Sieve 并发送停用通知信"]
+    ResultCheck -->|"成功识别起讫日"| ApplyConfig["生成 dovecot.sieve 与 config.json"]
+    ResultCheck -->|"日期模糊/无日期"| NotifyUnclear["发送补充日期提醒信"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["sievec 编译 (.svbin 二进制规则)"]
+    Sievec --> SendSuccess["发送配置结果确认信给本人"]
 
     RemoteSender["外部发件人"] -->|"发送邮件"| Postfix
     Postfix -->|"LMTP 派送"| Dovecot
-    Dovecot -->|"读取 dovecot.sieve 判定"| CheckDate{"是否在生效区间内？"}
-    CheckDate -->|"是 (且24hr内未回复过)"| AutoReply["自动发送 Vacation 回复给外部发件人"]
+    Dovecot -->|"检查 dovecot.sieve 与 15 秒延迟"| CheckDate{"是否在生效区间内？"}
+    CheckDate -->|"是 (且 24 小时内未回复过)"| AutoReply["自动发送标准固定样板回复 (非 AI 生成)"]
     CheckDate -->|"否"| Inbox["正常存入 Maildir 收件箱"]
 ```
 
 ### 📩 如何启用 / 停用自动回复
-用户只需在任何电脑或手机邮件 App 中**发一封信给自己**：
 
-#### 1. 指定日期区间（默认时区：UTC+8 台北时间）
+用户只需在任何电脑或手机邮件 App 中**发一封信给自己（From == To）**：
+
+#### 0. 🤖 局域网独立 GPU Ollama 本地端 AI 口语请假模式 (支持 4 语系)
+当环境变量配置了 `OLLAMA_HOST`（例如：`http://192.168.1.100:11434`）且 AI 服务正常时，用户可直接随手用日常口语发信给自己：
+- **简体中文**：主题填写“`我下周一到周三出差北京`”、“`明天请假一天`”
+- **繁体中文**：主题填写“`我下週三到五休假去日本`”、“`明天下午請假去看牙醫`”
+- **越南文**：主题填写“`Tôi xin nghỉ phép từ thứ 4 đến thứ 6 tuần sau`”、“`Ngày mai tôi đi công tác`”
+- **英文**：主题填写“`Out of office until next Monday`”、“`I will be on vacation tomorrow`”
+- **口头销假 / 取消回复**：随手发信“`我销假了`”、“`取消这次休假`”、“`Tôi đã đi làm lại`”或“`Cancel out of office`”，系统立即停用自动回信！
+- **零 AI 幻觉保障**：AI 仅负责解析时间区间与意图，对外自动回复邮件坚持采用企业标准样板（若信件正文有撰写代理人信息，则采用撰写内容）。
+- **平滑降级保护**：若 GPU 主机离线或超时（默认 5 秒），自动降级回传统 Regex 处理；纯口语时主动发信提醒用户改用 `#autoreply`。
+
+#### 1. 指定日期区间（传统 `#` 指令模式，默认时区：UTC+8 台北时间）
 - **收件人**：自己 (`your_email@example.com`)
 - **主题**：`#autoreply 2026-08-25 ~ 2026-08-30 外出开会 / 休假`（亦支持 `#vacation`、`#休假`、`#不在`、`#出差`、`#请假`）
 - **正文**：填写您要回复给对方的邮件内容（可自定义职务代理人、紧急电话等）。

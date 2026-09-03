@@ -207,25 +207,46 @@ Giá trị: v=DMARC1; p=quarantine; rua=mailto:postmaster@smile.taipei
 
 ```mermaid
 graph TD
-    User["Người dùng (Mọi ứng dụng Mail Client)"] -->|"Gửi lệnh cho chính mình (From == To, Tiêu đề: #autoreply)"| Postfix["Postfix MTA"]
-    Postfix -->|"Phân phối LMTP (private/dovecot-lmtp)"| Dovecot["Dovecot LMTP + Sieve Engine"]
+    User["Người dùng (Gửi cho chính mình: From == To)"] -->|"Thẻ # hoặc từ khóa văn nói (4 ngôn ngữ)"| Postfix["Postfix MTA"]
+    Postfix -->|"Phân phối LMTP"| Dovecot["Dovecot LMTP + Sieve Engine"]
     
-    Dovecot -->|"Chặn bắt lệnh"| Handler["Script xử lý (handle_autoreply.py)"]
-    Handler -->|"Phân tích khoảng thời gian & Nội dung"| SieveGen["Tạo /home/vmail/%u/sieve/dovecot.sieve"]
-    SieveGen -->|"Biên dịch sievec"| Binary["Mã nhị phân .svbin"]
-    Handler -->|"Gửi thư xác nhận thiết lập"| User
+    Dovecot -->|"autoreply_handler.sieve"| Handler["Script xử lý (handle_autoreply.py)"]
+    Handler --> CheckOllama{"Đã cấu hình OLLAMA_HOST & Kết nối tốt?"}
+    
+    CheckOllama -->|"Đúng"| Ollama["Máy chủ GPU Ollama LAN (Nhận diện JSON NLU)"]
+    CheckOllama -->|"Không / Hết giờ"| FallbackRegex["Trình phân tích Regex cũ (#)"]
+    
+    Ollama --> ResultCheck{"Kết quả phân tích AI"}
+    ResultCheck -->|"action: disable"| DoDisable["Xóa Sieve & Gửi thư thông báo đã tắt"]
+    ResultCheck -->|"Xác định được ngày"| ApplyConfig["Tạo dovecot.sieve & config.json"]
+    ResultCheck -->|"Ngày chưa rõ"| NotifyUnclear["Gửi thư yêu cầu bổ sung ngày"]
+    
+    FallbackRegex --> ApplyConfig
+    ApplyConfig --> Sievec["Biên dịch sievec (.svbin)"]
+    Sievec --> SendSuccess["Gửi thư xác nhận thiết lập cho người dùng"]
 
     RemoteSender["Người gửi bên ngoài"] -->|"Gửi thư"| Postfix
     Postfix -->|"Phân phối LMTP"| Dovecot
-    Dovecot -->|"Đọc dovecot.sieve kiểm tra"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
-    CheckDate -->|"Đúng (và chưa trả lời trong 24h)"| AutoReply["Tự động gửi thư phản hồi Vacation"]
-    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir bình thường"]
+    Dovecot -->|"Kiểm tra dovecot.sieve & Độ trễ 15 giây"| CheckDate{"Có trong khoảng thời gian hiệu lực?"}
+    CheckDate -->|"Đúng (<= 1 phản hồi/24h)"| AutoReply["Tự động gửi phản hồi mẫu chuẩn (Không dùng AI)"]
+    CheckDate -->|"Không"| Inbox["Lưu vào hòm thư Maildir"]
 ```
 
 ### 📩 Cách Người Dùng Bật / Tắt Tự Động Trả Lời
-Người dùng chỉ cần **gửi một email cho chính mình** từ ứng dụng email trên máy tính hoặc điện thoại:
 
-#### 1. Bật với Khoảng Thời Gian (Múi giờ: UTC+8 / Asia/Taipei)
+Người dùng chỉ cần **gửi một email cho chính mình (From == To)** từ ứng dụng email trên máy tính hoặc điện thoại:
+
+#### 0. 🤖 Chế độ xin nghỉ phép bằng ngôn ngữ tự nhiên qua Ollama AI cục bộ (Máy chủ GPU LAN, 4 ngôn ngữ)
+Khi biến môi trường `OLLAMA_HOST` được cấu hình (ví dụ: `http://192.168.1.100:11434`) và dịch vụ AI hoạt động tốt, người dùng có thể gửi email bằng văn nói tự nhiên:
+- **Tiếng Việt**: Tiêu đề “`Tôi xin nghỉ phép từ thứ 4 đến thứ 6 tuần sau`”, “`Ngày mai tôi đi công tác`”
+- **Tiếng Anh**: Tiêu đề “`Out of office until next Monday`”, “`I will be on vacation tomorrow`”
+- **Tiếng Trung phồn thể**: Tiêu đề “`我下週三到五休假去日本`”, “`明天下午請假去看牙醫`”
+- **Tiếng Trung giản thể**: Tiêu đề “`我下周一到周三出差北京`”, “`明天请假一天`”
+- **Hủy bằng văn nói**: Gửi email “`Hủy nghỉ phép đợt này`”, “`Tôi đã đi làm lại`”, “`Cancel out of office`” hoặc “`我銷假了`” để tắt tính năng ngay lập tức!
+- **Đảm bảo không bịa đặt (Zero Hallucination)**: AI chỉ nhận diện khoảng thời gian và ý định. Nội dung phản hồi ra bên ngoài luôn dùng mẫu chuẩn công ty (hoặc nội dung người dùng tự soạn trong thân thư).
+- **Hạ cấp mượt mà**: Nếu máy chủ GPU ngoại tuyến hoặc hết thời gian chờ (mặc định 5s), hệ thống tự động chuyển về phân tích Regex với lệnh `#` truyền thống.
+
+#### 1. Bật với Khoảng Thời Gian (Lệnh `#` truyền thống, Múi giờ: UTC+8 / Asia/Taipei)
 - **Người nhận**: Chính mình (`your_email@example.com`)
 - **Tiêu đề**: `#autoreply 2026-08-25 ~ 2026-08-30 Đi công tác / Nghỉ phép` (hoặc `#vacation`)
 - **Nội dung**: Soạn nội dung bạn muốn tự động gửi lại cho đối tác (người thay thế, số điện thoại khẩn cấp...).
