@@ -444,6 +444,17 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
     else:
         final_body = body
 
+    # Check if a previous auto-reply was already active
+    was_previously_enabled = False
+    if os.path.exists(cfg_file):
+        try:
+            with open(cfg_file, "r", encoding="utf-8") as f:
+                old_cfg = json.load(f)
+                if old_cfg.get("enabled"):
+                    was_previously_enabled = True
+        except Exception:
+            pass
+
     cfg_data = {
         "enabled": True,
         "owner": from_addr,
@@ -487,6 +498,14 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
         time_desc = f"{start_dt.strftime('%Y-%m-%d %H:%M:%S')} ~ {end_dt.strftime('%Y-%m-%d %H:%M:%S')} (UTC+8)"
         time_notif_short = f"{start_str} ~ {end_str}"
 
+    overwrite_tip_map = {
+        "zh-TW": "📌 提示：已自動為您覆蓋先前的休假回覆設定。\n" if was_previously_enabled else "",
+        "zh-CN": "📌 提示：已自动为您覆盖先前的休假回复设置。\n" if was_previously_enabled else "",
+        "vi": "📌 Ghi chú: Đã tự động ghi đè cài đặt nghỉ phép trước đó của bạn.\n" if was_previously_enabled else "",
+        "en": "📌 Note: Automatically overwritten your previous out-of-office setting.\n" if was_previously_enabled else ""
+    }
+    overwrite_tip = overwrite_tip_map.get(lang, "")
+
     notifications = {
         "zh-TW": (
             f"【自動回覆通知】已成功啟用自動回覆 (生效期間：{time_notif_short}){ai_tag}",
@@ -498,6 +517,7 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
             f"• 回應延遲：15 秒自然延遲發信（防機器人探測）\n"
             f"• 防轟炸頻率：同一寄件者 24 小時內最多回覆 1 次 (:days {DEFAULT_DAYS})\n"
             f"• 自動回覆主旨：{reply_subject}\n\n"
+            f"{overwrite_tip}"
             f"【自動回覆內文預覽】：\n"
             f"-----------------------------------------------------\n"
             f"{final_body}\n"
@@ -514,6 +534,7 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
             f"• 响应延迟：15 秒自然延迟发信（防机器人探测）\n"
             f"• 防轰炸频率：同一发件人 24 小时内最多回复 1 次 (:days {DEFAULT_DAYS})\n"
             f"• 自动回复主旨：{reply_subject}\n\n"
+            f"{overwrite_tip}"
             f"【自动回复正文预览】：\n"
             f"-----------------------------------------------------\n"
             f"{final_body}\n"
@@ -530,6 +551,7 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
             f"• Độ trễ phản hồi: Tự động gửi thư sau 15 giây\n"
             f"• Tần suất giới hạn: Tối đa 1 lần trong 24 giờ cho cùng 1 người gửi (:days {DEFAULT_DAYS})\n"
             f"• Tiêu đề phản hồi: {reply_subject}\n\n"
+            f"{overwrite_tip}"
             f"【Nội dung phản hồi xem trước】:\n"
             f"-----------------------------------------------------\n"
             f"{final_body}\n"
@@ -546,6 +568,7 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
             f"• Response Delay: 15-second natural sending delay\n"
             f"• Frequency Limit: At most 1 reply per 24 hours to the same sender (:days {DEFAULT_DAYS})\n"
             f"• Auto-Reply Subject: {reply_subject}\n\n"
+            f"{overwrite_tip}"
             f"【Auto-Reply Body Preview】:\n"
             f"-----------------------------------------------------\n"
             f"{final_body}\n"
@@ -556,7 +579,8 @@ def apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, b
     subj, notif_text = notifications.get(lang, notifications["zh-TW"])
     send_notification(from_addr, subj, notif_text)
     engine_name = "Ollama AI" if ai_parsed else "Regex"
-    log_maillog(f"Auto-reply enabled for {from_addr} via {engine_name} ({time_notif_short}, always_on={is_always_on}, lang={lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
+    action_type = "updated (overwrote previous)" if was_previously_enabled else "enabled"
+    log_maillog(f"Auto-reply {action_type} for {from_addr} via {engine_name} ({time_notif_short}, always_on={is_always_on}, lang={lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
 
 def main():
     raw_email = sys.stdin.buffer.read()
