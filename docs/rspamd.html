@@ -365,43 +365,43 @@ docker exec -it mailserver rspamadm control reload</code></pre>
                 <tbody>
                   <tr>
                     <td><span data-i18n="ruleDomainWl"><strong class="text-success"><i class="fa-solid fa-globe me-1"></i>網域白名單</strong></span><br><small class="text-muted">LOCAL_WL_DOMAIN</small></td>
-                    <td><code>override.d/local_wl_domain.inc</code></td>
+                    <td><code>kafeiou.d/local_wl_domain.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-success" data-i18n="actionDomainWl">白名單放行</span></td>
                     <td><code>google.com<br>microsoft.com<br>important-partner.com.tw</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleFromWl"><strong class="text-success"><i class="fa-solid fa-envelope me-1"></i>寄件者 Email 白名單</strong></span><br><small class="text-muted">LOCAL_WL_FROM</small></td>
-                    <td><code>override.d/local_wl_from.inc</code></td>
+                    <td><code>kafeiou.d/local_wl_from.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-success" data-i18n="actionFromWl">白名單放行</span></td>
                     <td><code>boss@partner-company.com<br>vip-service@bank.com.tw</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleIpWl"><strong class="text-success"><i class="fa-solid fa-network-wired me-1"></i>來源 IP / 網段白名單</strong></span><br><small class="text-muted">LOCAL_WL_IP</small></td>
-                    <td><code>override.d/local_wl_ip.inc</code></td>
+                    <td><code>kafeiou.d/local_wl_ip.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-success" data-i18n="actionIpWl">白名單放行</span></td>
                     <td><code>10.192.130.0/24<br>192.168.1.100<br>203.0.113.50</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleDomainBl"><strong class="text-danger"><i class="fa-solid fa-ban me-1"></i>網域黑名單</strong></span><br><small class="text-muted">CUSTOM_BLOCK_HEADER</small></td>
-                    <td><code>override.d/blacklist.inc</code></td>
+                    <td><code>kafeiou.d/blacklist.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionDomainBl">+40.0 分 (隔離)</span></td>
                     <td><code>phishing-scam.xyz<br>spammer-network.top</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleFromBl"><strong class="text-danger"><i class="fa-solid fa-user-xmark me-1"></i>惡意寄件者黑名單</strong></span><br><small class="text-muted">LOCAL_BL_FROM</small></td>
-                    <td><code>override.d/local_bl_from.map.inc</code></td>
+                    <td><code>kafeiou.d/local_bl_from.map.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionFromBl">+40.0 分 (隔離)</span></td>
                     <td><code>service@fake-bank-alert.com<br>lottery-winner@promo.net</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleSubjectDeny"><strong class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>主旨絕對阻擋 (正則)</strong></span><br><small class="text-muted">W_SPAM_SUBJECT_DENY</small></td>
-                    <td><code>override.d/w_spam_subject_deny.inc</code></td>
+                    <td><code>kafeiou.d/w_spam_subject_deny.inc</code></td>
                     <td><span class="badge badge-soft badge-soft-danger" data-i18n="actionSubjectDeny">+100.0 分 (絕對隔離)</span></td>
                     <td><code>/線上百家樂/i<br>/發票中獎通知.*請點擊/i<br>/Bitcoin.*Transfer/i</code></td>
                   </tr>
                   <tr>
                     <td><span data-i18n="ruleBadExt"><strong class="text-warning text-dark"><i class="fa-solid fa-file-zipper me-1"></i>危險副檔名 (含壓縮檔)</strong></span><br><small class="text-muted">BAD_ATTACHMENT</small></td>
-                    <td><code>local.d/bad_extensions.map</code></td>
+                    <td><code>kafeiou.d/bad_extensions.map</code></td>
                     <td><span class="badge badge-soft badge-soft-warning" data-i18n="actionBadExt">+15.0 分 (隔離)</span></td>
                     <td><code>exe<br>bat<br>vbs<br>scr<br>js<br>cmd<br>ps1</code></td>
                   </tr>
@@ -565,7 +565,7 @@ docker exec -it mailserver rspamadm control reload`,
         rescueStep2: "檢查帶有 <code>X-Quarantine-Reason: High spam score</code> 的被隔離信件。",
         rescueStep3: "直接點擊 <strong>「轉寄 (Forward)」</strong> 或重新發送給原收件同仁即可！",
         sec3Header: "黑白名單與過濾名冊維護 (Web UI 線上管理)",
-        sec3Intro: "管理員可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的「Configuration」➔「Maps」</strong> 分頁中點選名冊進行線上編輯，儲存後即時生效，無需手動修改後端文字檔案！",
+        sec3Intro: "本專案自訂名冊與規則皆收斂於 <code>kafeiou.d/</code> 目錄，並由 <code>local.d/</code> 透過 <code>.include</code> 自動引入。管理員亦可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的「Configuration」➔「Maps」</strong> 分頁中點選名冊進行線上編輯，儲存後即時生效，無需手動修改後端文字檔案！",
         thRuleType: "規則類型 / 名冊名稱",
         thTargetFile: "底層名冊檔案 (Maps)",
         thScoreAction: "評分 / 動作",
@@ -662,7 +662,7 @@ docker exec -it mailserver rspamadm control reload`,
         rescueStep2: "Locate messages with <code>X-Quarantine-Reason: High spam score</code>.",
         rescueStep3: "Click <strong>'Forward'</strong> or 'Resend' to deliver the email to the original recipient!",
         sec3Header: "Whitelists & Blacklists Management (Web UI)",
-        sec3Intro: "Admins can manage map lists directly via the <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) under 'Configuration' ➔ 'Maps'</strong>. Changes take effect immediately upon saving!",
+        sec3Intro: "All project-specific custom maps and rules are consolidated under the <code>kafeiou.d/</code> directory and included by <code>local.d/</code> via <code>.include</code>. Admins can also manage maps directly via the <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) under 'Configuration' ➔ 'Maps'</strong>. Changes take effect immediately upon saving!",
         thRuleType: "Rule Type / Map Name",
         thTargetFile: "Underlying Map File",
         thScoreAction: "Score / Action",
@@ -759,7 +759,7 @@ docker exec -it mailserver rspamadm control reload`,
         rescueStep2: "检查带有 <code>X-Quarantine-Reason: High spam score</code> 的被隔离邮件。",
         rescueStep3: "直接点击 <strong>“转发 (Forward)”</strong> 或重新发送给原收件同仁即可！",
         sec3Header: "黑白名单与过滤名册维护 (Web UI 在线管理)",
-        sec3Intro: "管理员可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的“Configuration”➔“Maps”</strong> 分页中点击名册进行在线编辑，保存后实时生效，无需手动修改后端文本文件！",
+        sec3Intro: "本项目自定义名册与规则皆收敛于 <code>kafeiou.d/</code> 目录，并由 <code>local.d/</code> 通过 <code>.include</code> 自动引入。管理员亦可直接在 <strong>Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>) 的“Configuration”➔“Maps”</strong> 分页中点击名册进行在线编辑，保存后实时生效，无需手动修改后端文本文件！",
         thRuleType: "规则类型 / 名册名称",
         thTargetFile: "底层名册文件 (Maps)",
         thScoreAction: "评分 / 动作",
@@ -856,7 +856,7 @@ docker exec -it mailserver rspamadm control reload`,
         rescueStep2: "Tìm thư có ghi chú <code>X-Quarantine-Reason: High spam score</code>.",
         rescueStep3: "Nhấn <strong>'Chuyển tiếp (Forward)'</strong> hoặc gửi lại cho nhân viên nhận ban đầu!",
         sec3Header: "Quản Lý Danh Sách Trắng/Đen (Trực Tuyến Trên Web UI)",
-        sec3Intro: "Quản trị viên chỉnh sửa danh sách trực tiếp trong <strong>'Configuration' ➔ 'Maps' trên Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>)</strong>. Thay đổi có hiệu lực ngay sau khi lưu!",
+        sec3Intro: "Toàn bộ danh sách và quy tắc tùy biến được quy tụ trong thư mục <code>kafeiou.d/</code> và được nạp tự động qua <code>.include</code> từ <code>local.d/</code>. Quản trị viên cũng có thể chỉnh sửa trực tiếp trong <strong>'Configuration' ➔ 'Maps' trên Rspamd Web UI (<code>http://&lt;IP&gt;:11334</code>)</strong>. Thay đổi có hiệu lực ngay sau khi lưu!",
         thRuleType: "Loại quy tắc / Tên danh sách",
         thTargetFile: "Tệp cấu hình Maps",
         thScoreAction: "Điểm / Hành động",

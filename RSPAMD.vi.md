@@ -92,6 +92,13 @@ Khi người dùng phản hồi không nhận được thư của đối tác, q
 
 ## 📑 4. Quản Lý Danh Sách Trắng / Đen (Trực Tuyến Qua Web UI)
 
+Dự án đã quy tụ toàn bộ các cấu hình tùy biến (danh sách đen/trắng, quy tắc biểu thức chính quy, đuôi tệp nguy hiểm và cách ly chuyển tiếp) vào thư mục `/etc/rspamd/kafeiou.d/` và được nạp tự động thông qua `.include` và `rspamd.local.lua`:
+- **`kafeiou_multimap.conf`**: Định nghĩa danh sách trắng/đen nội bộ, lọc tiêu đề và tệp đính kèm nguy hiểm, được tự động nạp bởi `local.d/multimap.conf`.
+- **`kafeiou_spf.conf`**: Định nghĩa danh sách IP ngoại lệ SPF, được tự động nạp bởi `local.d/spf.conf`.
+- **`kafeiou_regexp.conf`**: Định nghĩa quy tắc Regex tùy biến, được tự động nạp bởi `local.d/regexp.conf`.
+- **`quarantine_redirect.lua`**: Bộ lọc cách ly sau xử lý, được nạp an toàn khi khởi động qua `/etc/rspamd/rspamd.local.lua`.
+- **Dọn dẹp tệp thừa**: Các tệp không còn sử dụng hoặc trùng lặp với mặc định (`ratelimit.conf`, `greylist-whitelist-domains.inc`, `mx_check.conf`, `phishing.conf`) trong `local.d/` đã được loại bỏ hoàn toàn.
+
 Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình thủ công. Bạn có thể quản lý trực quan trên **Rspamd Web UI**:
 
 1. Đăng nhập `http://<IP_MÁY_CHỦ>:11334`.
@@ -103,7 +110,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
 ### 📋 Các Danh Sách Phổ Biến & Ví Dụ Thực Tế:
 
 #### ① Danh sách trắng tên miền (`LOCAL_WL_DOMAIN`)
-- **Đường dẫn**: `$CONFDIR/override.d/local_wl_domain.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/local_wl_domain.inc`
 - **Tác dụng**: Cho phép toàn bộ email từ các tên miền tin cậy đi qua mà không bị tính điểm thư rác.
 - **Ví dụ**:
   ```text
@@ -114,7 +121,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ② Danh sách trắng địa chỉ Email (`LOCAL_WL_FROM`)
-- **Đường dẫn**: `$CONFDIR/override.d/local_wl_from.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/local_wl_from.inc`
 - **Ví dụ**:
   ```text
   boss@partner-company.com
@@ -122,7 +129,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ③ Danh sách trắng IP / Dải mạng (`LOCAL_WL_IP`)
-- **Đường dẫn**: `$CONFDIR/override.d/local_wl_ip.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/local_wl_ip.inc`
 - **Ví dụ**:
   ```text
   10.192.130.0/24
@@ -131,7 +138,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ④ Danh sách đen tên miền (`CUSTOM_BLOCK_HEADER`)
-- **Đường dẫn**: `/etc/rspamd/override.d/blacklist.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/blacklist.inc`
 - **Tác dụng**: Cộng ngay **+40.0 điểm**, tự động kích hoạt chuyển tiếp vào hòm thư cách ly.
 - **Ví dụ**:
   ```text
@@ -140,7 +147,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ⑤ Danh sách đen người gửi (`LOCAL_BL_FROM`)
-- **Đường dẫn**: `$CONFDIR/override.d/local_bl_from.map.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/local_bl_from.map.inc`
 - **Ví dụ**:
   ```text
   service@fake-bank-alert.com
@@ -148,7 +155,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ⑥ Chặn tuyệt đối theo tiêu đề (`W_SPAM_SUBJECT_DENY`)
-- **Đường dẫn**: `$CONFDIR/override.d/w_spam_subject_deny.inc`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/w_spam_subject_deny.inc`
 - **Tác dụng**: Hỗ trợ biểu thức chính quy (Regex), cộng ngay **+100.0 điểm** để cách ly tuyệt đối!
 - **Ví dụ**:
   ```text
@@ -159,7 +166,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ⑦ Lọc từ khóa nội dung thư (`W_CONTENT_SPAM_TEXT`)
-- **Đường dẫn**: `/etc/rspamd/override.d/content_keywords.map`
+- **Đường dẫn**: `/etc/rspamd/kafeiou.d/content_keywords.map`
 - **Ví dụ**:
   ```text
   /daily high income guaranteed/i
@@ -168,7 +175,7 @@ Quản trị viên không cần truy cập máy chủ sửa tệp cấu hình th
   ```
 
 #### ⑧ Chặn tệp đính kèm nguy hiểm (`BAD_ATTACHMENT` / `BAD_ARCHIVE_ATTACHMENT`)
-- **Đường dẫn**: `/etc/rspamd/local.d/bad_extensions.map`
+- **Đường dẫn**: `$CONFDIR/kafeiou.d/bad_extensions.map`
 - **Tác dụng**: Chặn các tệp thực thi độc hại đính kèm trực tiếp hoặc **nằm sâu trong tệp nén ZIP/RAR** (+15.0 điểm).
 - **Danh sách đuôi tệp mặc định**:
   ```text

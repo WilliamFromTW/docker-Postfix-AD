@@ -1,4 +1,4 @@
--- /etc/rspamd/local.d/quarantine_redirect.lua
+-- /etc/rspamd/kafeiou.d/quarantine_redirect.lua
 rspamd_config:register_symbol({
   name = 'QUARANTINE_REDIRECT',
   type = 'postfilter',

@@ -92,6 +92,13 @@ If a colleague reports a missing client email, the administrator can easily reco
 
 ## 📑 4. Whitelists & Blacklists Management (Web UI)
 
+All project-specific custom definitions (blacklists, whitelists, regexes, dangerous attachments, and quarantine redirection) are consolidated under `/etc/rspamd/kafeiou.d/` and loaded via non-intrusive `.include` directives and native `rspamd.local.lua`:
+- **`kafeiou_multimap.conf`**: Defines local whitelists/blacklists, subject filters, and dangerous attachments. Automatically included by `local.d/multimap.conf`.
+- **`kafeiou_spf.conf`**: Defines SPF whitelist exception IPs. Automatically included by `local.d/spf.conf`.
+- **`kafeiou_regexp.conf`**: Defines custom regex rules. Automatically included by `local.d/regexp.conf`.
+- **`quarantine_redirect.lua`**: Quarantine postfilter, safely loaded on startup by `/etc/rspamd/rspamd.local.lua`.
+- **Redundant Files Removed**: Deprecated or upstream-duplicate files (`ratelimit.conf`, `greylist-whitelist-domains.inc`, `mx_check.conf`, `phishing.conf`) in `local.d/` have been removed.
+
 Administrators do not need to edit text files on the server directly. You can manage maps visually via the **Rspamd Web UI**:
 
 1. Log in to `http://<SERVER_IP>:11334`.
@@ -103,7 +110,7 @@ Administrators do not need to edit text files on the server directly. You can ma
 ### 📋 Common Maps & Practical Examples:
 
 #### ① Domain Whitelist (`LOCAL_WL_DOMAIN`)
-- **Map Path**: `$CONFDIR/override.d/local_wl_domain.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/local_wl_domain.inc`
 - **Effect**: Whitelists all incoming emails from specified trusted domains.
 - **Example Entries**:
   ```text
@@ -114,7 +121,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ② Sender Email Whitelist (`LOCAL_WL_FROM`)
-- **Map Path**: `$CONFDIR/override.d/local_wl_from.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/local_wl_from.inc`
 - **Effect**: Whitelists specific VIP or partner email addresses.
 - **Example Entries**:
   ```text
@@ -123,7 +130,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ③ IP / Subnet Whitelist (`LOCAL_WL_IP`)
-- **Map Path**: `$CONFDIR/override.d/local_wl_ip.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/local_wl_ip.inc`
 - **Effect**: Whitelists internal subnets, static branch IPs, or relay servers.
 - **Example Entries**:
   ```text
@@ -133,7 +140,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ④ Domain Blacklist (`CUSTOM_BLOCK_HEADER`)
-- **Map Path**: `/etc/rspamd/override.d/blacklist.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/blacklist.inc`
 - **Effect**: Adds **+40.0 points** immediately, triggering quarantine redirection.
 - **Example Entries**:
   ```text
@@ -142,7 +149,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ⑤ Sender Blacklist (`LOCAL_BL_FROM`)
-- **Map Path**: `$CONFDIR/override.d/local_bl_from.map.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/local_bl_from.map.inc`
 - **Example Entries**:
   ```text
   service@fake-bank-alert.com
@@ -150,7 +157,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ⑥ Absolute Subject Deny Rules (`W_SPAM_SUBJECT_DENY`)
-- **Map Path**: `$CONFDIR/override.d/w_spam_subject_deny.inc`
+- **Map Path**: `$CONFDIR/kafeiou.d/w_spam_subject_deny.inc`
 - **Effect**: Regex-based subject matching. Adds **+100.0 points** for absolute quarantine!
 - **Example Entries**:
   ```text
@@ -161,7 +168,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ⑦ Body Content Keyword Filter (`W_CONTENT_SPAM_TEXT`)
-- **Map Path**: `/etc/rspamd/override.d/content_keywords.map`
+- **Map Path**: `$CONFDIR/kafeiou.d/content_keywords.map`
 - **Example Entries**:
   ```text
   /daily high income guaranteed/i
@@ -170,7 +177,7 @@ Administrators do not need to edit text files on the server directly. You can ma
   ```
 
 #### ⑧ Dangerous File Extension Blocker (`BAD_ATTACHMENT` / `BAD_ARCHIVE_ATTACHMENT`)
-- **Map Path**: `/etc/rspamd/local.d/bad_extensions.map`
+- **Map Path**: `$CONFDIR/kafeiou.d/bad_extensions.map`
 - **Effect**: Blocks malicious executables directly attached or **packed inside ZIP/RAR archives** (+15.0 points).
 - **Default Blocklist**:
   ```text

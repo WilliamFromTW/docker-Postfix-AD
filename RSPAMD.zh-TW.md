@@ -92,7 +92,14 @@ docker exec -it mailserver rspamadm control reload
 
 ## 📑 4. 黑白名單與過濾名冊維護 (Web UI 線上管理)
 
-管理員無需手動登入伺服器修改文字檔，可直接透過 **Rspamd Web 控制台** 進行視覺化線上管理：
+本專案將所有客製化自訂定義（黑白名單、正則規則、危險副檔名與隔離重定向）收斂至專屬的 `/etc/rspamd/kafeiou.d/` 目錄，並透過低侵入性的 `.include` 與原生 `rspamd.local.lua` 進行解耦載入：
+- **`kafeiou_multimap.conf`**：定義本地黑白名單、主旨過濾與危險附件，由 `local.d/multimap.conf` 自動引入。
+- **`kafeiou_spf.conf`**：定義 SPF 例外 IP 白名單，由 `local.d/spf.conf` 自動引入。
+- **`kafeiou_regexp.conf`**：定義客製正則過濾規則，由 `local.d/regexp.conf` 自動引入。
+- **`quarantine_redirect.lua`**：隔離重定向過濾器，由 `/etc/rspamd/rspamd.local.lua` 於啟動時安全載入。
+- **清理冗餘檔案**：原 `local.d/` 中的 `ratelimit.conf`（已於 `redis.conf` 停用）、`greylist-whitelist-domains.inc`（空檔案）、`mx_check.conf` 及 `phishing.conf`（依循上游預設）已全數清理。
+
+管理員無需手動登入伺服器修改文字檔，亦可直接透過 **Rspamd Web 控制台** 進行視覺化線上管理：
 
 1. 登入 `http://<伺服器IP>:11334`。
 2. 點選頂部導覽列的 **「Configuration」➔「Maps」** 分頁。
@@ -103,7 +110,7 @@ docker exec -it mailserver rspamadm control reload
 ### 📋 常見名冊與規則實戰範例：
 
 #### ① 網域白名單 (`LOCAL_WL_DOMAIN`)
-- **名冊路徑**：`$CONFDIR/override.d/local_wl_domain.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/local_wl_domain.inc`
 - **效果**：來自此網域的所有信件免受垃圾評分干擾。
 - **範例內容**：
   ```text
@@ -114,7 +121,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ② 寄件者 Email 白名單 (`LOCAL_WL_FROM`)
-- **名冊路徑**：`$CONFDIR/override.d/local_wl_from.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/local_wl_from.inc`
 - **效果**：精準放行指定外部 VIP 或合作夥伴信箱。
 - **範例內容**：
   ```text
@@ -123,7 +130,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ③ 來源 IP / 網段白名單 (`LOCAL_WL_IP`)
-- **名冊路徑**：`$CONFDIR/override.d/local_wl_ip.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/local_wl_ip.inc`
 - **效果**：放行公司內部網段、分公司固定 IP 或特定中繼主機。
 - **範例內容**：
   ```text
@@ -133,7 +140,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ④ 網域黑名單 (`CUSTOM_BLOCK_HEADER`)
-- **名冊路徑**：`/etc/rspamd/override.d/blacklist.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/blacklist.inc`
 - **效果**：命中直接給予 **+40.0 分** 高分，立即觸發轉送至隔離信箱。
 - **範例內容**：
   ```text
@@ -142,7 +149,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ⑤ 惡意寄件者黑名單 (`LOCAL_BL_FROM`)
-- **名冊路徑**：`$CONFDIR/override.d/local_bl_from.map.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/local_bl_from.map.inc`
 - **範例內容**：
   ```text
   service@fake-bank-alert.com
@@ -150,7 +157,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ⑥ 主旨絕對阻擋規則 (`W_SPAM_SUBJECT_DENY`)
-- **名冊路徑**：`$CONFDIR/override.d/w_spam_subject_deny.inc`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/w_spam_subject_deny.inc`
 - **效果**：支援正則表達式（Regex），命中直接給予 **+100.0 分** 絕對隔離！
 - **範例內容**：
   ```text
@@ -161,7 +168,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ⑦ 內文關鍵字特徵 (`W_CONTENT_SPAM_TEXT`)
-- **名冊路徑**：`/etc/rspamd/override.d/content_keywords.map`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/content_keywords.map`
 - **範例內容**：
   ```text
   /兼職日領/i
@@ -170,7 +177,7 @@ docker exec -it mailserver rspamadm control reload
   ```
 
 #### ⑧ 危險附件副檔名攔截 (`BAD_ATTACHMENT` / `BAD_ARCHIVE_ATTACHMENT`)
-- **名冊路徑**：`/etc/rspamd/local.d/bad_extensions.map`
+- **名冊路徑**：`$CONFDIR/kafeiou.d/bad_extensions.map`
 - **效果**：阻擋直接夾帶或**藏在 ZIP/RAR 壓縮檔內部**的惡意執行檔（命中 +15.0 分）。
 - **預設阻擋清單**：
   ```text

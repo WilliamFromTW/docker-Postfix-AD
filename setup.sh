@@ -101,10 +101,10 @@ fi
 
 if [ -n "${SPAM_EMAIL}" ]; then
  sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
- sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/local.d/quarantine_redirect.lua
+ sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
 else
  sed -i "s/SPAM_EMAIL/postmaster/g" /etc/postfix/milter_header_checks
- sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/local.d/quarantine_redirect.lua
+ sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
 fi
 
 
@@ -144,7 +144,7 @@ postmap /etc/postfix/sender_bcc
 postmap /etc/postfix/recipient_bcc
 
 chown -R _rspamd:_rspamd /etc/rspamd/local.d
-chown -R _rspamd:_rspamd /etc/rspamd/override.d  
+chown -R _rspamd:_rspamd /etc/rspamd/kafeiou.d
 chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/sbin/postmap /etc/postfix/aliases
 /usr/sbin/postalias lmdb:/etc/aliases

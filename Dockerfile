@@ -30,7 +30,7 @@ RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*.py
 RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem
 RUN unbound-control-setup
 RUN chown -R _rspamd:_rspamd /etc/rspamd/maps.d
-RUN chown -R _rspamd:_rspamd /etc/rspamd/override.d
+RUN chown -R _rspamd:_rspamd /etc/rspamd/kafeiou.d
 RUN chown -R _rspamd:_rspamd /var/lib/rspamd
 RUN usermod -aG clamscan _rspamd
 RUN usermod -aG virusgroup _rspamd
