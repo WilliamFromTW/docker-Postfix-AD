@@ -175,11 +175,20 @@ def process_hold_queue(delay_seconds: int, enabled: bool, now_ts: Optional[float
                 res = cmd_exec(cmd, capture_output=True, text=True, check=False)
                 if res.returncode == 0:
                     released_count += 1
-                    log(f"Released message {qid} (sender: {msg.get('sender')}, held {age:.1f}s)")
+                    # 立即透過 postqueue -i 喚醒 qmgr 排程即刻派送，終結預設 300 秒之 deferred 延遲
+                    cmd_exec(["postqueue", "-i", qid], capture_output=True, text=True, check=False)
+                    log(f"Released and scheduled immediate delivery for message {qid} (sender: {msg.get('sender')}, held {age:.1f}s)")
                 else:
                     log(f"Failed to release {qid}: {res.stderr.strip()}", syslog.LOG_WARNING)
             except Exception as e:
                 log(f"Exception releasing {qid}: {e}", syslog.LOG_ERR)
+
+    # 若本輪有釋放任何信件，執行 postqueue -f 確保所有釋放信件立即觸發派送
+    if released_count > 0:
+        try:
+            cmd_exec(["postqueue", "-f"], capture_output=True, text=True, check=False)
+        except Exception:
+            pass
 
     return released_count
 

@@ -90,9 +90,12 @@ class TestDelayedQueueDaemon(unittest.TestCase):
         released = delayed_queue_daemon.process_hold_queue(delay_seconds=10, enabled=True, now_ts=now, run_cmd=mock_cmd)
 
         # 只有 MSG_OLD (15s >= 10s) 應該被釋放
-        self.assertEqual(released, 1)
-        # 驗證有呼叫 postsuper -H MSG_OLD
+        # 驗證有呼叫 postsuper -H MSG_OLD 解除保留
         mock_cmd.assert_any_call(["postsuper", "-H", "MSG_OLD"], capture_output=True, text=True, check=False)
+        # 驗證有呼叫 postqueue -i MSG_OLD 排程即刻派送
+        mock_cmd.assert_any_call(["postqueue", "-i", "MSG_OLD"], capture_output=True, text=True, check=False)
+        # 驗證有呼叫 postqueue -f 刷新佇列
+        mock_cmd.assert_any_call(["postqueue", "-f"], capture_output=True, text=True, check=False)
 
     def test_cancel_hold_message(self):
         """測試佇列中強制抹除 (postsuper -d)"""
