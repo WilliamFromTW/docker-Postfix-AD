@@ -268,6 +268,110 @@ Message-ID: <{target_id}>
         self.assertIn("colleague@smile.taipei", payload_text)
         self.assertIn("client@gmail.com", payload_text)
 
+    def test_clean_subject(self):
+        """測試主旨徹底清理 (#recall, Fwd:, Re:, 轉寄:, 撤回:)"""
+        s1 = "#recall 測試郵件"
+        self.assertEqual(handle_recall.clean_subject(s1), "測試郵件")
+
+        s2 = "Fwd: #recall 專案計畫"
+        self.assertEqual(handle_recall.clean_subject(s2), "專案計畫")
+
+        s3 = "Re: FW: 轉寄: #recall 開會通知"
+        self.assertEqual(handle_recall.clean_subject(s3), "開會通知")
+
+        s4 = "Recall: 機密檔案"
+        self.assertEqual(handle_recall.clean_subject(s4), "機密檔案")
+
+    def test_loop_prevention(self):
+        """測試防自觸發迴圈 (Auto-Submitted, postmaster, 回報信)"""
+        # 1. 排除 Auto-Submitted
+        msg1 = MIMEText("test")
+        msg1["Subject"] = "#recall 重要信件"
+        msg1["Auto-Submitted"] = "auto-replied"
+        is_rec, _ = handle_recall.is_recall_trigger(msg1)
+        self.assertFalse(is_rec)
+
+        # 2. 排除 postmaster / mailer-daemon / vmail
+        msg2 = MIMEText("test")
+        msg2["Subject"] = "#recall 重要信件"
+        msg2["From"] = "postmaster@smile.taipei"
+        is_rec, _ = handle_recall.is_recall_trigger(msg2)
+        self.assertFalse(is_rec)
+
+        msg2b = MIMEText("test")
+        msg2b["Subject"] = "#recall 重要信件"
+        msg2b["From"] = "vmail@smile.taipei"
+        is_rec, _ = handle_recall.is_recall_trigger(msg2b)
+        self.assertFalse(is_rec)
+
+        # 3. 排除狀態報告信自身
+        msg3 = MIMEText("test")
+        msg3["Subject"] = "郵件收回狀態報告 / Message Recall Status: 測試"
+        is_rec, _ = handle_recall.is_recall_trigger(msg3)
+        self.assertFalse(is_rec)
+
+    def test_extract_target_message_id_from_body(self):
+        """測試轉發信件從內文中解析原始 Message-ID"""
+        body = """
+---------- Forwarded message ---------
+From: boss@smile.taipei
+Date: Fri, Sep 4, 2026 at 6:15 PM
+Subject: 業務報價單
+To: client@company.com
+Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
+
+這是原信內容...
+"""
+        msg = MIMEText(body)
+        msg["Subject"] = "Fwd: #recall 業務報價單"
+        msg["From"] = "boss@smile.taipei"
+        msg["To"] = "boss@smile.taipei"
+
+        target_id = handle_recall.extract_target_message_id(msg, "boss@smile.taipei")
+        self.assertEqual(target_id, "FORWARDED-MSG-ID-888@smile.taipei")
+
+    def test_extract_target_message_id_from_sent_fallback(self):
+        """測試轉發信件內文無 Message-ID 時，自動搜尋寄件備份 Sent 成功匹配"""
+        msg = MIMEText("純轉發內文無任何標頭")
+        msg["Subject"] = "Fwd: #recall 行動端測試"
+        msg["From"] = "boss@smile.taipei"
+        msg["To"] = "boss@smile.taipei"
+
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm" and cmd[1] == "fetch" and "mailbox" in cmd and "HEADER" in cmd:
+                return MagicMock(returncode=0, stdout="hdr.message-id: Message-ID: <SENT-MATCH-777@smile.taipei>\n", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        target_id = handle_recall.extract_target_message_id(msg, "boss@smile.taipei", run_cmd=mock_cmd)
+        self.assertEqual(target_id, "SENT-MATCH-777@smile.taipei")
+
+    def test_extract_original_recipients_from_sent(self):
+        """測試從 Sent 寄件備份中還原原信的收件者 (To, Cc)"""
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm" and cmd[1] == "fetch":
+                output = "To: user1@smile.taipei, user2@smile.taipei\nCc: manager@smile.taipei\n"
+                return MagicMock(returncode=0, stdout=output, stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        recips = handle_recall.extract_original_recipients_from_sent("boss@smile.taipei", "TARGET-123", run_cmd=mock_cmd)
+        self.assertIn("user1@smile.taipei", recips)
+        self.assertIn("user2@smile.taipei", recips)
+        self.assertIn("manager@smile.taipei", recips)
+
+    def test_send_report_email_postmaster_envelope(self):
+        """測試報告郵件發送時使用 postmaster 信封寄件者"""
+        report = MIMEText("test report")
+        mock_cmd = MagicMock()
+        mock_cmd.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        handle_recall.send_report_email(report, "user@kafeiou.pw", sender_domain="kafeiou.pw", run_cmd=mock_cmd)
+        mock_cmd.assert_called_once()
+        called_args = mock_cmd.call_args[0][0]
+        self.assertIn("-f", called_args)
+        self.assertIn("postmaster@kafeiou.pw", called_args)
+
 
 if __name__ == "__main__":
     unittest.main()

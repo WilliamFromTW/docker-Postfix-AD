@@ -25,6 +25,7 @@ from email.utils import formatdate, parseaddr
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 try:
@@ -44,6 +45,34 @@ except ImportError:
     syslog = DummySyslog()
 import time
 from typing import Dict, List, Optional, Tuple
+
+# 確保在 Dovecot Sieve (vmail) 隔離環境下能搜尋到 /usr/sbin, /usr/local/sbin 等二進位檔
+default_paths = ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"]
+current_path = os.environ.get("PATH", "")
+path_parts = current_path.split(os.pathsep) if current_path else []
+for p in reversed(default_paths):
+    if p not in path_parts:
+        path_parts.insert(0, p)
+os.environ["PATH"] = os.pathsep.join(path_parts)
+
+
+def get_bin_path(name: str) -> str:
+    """尋找可執行檔的路徑，優先檢查 PATH，若找不到則檢查標準 Linux 系統目錄"""
+    found = shutil.which(name)
+    if found:
+        return found
+    candidates = [
+        f"/usr/sbin/{name}",
+        f"/usr/local/sbin/{name}",
+        f"/usr/bin/{name}",
+        f"/usr/local/bin/{name}",
+        f"/sbin/{name}",
+        f"/bin/{name}",
+    ]
+    for c in candidates:
+        if os.path.exists(c) and os.access(c, os.X_OK):
+            return c
+    return name
 
 CONFIG_PATH = os.environ.get("RECALL_CONFIG_PATH", "/etc/dovecot/recall.env")
 DEFAULT_CONFIG = {
@@ -102,20 +131,48 @@ def decode_mime_words(raw_header: Optional[str]) -> str:
         return str(raw_header).strip()
 
 
+def clean_subject(raw_subject: str) -> str:
+    """徹底清理主旨中的 #recall、收回關鍵字以及回覆/轉寄前綴 (Re:, Fwd:, FW:, 轉寄:, 轉發:)"""
+    cleaned = decode_mime_words(raw_subject)
+    # 移除 #recall 標籤（不論大小寫及在主旨任何位置）
+    cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE)
+    # 移除收回前綴
+    cleaned = re.sub(r'^(?:Recall|撤回|收回)\s*[:：]\s*', '', cleaned, flags=re.IGNORECASE)
+    # 循環移除 Re: / Fwd: / FW: / 轉寄: / 轉發: 前綴
+    prefix_pattern = r'^(?:re|fwd|fw|轉寄|轉發)\s*[:：]\s*'
+    while re.search(prefix_pattern, cleaned, flags=re.IGNORECASE):
+        cleaned = re.sub(prefix_pattern, '', cleaned, count=1, flags=re.IGNORECASE).strip()
+    return cleaned.strip()
+
+
 def is_recall_trigger(msg: email.message.Message) -> Tuple[bool, str]:
     """
     檢測是否為收回請求：
     回傳 (is_recall, trigger_type)
     trigger_type: 'outlook_action' | 'outlook_subject' | 'mobile_hash' | ''
     """
+    # 0. 排除自動通知、系統回報信，避免無限迴圈
+    auto_sub = msg.get("Auto-Submitted", "").lower()
+    if auto_sub in ["auto-replied", "auto-generated"]:
+        return False, ""
+
+    from_header = decode_mime_words(msg.get("From", "")).lower()
+    sender_header = decode_mime_words(msg.get("Sender", "")).lower()
+    for sys_sender in ["postmaster@", "mailer-daemon@", "vmail@"]:
+        if sys_sender in from_header or sys_sender in sender_header:
+            return False, ""
+
+    subject = decode_mime_words(msg.get("Subject", ""))
+    # 排除收回狀態報告信自身
+    if any(sig in subject for sig in ["郵件收回狀態報告", "Message Recall Status"]):
+        return False, ""
+
     # 1. 檢查 Exchange/Outlook 原生標頭
     if msg.get("X-MS-Exchange-Organization-Recall-Action"):
         return True, "outlook_action"
 
-    subject = decode_mime_words(msg.get("Subject", ""))
-
-    # 2. 檢查行動端 #recall 關鍵字
-    if re.search(r'(?:\A|\s)#recall\b', subject, re.IGNORECASE):
+    # 2. 檢查行動端 #recall 關鍵字 (例如: "#recall", "Re: #recall", "#recall: 測試")
+    if re.search(r'#recall\b', subject, re.IGNORECASE):
         return True, "mobile_hash"
 
     # 3. 檢查 Outlook 原生主旨
@@ -135,6 +192,32 @@ def clean_message_id(msg_id: Optional[str]) -> str:
     return msg_id.strip("<>").strip()
 
 
+def search_body_for_message_id(msg: email.message.Message) -> Optional[str]:
+    """從郵件內文 (特別是轉發 Forward 區塊) 搜尋原始 Message-ID"""
+    body_parts = []
+    try:
+        if msg.is_multipart():
+            for part in msg.walk():
+                ctype = part.get_content_type()
+                if ctype in ["text/plain", "text/html"]:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+        else:
+            payload = msg.get_payload(decode=True)
+            if payload:
+                body_parts.append(payload.decode("utf-8", errors="ignore"))
+    except Exception:
+        pass
+
+    combined = "\n".join(body_parts)
+    # 匹配轉發區塊中的 Message-ID: <...>
+    match = re.search(r'(?:Message-ID|Message-Id)\s*[:：]\s*<([^>]+)>', combined, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
 def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: Optional[subprocess.run] = None) -> Optional[str]:
     """
     提取目標欲收回郵件的 Message-ID：
@@ -142,7 +225,8 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
     1. In-Reply-To
     2. References (最後一個 ID)
     3. X-MS-Exchange-Original-Message-Id
-    4. 搜尋發件者 Sent 備份信箱比對主旨 (Fallback)
+    4. 內文解析 (轉發信中包含的原始 Message-ID)
+    5. 搜尋發件者 Sent 備份信箱比對主旨 (Fallback)
     """
     # 1. In-Reply-To
     in_reply_to = msg.get("In-Reply-To")
@@ -165,27 +249,55 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
         if ids:
             return ids[-1]
 
-    # 4. Fallback: 由主旨搜尋 Sent 信箱
-    subject = decode_mime_words(msg.get("Subject", ""))
-    clean_sub = re.sub(r'^(?:Recall|撤回|收回)\s*[:：]\s*', '', subject, flags=re.IGNORECASE)
-    clean_sub = re.sub(r'#recall\s*', '', clean_sub, flags=re.IGNORECASE).strip()
-    clean_sub = re.sub(r'^(?:Re|Fwd)\s*[:：]\s*', '', clean_sub, flags=re.IGNORECASE).strip()
+    # 4. 內文解析 (轉發區塊)
+    body_msg_id = search_body_for_message_id(msg)
+    if body_msg_id:
+        return body_msg_id
 
-    if clean_sub and sender and run_cmd:
-        try:
-            # 透過 doveadm 搜尋寄件者 Sent 目錄中符合主旨的信件
-            res = run_cmd(["doveadm", "search", "-u", sender, "mailbox", "Sent", "HEADER", "Subject", clean_sub],
-                          capture_output=True, text=True, check=False)
-            if res.returncode == 0 and res.stdout.strip():
-                first_guid = res.stdout.strip().splitlines()[0].strip()
-                fetch_res = run_cmd(["doveadm", "fetch", "-u", sender, "hdr.message-id", "mailbox", "Sent", "mailbox-guid", first_guid],
-                                    capture_output=True, text=True, check=False)
+    # 5. Fallback: 由主旨搜尋 Sent 信箱 (多信匣支援)
+    clean_sub = clean_subject(msg.get("Subject", ""))
+    if clean_sub and sender:
+        cmd_exec = run_cmd or subprocess.run
+        doveadm_bin = get_bin_path("doveadm")
+        sent_candidates = ["Sent", "Sent Items", "Sent Messages", "INBOX.Sent"]
+
+        for folder in sent_candidates:
+            try:
+                # 方式 A：直接 fetch header
+                fetch_res = cmd_exec(
+                    [doveadm_bin, "fetch", "-u", sender, "hdr.message-id", "mailbox", folder, "HEADER", "Subject", clean_sub],
+                    capture_output=True, text=True, check=False
+                )
                 if fetch_res.returncode == 0 and fetch_res.stdout:
-                    match = re.search(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
-                    if match:
-                        return match.group(1)
-        except Exception as e:
-            log(f"Sent mailbox fallback search failed: {e}", syslog.LOG_WARNING)
+                    matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
+                    if matches:
+                        return matches[-1]
+
+                # 方式 B：search 取得 GUID 後 fetch
+                res = cmd_exec(
+                    [doveadm_bin, "search", "-u", sender, "mailbox", folder, "HEADER", "Subject", clean_sub],
+                    capture_output=True, text=True, check=False
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    lines = res.stdout.strip().splitlines()
+                    last_line = lines[-1].strip()
+                    tokens = last_line.split()
+                    query = ["mailbox", folder]
+                    if len(tokens) >= 2:
+                        query.extend(["mailbox-guid", tokens[0], "uid", tokens[1]])
+                    elif len(tokens) == 1:
+                        query.extend(["mailbox-guid", tokens[0]])
+
+                    fetch_res2 = cmd_exec(
+                        [doveadm_bin, "fetch", "-u", sender, "hdr.message-id"] + query,
+                        capture_output=True, text=True, check=False
+                    )
+                    if fetch_res2.returncode == 0 and fetch_res2.stdout:
+                        matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res2.stdout, re.IGNORECASE)
+                        if matches:
+                            return matches[-1]
+            except Exception as e:
+                log(f"Sent mailbox fallback search failed in {folder}: {e}", syslog.LOG_WARNING)
 
     return None
 
@@ -214,7 +326,8 @@ def is_internal_recipient(email_addr: str, sender_domain: str, run_cmd: Optional
 
     # 檢查 doveadm user 是否存在該帳號
     try:
-        res = cmd_exec(["doveadm", "user", email_addr], capture_output=True, text=True, check=False)
+        doveadm_bin = get_bin_path("doveadm")
+        res = cmd_exec([doveadm_bin, "user", email_addr], capture_output=True, text=True, check=False)
         if res.returncode == 0:
             return True
     except Exception:
@@ -223,14 +336,23 @@ def is_internal_recipient(email_addr: str, sender_domain: str, run_cmd: Optional
     return False
 
 
-def check_and_cancel_hold_queue(target_msg_id: str, sender: str, run_cmd: Optional[subprocess.run] = None) -> bool:
+def check_and_cancel_hold_queue(
+    target_msg_id: str,
+    sender: str,
+    run_cmd: Optional[subprocess.run] = None,
+    out_recipients: Optional[List[str]] = None
+) -> bool:
     """
     第一層 (Layer 1): 檢查 Postfix Hold 佇列。
     若發現目標信件存在於 Hold 佇列，直接執行 postsuper -d 銷毀。
     """
     cmd_exec = run_cmd or subprocess.run
+    postqueue_bin = get_bin_path("postqueue")
+    postcat_bin = get_bin_path("postcat")
+    postsuper_bin = get_bin_path("postsuper")
+
     try:
-        proc = cmd_exec(["postqueue", "-j"], capture_output=True, text=True, check=False)
+        proc = cmd_exec([postqueue_bin, "-j"], capture_output=True, text=True, check=False)
         if proc.returncode != 0 or not proc.stdout:
             return False
 
@@ -250,12 +372,22 @@ def check_and_cancel_hold_queue(target_msg_id: str, sender: str, run_cmd: Option
                     continue
 
                 # 透過 postcat 讀取 header 檢查 Message-ID
-                cat_proc = cmd_exec(["postcat", "-h", qid], capture_output=True, text=True, check=False)
+                cat_proc = cmd_exec([postcat_bin, "-h", qid], capture_output=True, text=True, check=False)
                 if cat_proc.returncode == 0 and cat_proc.stdout:
                     match = re.search(r'Message-ID:\s*<([^>]+)>', cat_proc.stdout, re.IGNORECASE)
                     if match and match.group(1).strip() == target_msg_id.strip():
-                        # 命中目標信件，執行強制抹除
-                        del_proc = cmd_exec(["postsuper", "-d", qid], capture_output=True, text=True, check=False)
+                        # 命中目標信件，若有需要則提取收件者
+                        if out_recipients is not None:
+                            for hline in cat_proc.stdout.splitlines():
+                                if any(hline.lower().startswith(p) for p in ["to:", "cc:"]):
+                                    val = re.sub(r'^(?:to|cc)\s*[:：]\s*', '', hline, flags=re.IGNORECASE)
+                                    for part in val.split(","):
+                                        addr = parseaddr(part)[1].strip().lower()
+                                        if addr and addr not in out_recipients:
+                                            out_recipients.append(addr)
+
+                        # 執行強制抹除
+                        del_proc = cmd_exec([postsuper_bin, "-d", qid], capture_output=True, text=True, check=False)
                         if del_proc.returncode == 0:
                             log(f"[Layer 1 Success] Killed queued message {qid} (Message-ID: {target_msg_id})")
                             return True
@@ -274,19 +406,21 @@ def expunge_internal_mailbox(recipient: str, target_msg_id: str, max_hours: int,
     status: 'SUCCESS' | 'EXPIRED' | 'NOT_FOUND' | 'ERROR'
     """
     cmd_exec = run_cmd or subprocess.run
+    doveadm_bin = get_bin_path("doveadm")
+
     try:
         # 1. 搜尋目標信件是否在 INBOX 中
-        search_cmd = ["doveadm", "search", "-u", recipient, "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        search_cmd = [doveadm_bin, "search", "-u", recipient, "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
         search_res = cmd_exec(search_cmd, capture_output=True, text=True, check=False)
         if search_res.returncode != 0 or not search_res.stdout.strip():
             # 搜尋全信匣 (包含使用者自訂資料夾)
-            search_cmd2 = ["doveadm", "search", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
             search_res = cmd_exec(search_cmd2, capture_output=True, text=True, check=False)
             if search_res.returncode != 0 or not search_res.stdout.strip():
                 return "NOT_FOUND", "信件不存在或已被刪除"
 
         # 2. 獲取信件接收時間 (date.saved 或 date.received)
-        fetch_cmd = ["doveadm", "fetch", "-u", recipient, "date.saved", "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
         fetch_res = cmd_exec(fetch_cmd, capture_output=True, text=True, check=False)
         saved_ts = None
         if fetch_res.returncode == 0 and fetch_res.stdout:
@@ -302,7 +436,7 @@ def expunge_internal_mailbox(recipient: str, target_msg_id: str, max_hours: int,
                 return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
 
         # 3. 執行強制抹除 (doveadm expunge 無視 SEEN 旗標強制物理抹除)
-        expunge_cmd = ["doveadm", "expunge", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
         exp_res = cmd_exec(expunge_cmd, capture_output=True, text=True, check=False)
         if exp_res.returncode == 0:
             log(f"[Layer 2 Success] Expunged message <{target_msg_id}> from user {recipient}")
@@ -315,6 +449,35 @@ def expunge_internal_mailbox(recipient: str, target_msg_id: str, max_hours: int,
         return "ERROR", str(e)
 
 
+def extract_original_recipients_from_sent(sender: str, target_msg_id: str, run_cmd: Optional[subprocess.run] = None) -> List[str]:
+    """從寄件者的 Sent 目錄中讀取原信的 To 與 Cc 收件者"""
+    cmd_exec = run_cmd or subprocess.run
+    doveadm_bin = get_bin_path("doveadm")
+    sent_candidates = ["Sent", "Sent Items", "Sent Messages", "INBOX.Sent"]
+    found_recips: List[str] = []
+
+    for folder in sent_candidates:
+        try:
+            fetch_res = cmd_exec(
+                [doveadm_bin, "fetch", "-u", sender, "hdr.to hdr.cc", "mailbox", folder, "HEADER", "Message-ID", f"<{target_msg_id}>"],
+                capture_output=True, text=True, check=False
+            )
+            if fetch_res.returncode == 0 and fetch_res.stdout:
+                for line in fetch_res.stdout.splitlines():
+                    line = line.strip()
+                    if any(line.lower().startswith(p) for p in ["to:", "cc:", "hdr.to:", "hdr.cc:"]):
+                        val = re.sub(r'^(?:hdr\.)?(?:to|cc)\s*[:：]\s*', '', line, flags=re.IGNORECASE)
+                        for part in val.split(","):
+                            addr = parseaddr(part)[1].strip().lower()
+                            if addr and addr not in found_recips:
+                                found_recips.append(addr)
+                if found_recips:
+                    break
+        except Exception:
+            pass
+    return found_recips
+
+
 def build_status_report(
     sender: str,
     target_subject: str,
@@ -323,12 +486,18 @@ def build_status_report(
     results: List[Dict[str, str]]
 ) -> MIMEMultipart:
     """生成繁中、簡中、英文、越南文四國語言彙總報告郵件"""
+    clean_sub = clean_subject(target_subject)
+    sender_domain = sender.split('@')[1] if '@' in sender else 'localhost'
+    postmaster = f"postmaster@{sender_domain}"
+
     msg = MIMEMultipart("alternative")
-    msg["From"] = f"Mail Delivery System <postmaster@{sender.split('@')[1] if '@' in sender else 'localhost'}>"
+    msg["From"] = f"Mail Delivery System <{postmaster}>"
     msg["To"] = sender
-    msg["Subject"] = f"郵件收回狀態報告 / Message Recall Status: {target_subject}"
+    msg["Subject"] = f"郵件收回狀態報告 / Message Recall Status: {clean_sub}"
     msg["Date"] = formatdate(localtime=True)
     msg["Auto-Submitted"] = "auto-replied"
+    msg["Precedence"] = "auto_reply"
+    msg["X-Auto-Response-Suppress"] = "All"
 
     # 表格內容生成
     table_rows_text = ""
@@ -355,7 +524,7 @@ def build_status_report(
 ======================================================================
 郵件收回狀態報告 / MESSAGE RECALL STATUS REPORT
 ======================================================================
-原郵件主旨 / Subject : {target_subject}
+原郵件主旨 / Subject : {clean_sub}
 訊息識別碼 / Message-ID: <{target_msg_id}>
 觸發方式   / Trigger   : {trigger_type}
 時間戳記   / Timestamp : {time.strftime('%Y-%m-%d %H:%M:%S')}
@@ -401,7 +570,7 @@ def build_status_report(
             
             <div style="padding: 24px;">
                 <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
-                    <tr><td style="width: 130px; font-weight: bold; color: #586069;">原郵件主旨 / Subject:</td><td><strong>{target_subject}</strong></td></tr>
+                    <tr><td style="width: 130px; font-weight: bold; color: #586069;">原郵件主旨 / Subject:</td><td><strong>{clean_sub}</strong></td></tr>
                     <tr><td style="font-weight: bold; color: #586069;">Message-ID:</td><td style="font-family: monospace; color: #444;">&lt;{target_msg_id}&gt;</td></tr>
                     <tr><td style="font-weight: bold; color: #586069;">觸發機制 / Trigger:</td><td>{trigger_type}</td></tr>
                     <tr><td style="font-weight: bold; color: #586069;">處理時間 / Time:</td><td>{time.strftime('%Y-%m-%d %H:%M:%S')}</td></tr>
@@ -440,13 +609,17 @@ def build_status_report(
     return msg
 
 
-def send_report_email(report_msg: MIMEMultipart, recipient: str, run_cmd: Optional[subprocess.run] = None):
-    """透過本機 sendmail 發送報告郵件給寄件者"""
+def send_report_email(report_msg: MIMEMultipart, recipient: str, sender_domain: str = "", run_cmd: Optional[subprocess.run] = None):
+    """透過本機 sendmail 發送報告郵件給寄件者，並指定 postmaster 為信封寄件者避免以 vmail 發出"""
     cmd_exec = run_cmd or subprocess.run
+    domain = sender_domain or (recipient.split("@", 1)[1] if "@" in recipient else "localhost")
+    postmaster = f"postmaster@{domain}"
+    sendmail_bin = get_bin_path("sendmail")
+    cmd = [sendmail_bin, "-t", "-oi", "-f", postmaster]
     try:
-        proc = cmd_exec(["/usr/sbin/sendmail", "-t", "-oi"], input=report_msg.as_bytes(), check=False)
+        proc = cmd_exec(cmd, input=report_msg.as_bytes(), check=False)
         if proc.returncode == 0:
-            log(f"Successfully sent recall status report to {recipient}")
+            log(f"Successfully sent recall status report to {recipient} via envelope sender {postmaster}")
         else:
             log(f"Failed to send recall report to {recipient}, code={proc.returncode}", syslog.LOG_WARNING)
     except Exception as e:
@@ -483,24 +656,37 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
         # 發送目標未找到通知
         report = build_status_report(
             sender=sender_addr,
-            target_subject=decode_mime_words(msg.get("Subject", "")),
+            target_subject=msg.get("Subject", ""),
             target_msg_id="UNKNOWN",
             trigger_type=trigger_type,
-            results=[{"recipient": sender_addr, "internal": True, "status": "ERROR", "reason": "無法解析原郵件 Message-ID (No In-Reply-To or References)"}]
+            results=[{"recipient": sender_addr, "internal": True, "status": "ERROR", "reason": "無法解析原郵件 Message-ID (No In-Reply-To, References, or Sent mailbox match)"}]
         )
-        send_report_email(report, sender_addr, run_cmd=cmd_exec)
+        send_report_email(report, sender_addr, sender_domain=sender_domain, run_cmd=cmd_exec)
         return True
 
     # 3. 提取收件人清單
     recipients = get_all_recipients(msg)
+    # 若為轉發或自寄給自己的信 (recipients 僅有寄件者本人)，嘗試從寄件備份 Sent 中提取真正原信收件者
+    orig_recips = extract_original_recipients_from_sent(sender_addr, target_msg_id, run_cmd=cmd_exec)
+    if orig_recips:
+        if not recipients or (len(recipients) == 1 and recipients[0].lower() == sender_addr.lower()):
+            recipients = orig_recips
+        else:
+            for orx in orig_recips:
+                if orx.lower() not in [r.lower() for r in recipients]:
+                    recipients.append(orx)
+
     if not recipients:
         recipients = [sender_addr]
 
     results: List[Dict[str, str]] = []
 
     # 4. 第一層 (Layer 1): 佇列暫存檢查 (10 秒內)
-    queue_killed = check_and_cancel_hold_queue(target_msg_id, sender_addr, run_cmd=cmd_exec)
+    hold_recips: List[str] = []
+    queue_killed = check_and_cancel_hold_queue(target_msg_id, sender_addr, run_cmd=cmd_exec, out_recipients=hold_recips)
     if queue_killed:
+        if hold_recips and (len(recipients) == 1 and recipients[0].lower() == sender_addr.lower()):
+            recipients = hold_recips
         for r in recipients:
             is_int = is_internal_recipient(r, sender_domain, run_cmd=cmd_exec)
             results.append({
@@ -533,12 +719,12 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
     # 6. 生成並寄送多語言狀態報告給寄件者
     report = build_status_report(
         sender=sender_addr,
-        target_subject=decode_mime_words(msg.get("Subject", "")),
+        target_subject=msg.get("Subject", ""),
         target_msg_id=target_msg_id,
         trigger_type=trigger_type,
         results=results
     )
-    send_report_email(report, sender_addr, run_cmd=cmd_exec)
+    send_report_email(report, sender_addr, sender_domain=sender_domain, run_cmd=cmd_exec)
 
     return True
 
