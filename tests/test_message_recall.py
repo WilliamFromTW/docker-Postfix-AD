@@ -123,6 +123,8 @@ class TestDelayedQueueDaemon(unittest.TestCase):
                     return MagicMock(returncode=0, stdout="Subject: =?UTF-8?B?I3JlY2FsbCDmuKzntao=?=\n", stderr="")
                 elif qid == "QID_HEADER":
                     return MagicMock(returncode=0, stdout="X-MS-Exchange-Organization-Recall-Action: delete\n", stderr="")
+                elif qid == "QID_FOLDED":
+                    return MagicMock(returncode=0, stdout="Subject: Re: very long subject line from previous email\n  #recall\n", stderr="")
                 else:
                     return MagicMock(returncode=0, stdout="Subject: 一般業務郵件\n", stderr="")
             return MagicMock(returncode=1, stdout="", stderr="")
@@ -131,6 +133,7 @@ class TestDelayedQueueDaemon(unittest.TestCase):
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_MIME", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_HEADER", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_FOLDED", run_cmd=mock_cmd))
         self.assertFalse(delayed_queue_daemon.is_recall_message("QID_NORMAL", run_cmd=mock_cmd))
 
     def test_process_hold_queue_fast_pass_recall(self):

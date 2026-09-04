@@ -184,6 +184,7 @@ def get_queued_hold_messages(run_cmd: Optional[Callable] = None) -> List[Dict]:
     return messages
 
 
+import email
 from email.header import decode_header, make_header
 
 
@@ -200,7 +201,8 @@ def decode_mime_words(raw: str) -> str:
 def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
     """
     檢查 Hold 佇列中的郵件是否為收回請求信：
-    比對主旨（支援 RFC 2047 Base64 解碼）是否包含 #recall、Recall:、撤回:、收回:，或帶有 Exchange 原生收回標頭。
+    比對主旨（支援 RFC 2047 Base64 解碼與 RFC 2822 多行折疊解析）是否包含 #recall、Recall:、撤回:、收回:，
+    或帶有 Exchange 原生收回標頭。
     收回信應享有 0 秒即刻直通 (Fast-Pass) 權限，完全不需等待 10 秒。
     """
     cmd_exec = run_cmd or subprocess.run
@@ -208,14 +210,28 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
     try:
         proc = cmd_exec([postcat_bin, "-h", qid], capture_output=True, text=True, check=False)
         if proc.returncode == 0 and proc.stdout:
+            # 1. 透過標準 email 套件完整解析（自動還原多行折疊標頭）
+            try:
+                msg = email.message_from_string(proc.stdout)
+                if msg.get("X-MS-Exchange-Organization-Recall-Action"):
+                    return True
+                raw_sub = msg.get("Subject", "")
+                if raw_sub:
+                    decoded_sub = decode_mime_words(raw_sub)
+                    for sub_text in [decoded_sub, raw_sub]:
+                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(r'(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
+                            return True
+            except Exception:
+                pass
+
+            # 2. 備用逐行比對 (相容非標準輸出或部分欄位)
             for line in proc.stdout.splitlines():
                 line = line.strip()
                 if line.lower().startswith("subject:"):
                     raw_sub = line[8:].strip()
-                    # 同時檢查原始字串與解碼後的字串
                     decoded_sub = decode_mime_words(raw_sub)
                     for sub_text in [decoded_sub, raw_sub]:
-                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.match(r'^(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
+                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(r'(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
                             return True
                 elif line.lower().startswith("x-ms-exchange-organization-recall-action:"):
                     return True
