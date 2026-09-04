@@ -113,8 +113,9 @@ class TestDelayedQueueDaemon(unittest.TestCase):
         """測試佇列中辨識收回信件 (#recall, Recall:, X-MS-Exchange)"""
         def mock_cmd(cmd, **kwargs):
             cmd_base = os.path.basename(cmd[0])
-            qid = cmd[2]
             if cmd_base == "postcat":
+                self.assertIn("-q", cmd, "postcat requires -q to search mail queue by queue ID")
+                qid = cmd[-1]
                 if qid == "QID_RECALL":
                     return MagicMock(returncode=0, stdout="Subject: #recall 專案進度\n", stderr="")
                 elif qid == "QID_OUTLOOK":
@@ -151,7 +152,8 @@ class TestDelayedQueueDaemon(unittest.TestCase):
             cmd_base = os.path.basename(cmd[0])
             if cmd_base == "postqueue" and cmd[1] == "-j":
                 return MagicMock(returncode=0, stdout=mock_queue, stderr="")
-            elif cmd_base == "postcat" and cmd[2] == "MSG_RECALL":
+            elif cmd_base == "postcat" and cmd[-1] == "MSG_RECALL":
+                self.assertIn("-q", cmd, "postcat requires -q to search mail queue by queue ID")
                 return MagicMock(returncode=0, stdout="Subject: Fwd: #recall 緊急撤回\n", stderr="")
             elif cmd_base == "postsuper" and cmd[1] == "-H":
                 return MagicMock(returncode=0, stdout="", stderr="")
@@ -239,9 +241,10 @@ Message-ID: <{target_id}>
         def mock_cmd(cmd, **kwargs):
             if cmd[0] == "postqueue":
                 return MagicMock(returncode=0, stdout=postqueue_json, stderr="")
-            elif cmd[0] == "postcat" and cmd[2] == "HOLDQ123":
+            elif cmd[0] == "postcat" and cmd[-1] == "HOLDQ123":
+                self.assertIn("-q", cmd, "postcat requires -q to search mail queue by queue ID")
                 return MagicMock(returncode=0, stdout=postcat_headers, stderr="")
-            elif cmd[0] == "postsuper" and cmd[1] == "-d" and cmd[2] == "HOLDQ123":
+            elif cmd[0] == "postsuper" and cmd[1] == "-d" and cmd[-1] == "HOLDQ123":
                 return MagicMock(returncode=0, stdout="", stderr="")
             return MagicMock(returncode=1, stdout="", stderr="error")
 

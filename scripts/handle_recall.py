@@ -437,8 +437,8 @@ def check_and_cancel_hold_queue(
                 if sender and qsender and sender.lower() != qsender.lower():
                     continue
 
-                # 透過 postcat 讀取 header 檢查 Message-ID
-                cat_proc = cmd_exec([postcat_bin, "-h", qid], capture_output=True, text=True, check=False)
+                # 透過 postcat 讀取 header 檢查 Message-ID (需帶 -q 搜尋佇列)
+                cat_proc = cmd_exec([postcat_bin, "-q", "-h", qid], capture_output=True, text=True, check=False)
                 if cat_proc.returncode == 0 and cat_proc.stdout:
                     match = re.search(r'Message-ID:\s*<([^>]+)>', cat_proc.stdout, re.IGNORECASE)
                     if match and match.group(1).strip() == target_msg_id.strip():

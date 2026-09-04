@@ -208,7 +208,9 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
     cmd_exec = run_cmd or subprocess.run
     postcat_bin = get_bin_path("postcat")
     try:
-        proc = cmd_exec([postcat_bin, "-h", qid], capture_output=True, text=True, check=False)
+        proc = cmd_exec([postcat_bin, "-q", "-h", qid], capture_output=True, text=True, check=False)
+        if proc.returncode != 0:
+            log(f"postcat -q -h failed for {qid}: returncode={proc.returncode}, stderr={proc.stderr.strip()}", syslog.LOG_WARNING)
         if proc.returncode == 0 and proc.stdout:
             # 1. 透過標準 email 套件完整解析（自動還原多行折疊標頭）
             try:
