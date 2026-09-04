@@ -309,3 +309,115 @@ docker exec -it mailserver telnet localhost 8891  # OpenDKIM
 docker exec -it mailserver telnet localhost 11334 # Rspamd
 docker exec -it mailserver telnet localhost 12340 # Quota Service
 ```
+
+---
+
+## 📬 7. Enterprise Two-Tier Message Recall System
+
+This system features an enterprise two-tier message recall mechanism natively compatible with Microsoft Outlook's "Recall This Message" and mobile `#recall` reply commands, resolving traditional IMAP limitations and recipient curiosity issues.
+
+### 🔄 System Architecture Flowchart
+
+```mermaid
+flowchart TD
+    subgraph Client ["Sender Client"]
+        A1["Outlook (PC) sends email"]
+        A2["Mobile / Webmail sends email"]
+    end
+
+    subgraph Layer1 ["Layer 1: Postfix Delay Buffer"]
+        B["Postfix Submission / SMTPS (:587 / :465)"]
+        C["Immediate 250 OK (zero latency experience)"]
+        D["Enter Hold Queue (default HOLD for 10s)"]
+        E{"Recall received<br/>within 10 seconds?"}
+        F["Background Daemon<br/>delayed_queue_daemon.py"]
+        G["postsuper -d (Killed in queue)"]
+        H["postsuper -H (Released for delivery)"]
+    end
+
+    subgraph Layer2 ["Layer 2: Dovecot Sieve Forced Mailbox Expunge"]
+        I["Recipient Mailbox (Same Domain)"]
+        J["Sieve Global Filter<br/>(autoreply_handler.sieve / 90-recall.sieve)"]
+        K{"Trigger matched?<br/>1. Outlook native recall<br/>2. Subject #recall"}
+        L["Sieve Pipe Script<br/>handle_recall.py"]
+        M{"Time limit check<br/>Age <= 2 hours?"}
+        N["doveadm expunge<br/>Forced expunge (Read / Unread)"]
+        O["Reject recall (Expired)"]
+        P["Silent discard<br/>Recipient is undisturbed"]
+    end
+
+    subgraph Report ["Status Report"]
+        Q["Generate 4-Language Report<br/>(zh-TW / zh-CN / en / vi)"]
+        R["Send report to original sender"]
+    end
+
+    A1 --> B
+    A2 --> B
+    B --> C
+    B --> D
+    D --> F
+    F --> E
+    E -- "Yes (within 10s)" --> G
+    G --> Q
+    E -- "No (after 10s)" --> H
+    H --> I
+
+    %% Recall trigger flow
+    S1["Sender initiates recall:<br/>1. Outlook 'Recall This Message'<br/>2. Sent Items reply with #recall"]
+    S1 --> J
+    J --> K
+    K -- "Yes" --> L
+    L --> M
+    M -- "Within limit (<= 2h)" --> N
+    M -- "Expired (> 2h)" --> O
+    N --> P
+    O --> P
+    N --> Q
+    O --> Q
+    Q --> R
+```
+
+### 🎯 Core Operating Principles
+
+1. **Layer 1: Outgoing Delay Buffer**:
+   - Outgoing authenticated mail via Port 587 (Submission) or Port 465 (SMTPS) immediately returns `250 OK: queued` to the client, while placing the message in the Postfix Hold queue for `RECALL_DELAY_SECONDS` (default: 10 seconds).
+   - If recalled within 10s, the system runs `postsuper -d` to kill the message in the queue; neither internal nor external recipients receive it.
+   - If 10s elapses without recall, `delayed_queue_daemon.py` runs `postsuper -H` to release and deliver the message.
+   - **Zero Delay Bypass**: Setting `RECALL_DELAY_SECONDS=0` bypasses the Hold queue completely, delivering outbound messages instantly.
+
+2. **Layer 2: Same-Domain Mailbox Forced Expunge**:
+   - For messages already delivered to same-domain mailboxes, if recalled within `RECALL_MAX_HOURS` (default: 2 hours), the system invokes `doveadm expunge` by Message-ID.
+   - **Forced Deletion**: Regardless of whether the recipient has read the email (`SEEN` flag) or not, the message is physically expunged.
+   - **Silent Suppression**: Outlook recall notices (`Recall:` emails) are discarded (`discard`), keeping recipients undisturbed.
+   - **Expiration Protection**: Recalls past 2 hours are rejected silently.
+   - **External Protection**: For external recipients (e.g. Gmail), outgoing recall notices are suppressed to avoid confusion.
+
+### 📱 Triggering Message Recall
+
+| Client Environment | Action | Detection |
+| :--- | :--- | :--- |
+| **PC Microsoft Outlook** | Open sent email, select File / Actions ➜ **"Recall This Message"** | `X-MS-Exchange-Organization-Recall-Action` header or `Recall:` / `撤回:` subject prefix |
+| **Mobile / Webmail (iOS, Android)** | Open "Sent Items", tap **Reply**, prepend **`#recall`** to Subject and send | Targets original Message-ID via `In-Reply-To` / `References` |
+
+### 🛠️ Container Configuration Guide (`/etc/dovecot/recall.env`)
+
+Configuration is stored directly in `/etc/dovecot/recall.env` inside the container:
+
+```bash
+docker exec -it mailserver vi /etc/dovecot/recall.env
+```
+
+Default content:
+```ini
+ENABLE_RECALL="yes"        # Enable recall system (yes / no)
+RECALL_DELAY_SECONDS=10    # Layer 1 delay buffer in seconds (0 to disable)
+RECALL_MAX_HOURS=2         # Layer 2 same-domain expunge time limit in hours
+```
+
+### 💡 Protocol Notes (POP3 vs IMAP)
+
+- **IMAP / Webmail**: Real-time bi-directional sync; expunged messages disappear immediately from the recipient's screen.
+- **POP3**:
+  - During the initial 10-second delay buffer, the email is not yet in the mailbox, so POP3 clients cannot fetch it (100% intercepted).
+  - If already downloaded to a local `.pst` file beyond the buffer window, the server copy is expunged, but the local file cannot be deleted remotely (noted in the status report).
+

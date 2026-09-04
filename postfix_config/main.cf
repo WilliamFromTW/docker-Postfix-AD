@@ -833,6 +833,10 @@ smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, defer_u
 smtpd_forbid_bare_newline = yes
 address_verify_map = lmdb:$data_directory/verify_cache
 compatibility_level=3.6
+
+# 出站認證暫存延遲 (Two-Tier Message Recall Delay Buffer)
+smtpd_submission_data_restrictions = check_sender_access pcre:/etc/postfix/submission_hold
+
 default_database_type = lmdb
 alias_maps = lmdb:/etc/aliases
 alias_database = lmdb:/etc/aliases

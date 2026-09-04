@@ -1,5 +1,18 @@
 require ["vnd.dovecot.pipe", "copy", "variables", "envelope", "subaddress"];
 
+# -------------------------------------------------------------
+# 0. 企業級雙層郵件收回 (Two-Tier Message Recall) 全域攔截處理
+# 支援 Outlook 原生收回 (X-MS-Exchange 標頭, Recall:, 撤回:) 與行動端 (#recall)
+# -------------------------------------------------------------
+if anyof (
+    exists "X-MS-Exchange-Organization-Recall-Action",
+    header :matches "Subject" ["*#recall*", "*#RECALL*", "*Recall:*", "*Recall：*", "*撤回:*", "*撤回：*", "*收回:*", "*收回：*"]
+) {
+    pipe :copy "handle_recall.py";
+    discard;
+    stop;
+}
+
 # 1. 攔截本人寄給本人的指令信或口語休假信 (交由 handle_autoreply.py 進行完整 MIME 解碼與分析)
 # 排除系統自動回覆確認信與回信轉發
 if not header :matches "Subject" [

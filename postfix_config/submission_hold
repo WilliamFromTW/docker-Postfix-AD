@@ -1,0 +1,5 @@
+# /etc/postfix/submission_hold
+# 出站郵件暫存規則 (Two-Tier Message Recall Queue Hold Policy)
+# 當 RECALL_DELAY_SECONDS > 0 且 ENABLE_RECALL="yes" 時為 HOLD；
+# 設為 0 秒或未啟用時自動由 setup.sh 改寫為 /^/ DUNNO (0 延遲直發)。
+/^/ HOLD Delay buffer for message recall

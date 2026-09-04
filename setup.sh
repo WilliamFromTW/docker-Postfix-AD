@@ -159,9 +159,10 @@ mkdir -p /usr/lib/dovecot/sieve-pipe
 chown -R vmail:vmail /usr/lib/dovecot/sieve-pipe
 chmod -R 755 /usr/lib/dovecot/sieve-pipe
 
-mkdir -p /etc/dovecot/sieve/global
-if [ -f "/etc/dovecot/sieve/global/autoreply_handler.sieve" ]; then
-  /usr/bin/sievec /etc/dovecot/sieve/global/autoreply_handler.sieve 2>/dev/null || /usr/sbin/sievec /etc/dovecot/sieve/global/autoreply_handler.sieve 2>/dev/null
+if [ -d "/etc/dovecot/sieve/global" ]; then
+  for sf in /etc/dovecot/sieve/global/*.sieve; do
+    [ -f "$sf" ] && (/usr/bin/sievec "$sf" 2>/dev/null || /usr/sbin/sievec "$sf" 2>/dev/null || true)
+  done
   chown -R vmail:vmail /etc/dovecot/sieve
 fi
 
@@ -174,6 +175,36 @@ DEFAULT_LANG="${DEFAULT_LANG}"
 TZ="${TZ}"
 EOF
 chmod 644 /etc/dovecot/ollama.env
+
+# -------------------------------------------------------------
+# 企業級雙層郵件收回 (Two-Tier Message Recall) 初始化
+# -------------------------------------------------------------
+RECALL_ENV="/etc/dovecot/recall.env"
+if [ ! -f "$RECALL_ENV" ]; then
+  cat << EOF > "$RECALL_ENV"
+ENABLE_RECALL="yes"
+RECALL_DELAY_SECONDS=10
+RECALL_MAX_HOURS=2
+EOF
+  chmod 644 "$RECALL_ENV"
+fi
+
+if [ -f "$RECALL_ENV" ]; then
+  # shellcheck source=/dev/null
+  . "$RECALL_ENV"
+fi
+
+mkdir -p /etc/postfix
+if [ "${ENABLE_RECALL}" = "yes" ] && [ "${RECALL_DELAY_SECONDS:-10}" -gt 0 ] 2>/dev/null; then
+  echo "/^/ HOLD Delay buffer for message recall (${RECALL_DELAY_SECONDS}s)" > /etc/postfix/submission_hold
+else
+  echo "/^/ DUNNO" > /etc/postfix/submission_hold
+fi
+chmod 644 /etc/postfix/submission_hold
+
+mkdir -p /var/spool/postfix/hold
+chown postfix:postfix /var/spool/postfix/hold
+chmod 700 /var/spool/postfix/hold
 
 # -------------------------------------------------------------
 # OpenLDAP 用戶端全域 TLS 憑證相容性配置 (支援 AD / NethServer 8 自簽憑證)

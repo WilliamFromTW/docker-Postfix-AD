@@ -301,3 +301,117 @@ docker exec -it mailserver telnet localhost 8891  # OpenDKIM
 docker exec -it mailserver telnet localhost 11334 # Rspamd
 docker exec -it mailserver telnet localhost 12340 # Quota 服务
 ```
+
+---
+
+## 📬 7. 企业级双层邮件收回系统 (Two-Tier Message Recall System)
+
+本系统具备原生相容 Microsoft Outlook「收回此邮件」与移动设备 `#recall` 回复之企业级双层收回机制，解决传统 IMAP 无法收回邮件与造成收件者好奇点阅之历史痛点。
+
+### 🔄 系统架构流程图
+
+```mermaid
+flowchart TD
+    subgraph Client ["发信人 (Sender Client)"]
+        A1["Outlook (PC) 发送邮件"]
+        A2["移动设备 / 其它客户端发送邮件"]
+    end
+
+    subgraph Layer1 ["第一层：Postfix 出站队列暂存 (Layer 1: Delay Buffer)"]
+        B["Postfix Submission / SMTPS (:587 / :465)"]
+        C["立即返回 250 OK (发信无延迟感)"]
+        D["进入 Hold 队列 (默认 HOLD 10 秒)"]
+        E{"是否在 10 秒内<br/>收到收回请求？"}
+        F["后台常驻精灵<br/>delayed_queue_daemon.py"]
+        G["postsuper -d (队列中强制删除)"]
+        H["postsuper -H (释放队列正常递送)"]
+    end
+
+    subgraph Layer2 ["第二层：Dovecot Sieve 邮箱强制抹除 (Layer 2: Mailbox Expunge)"]
+        I["收件人邮箱 (同域名)"]
+        J["Sieve 全局过滤器<br/>(autoreply_handler.sieve / 90-recall.sieve)"]
+        K{"触发条件判断<br/>1. Outlook 原生收回<br/>2. 主题 #recall"}
+        L["Sieve Pipe 脚本<br/>handle_recall.py"]
+        M{"时效判定<br/>时差 <= 2 小时？"}
+        N["doveadm expunge<br/>强制抹除信件 (无论已读/未读)"]
+        O["拒绝抹除 (超时记录)"]
+        P["静默丢弃 (discard)<br/>彻底不打扰收件人"]
+    end
+
+    subgraph Report ["状态回报 (Status Report)"]
+        Q["产生四国语言报表<br/>(zh-TW / zh-CN / en / vi)"]
+        R["发送报告给原发信人"]
+    end
+
+    A1 --> B
+    A2 --> B
+    B --> C
+    B --> D
+    D --> F
+    F --> E
+    E -- "是 (10s 内收回)" --> G
+    G --> Q
+    E -- "否 (超过 10s)" --> H
+    H --> I
+
+    %% 收回触发流程
+    S1["发信人发起收回:<br/>1. Outlook 点击「收回此邮件」<br/>2. Sent Items 回复 #recall"]
+    S1 --> J
+    J --> K
+    K -- "是" --> L
+    L --> M
+    M -- "符合时效 (<= 2h)" --> N
+    M -- "已超时 (> 2h)" --> O
+    N --> P
+    O --> P
+    N --> Q
+    O --> Q
+    Q --> R
+```
+
+### 🎯 双层核心运作原理
+
+1. **第一层：出站队列暂存缓冲 (Layer 1 Delay Buffer)**：
+   - 凡通过认证 Port 587 (Submission) 或 Port 465 (SMTPS) 发送的邮件，Postfix 会立即回应 `250 OK: queued` 给发件人，并将邮件暂留于 Hold 队列 `RECALL_DELAY_SECONDS`（默认 10 秒）。
+   - 若发件人在 10 秒内发起收回，系统通过 `postsuper -d` 直接在队列中销毁邮件，内部同事与外部收件人均不会收到任何邮件。
+   - 若 10 秒内未收回，后台精灵 `delayed_queue_daemon.py` 自动执行 `postsuper -H` 放行邮件正常递送。
+   - **0 延迟旁路**：若管理员设置 `RECALL_DELAY_SECONDS=0`，系统自动切换为 direct bypass，出站邮件直接即时发出，完全不进入 Hold 队列。
+
+2. **第二层：同域名邮箱强制抹除 (Layer 2 Forced Expunge)**：
+   - 当邮件已送达同域名内部邮箱，在 `RECALL_MAX_HOURS`（默认 2 小时）时限内发起收回，系统通过 `doveadm expunge` 锁定 Message-ID 强制抹除该邮件。
+   - **已读/未读一律抹除**：无论收件人是否已开启或点阅过（`SEEN`），邮件一律自邮箱中彻底移除。
+   - **收回通知信彻底静默**：系统自动拦截并丢弃 Outlook 产生的收回收信（`discard`），收件人完全不会收到任何尴尬通知。
+   - **时效逾期保护**：超过 2 小时之收回请求将被系统拒绝，且维持静默不打扰收件人。
+   - **外部收件人保护**：对已出站之外部收件人（如 Gmail 等），系统会拦截对外发送的收回通知，并于回报中提示外部邮箱无法强制抹除。
+
+### 📱 双轨发起收回方式
+
+| 客户端环境 | 操作方式 | 辨识机制 |
+| :--- | :--- | :--- |
+| **PC 端 Microsoft Outlook** | 打开已发送邮件，点击菜单「文件」/「动作」➜ **「收回此邮件」** | 辨识 `X-MS-Exchange-Organization-Recall-Action` 标头或 `Recall:`/`撤回:` 主题 |
+| **手机端 / Webmail (iOS, Android, 网页邮件)** | 前往「已发送邮件 (Sent Items)」，点击该邮件**回复 (Reply)**，于**主题开头加上 `#recall`** 发送 | 通过 `In-Reply-To` / `References` 标头锁定原始 Message-ID |
+
+### 🛠️ 容器内部参数调整指南 (`/etc/dovecot/recall.env`)
+
+本功能之参数存放在容器内部配置文件，网页生成器维持简洁不变。若需调整时限或关闭功能，管理员可随时 `docker exec` 进入修改：
+
+```bash
+# 进入容器
+docker exec -it mailserver vi /etc/dovecot/recall.env
+```
+
+文件默认内容：
+```ini
+ENABLE_RECALL="yes"        # 是否启用收回系统 (yes / no)
+RECALL_DELAY_SECONDS=10    # 第一层队列暂存秒数 (设为 0 代表直接直发，完全关闭暂存)
+RECALL_MAX_HOURS=2         # 第二层同域名强制抹除有效时限 (小时)
+```
+修改存盘后，后台守护进程与 Sieve 脚本会**自动即时重新读取生效**，无需重启容器。
+
+### 💡 协议特性与注意事项 (POP3 vs IMAP)
+
+- **IMAP / Webmail 客户端**：双向即时同步，服务器执行 `doveadm expunge` 后，收件人屏幕上的邮件会立即消失。
+- **POP3 客户端**：
+  - 第一层 10 秒暂存期间，邮件尚未进邮箱，POP3 绝对收不到（100% 成功拦截）。
+  - 若已超过暂存期且对方已使用 POP3 将邮件收取下载至本地电脑硬盘（.pst 文件），服务器端会抹除备份，但无法远程删除其电脑本地文件（此时系统会在收回报告中向发件人备注说明）。
+

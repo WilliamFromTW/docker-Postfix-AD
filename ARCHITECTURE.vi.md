@@ -301,3 +301,114 @@ docker exec -it mailserver telnet localhost 8891  # OpenDKIM
 docker exec -it mailserver telnet localhost 11334 # Rspamd
 docker exec -it mailserver telnet localhost 12340 # Quota Service
 ```
+
+---
+
+## 📬 7. Hệ thống Thu hồi Thư Hai Lớp Doanh nghiệp (Two-Tier Message Recall System)
+
+Hệ thống sở hữu cơ chế thu hồi hai lớp cấp doanh nghiệp, tương thích nguyên bản với nút "Recall This Message" của Microsoft Outlook và lệnh phản hồi `#recall` trên thiết bị di động, khắc phục triệt để hạn chế của IMAP truyền thống.
+
+### 🔄 Sơ đồ Luồng Kiến trúc Hệ thống
+
+```mermaid
+flowchart TD
+    subgraph Client ["Người gửi (Sender Client)"]
+        A1["Outlook (PC) gửi thư"]
+        A2["Thiết bị di động / Webmail gửi thư"]
+    end
+
+    subgraph Layer1 ["Lớp 1: Đệm trễ hàng đợi Postfix (Layer 1: Delay Buffer)"]
+        B["Postfix Submission / SMTPS (:587 / :465)"]
+        C["Phản hồi ngay 250 OK (trải nghiệm không trễ)"]
+        D["Vào hàng đợi Hold (mặc định giữ 10 giây)"]
+        E{"Có yêu cầu thu hồi<br/>trong 10 giây không?"}
+        F["Tiến trình nền<br/>delayed_queue_daemon.py"]
+        G["postsuper -d (Hủy trực tiếp trong hàng đợi)"]
+        H["postsuper -H (Giải phóng hàng đợi gửi đi bình thường)"]
+    end
+
+    subgraph Layer2 ["Lớp 2: Xóa cưỡng chế hộp thư Dovecot Sieve (Layer 2: Mailbox Expunge)"]
+        I["Hộp thư người nhận (Cùng tên miền)"]
+        J["Bộ lọc Sieve toàn cục<br/>(autoreply_handler.sieve / 90-recall.sieve)"]
+        K{"Điều kiện kích hoạt<br/>1. Outlook thu hồi nguyên bản<br/>2. Tiêu đề #recall"}
+        L["Script Sieve Pipe<br/>handle_recall.py"]
+        M{"Kiểm tra thời hạn<br/>Khoảng cách <= 2 giờ?"}
+        N["doveadm expunge<br/>Xóa cưỡng chế (Bất kể đã đọc / chưa đọc)"]
+        O["Từ chối thu hồi (Quá hạn)"]
+        P["Hủy bỏ âm thầm (discard)<br/>Không làm phiền người nhận"]
+    end
+
+    subgraph Report ["Báo cáo trạng thái (Status Report)"]
+        Q["Tạo báo cáo 4 ngôn ngữ<br/>(zh-TW / zh-CN / en / vi)"]
+        R["Gửi báo cáo lại cho người gửi ban đầu"]
+    end
+
+    A1 --> B
+    A2 --> B
+    B --> C
+    B --> D
+    D --> F
+    F --> E
+    E -- "Có (trong 10s)" --> G
+    G --> Q
+    E -- "Không (sau 10s)" --> H
+    H --> I
+
+    %% Luồng kích hoạt thu hồi
+    S1["Người gửi kích hoạt thu hồi:<br/>1. Outlook nhấn 'Recall This Message'<br/>2. Sent Items phản hồi #recall"]
+    S1 --> J
+    J --> K
+    K -- "Đúng" --> L
+    L --> M
+    M -- "Hợp lệ (<= 2h)" --> N
+    M -- "Quá hạn (> 2h)" --> O
+    N --> P
+    O --> P
+    N --> Q
+    O --> Q
+    Q --> R
+```
+
+### 🎯 Nguyên lý Vận hành Cốt lõi Hai Lớp
+
+1. **Lớp 1: Bộ đệm trễ hàng đợi gửi đi (Layer 1 Delay Buffer)**:
+   - Thư gửi qua cổng xác thực 587 (Submission) hoặc 465 (SMTPS) sẽ được Postfix phản hồi `250 OK: queued` ngay lập tức, đồng thời lưu tạm tại hàng đợi Hold trong `RECALL_DELAY_SECONDS` (mặc định 10 giây).
+   - Nếu thu hồi trong vòng 10 giây, lệnh `postsuper -d` sẽ hủy thư ngay trong hàng đợi; cả người nhận nội bộ lẫn bên ngoài đều không nhận được.
+   - Nếu không thu hồi, `delayed_queue_daemon.py` tự động giải phóng (`postsuper -H`) để gửi đi bình thường.
+   - **Bỏ qua đệm (0 giây)**: Khi quản trị viên thiết lập `RECALL_DELAY_SECONDS=0`, hệ thống tự động gửi thẳng tức thì mà không qua hàng đợi Hold.
+
+2. **Lớp 2: Xóa cưỡng chế hộp thư cùng tên miền (Layer 2 Forced Expunge)**:
+   - Khi thư đã vào hộp thư nội bộ, trong thời hạn `RECALL_MAX_HOURS` (mặc định 2 giờ), hệ thống gọi `doveadm expunge` để xóa thư theo Message-ID.
+   - **Xóa bất kể trạng thái đã đọc**: Dù người nhận đã mở đọc (`SEEN`) hay chưa, thư đều bị xóa hoàn toàn khỏi hộp thư.
+   - **Chặn hoàn toàn thông báo thu hồi**: Thông báo thu hồi của Outlook bị hủy bỏ âm thầm (`discard`), người nhận không thấy bất kỳ dấu vết nào.
+   - **Bảo vệ người nhận bên ngoài**: Đối với thư gửi ra ngoài (như Gmail), thông báo thu hồi cũng bị chặn lại để tránh gây hiểu lầm cho đối tác.
+
+### 📱 Các Cách Kích Hoạt Thu Hồi
+
+| Môi trường Client | Thao tác | Cơ chế nhận diện |
+| :--- | :--- | :--- |
+| **Microsoft Outlook (PC)** | Mở thư đã gửi, chọn menu Tệp / Hành động ➜ **"Recall This Message"** | Header `X-MS-Exchange-Organization-Recall-Action` hoặc tiền tố `Recall:` / `撤回:` |
+| **Di động / Webmail (iOS, Android)** | Vào "Hộp thư đã gửi (Sent Items)", nhấn **Trả lời (Reply)**, thêm **`#recall`** vào đầu tiêu đề | Định danh qua Header `In-Reply-To` / `References` |
+
+### 🛠️ Hướng Dẫn Điều Chỉnh Tham Số Trong Container (`/etc/dovecot/recall.env`)
+
+Các tham số được lưu trong container:
+
+```bash
+docker exec -it mailserver vi /etc/dovecot/recall.env
+```
+
+Nội dung mặc định:
+```ini
+ENABLE_RECALL="yes"        # Bật hệ thống thu hồi (yes / no)
+RECALL_DELAY_SECONDS=10    # Số giây đệm hàng đợi Lớp 1 (0 để tắt đệm)
+RECALL_MAX_HOURS=2         # Thời hạn xóa cưỡng chế Lớp 2 (giờ)
+```
+
+### 💡 Lưu Ý về Giao Thức (POP3 vs IMAP)
+
+- **IMAP / Webmail**: Đồng bộ 2 chiều tức thì; thư bị xóa sẽ biến mất ngay lập tức trên màn hình người nhận.
+- **POP3**:
+  - Trong 10 giây đệm ban đầu, thư chưa vào hộp thư nên POP3 không thể tải về (chặn thành công 100%).
+  - Nếu đã tải về ổ đĩa cục bộ (.pst) sau thời gian đệm, máy chủ sẽ xóa bản sao lưu nhưng không thể can thiệp tệp trên máy tính người dùng (được ghi chú rõ trong báo cáo).
+
