@@ -102,12 +102,36 @@ def get_configured_tz():
     # Natively use container's local timezone
     return datetime.now().astimezone().tzinfo
 
+def check_ollama_health(host, timeout=3.0):
+    """
+    Performs an ultra-lightweight HTTP GET health check on Ollama's native endpoint:
+    GET http://<host>:11434/
+    Returns True if 200 OK (body contains 'Ollama is running'), False otherwise.
+    Fast-fails within 3 seconds to avoid blocking mail delivery when GPU host is down.
+    """
+    if not host:
+        return False
+    try:
+        req = urllib.request.Request(f"{host}/", headers={"User-Agent": "Postfix-Autoreply/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status == 200:
+                body = resp.read().decode("utf-8", errors="ignore")
+                if "Ollama is running" in body:
+                    return True
+                return True
+    except Exception as ex:
+        log_maillog(f"Ollama health check failed ({host}/): {ex}", syslog.LOG_WARNING if HAS_SYSLOG else None)
+        return False
+    return False
+
 def get_ollama_active_model(host):
     """
     Discovers the active or first available model on the Ollama server
     if no OLLAMA_MODEL was explicitly configured.
     """
     if not host:
+        return ""
+    if not check_ollama_health(host, timeout=3.0):
         return ""
     # Check currently running model (/api/ps)
     try:
@@ -196,13 +220,37 @@ def load_ollama_config():
         conf["OLLAMA_MODEL"] = get_ollama_active_model(conf["OLLAMA_HOST"])
 
     try:
-        timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 180.0
+        timeout = float(conf["OLLAMA_TIMEOUT"]) if conf["OLLAMA_TIMEOUT"] else 20.0
     except Exception:
-        timeout = 180.0
+        timeout = 20.0
 
     return conf["OLLAMA_HOST"], conf["OLLAMA_MODEL"], timeout, conf["DEFAULT_LANG"]
 
 OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT, DEFAULT_LANG = load_ollama_config()
+
+# 假期/請假意圖關鍵字庫（涵蓋繁中、簡中、英文、越南文常見休假詞彙）
+VACATION_INTENT_KEYWORDS = [
+    # 中文（繁體 / 簡體）
+    "休假", "請假", "请假", "出差", "公出", "不在", "外出",
+    "特休", "年假", "病假", "事假", "放假", "公休", "補休", "补休",
+    "銷假", "销假", "暫離", "暂离",
+    # 英文
+    "vacation", "holiday", "leave", "out of office", "ooo",
+    "day off", "days off", "annual leave", "sick leave",
+    "business trip", "away from office",
+    # 越南文
+    "nghỉ", "nghỉ phép", "nghỉ ốm", "công tác", "vắng mặt", "đi vắng"
+]
+
+def check_vacation_intent(subject):
+    """
+    Checks whether the email subject contains vacation/leave intent keywords.
+    Strictly inspects subject only to prevent false positives from body notes or forwarded emails.
+    """
+    if not subject:
+        return False
+    s_lower = subject.lower()
+    return any(kw.lower() in s_lower for kw in VACATION_INTENT_KEYWORDS)
 
 VIETNAMESE_CHARS_RE = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]")
 CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -485,6 +533,9 @@ Respond ONLY with valid JSON matching this schema:
     }
 
     if not OLLAMA_HOST:
+        return None
+    if not check_ollama_health(OLLAMA_HOST, timeout=3.0):
+        log_maillog(f"Ollama server at {OLLAMA_HOST} is offline or unreachable (health check failed); skipping inference", syslog.LOG_WARNING if HAS_SYSLOG else None)
         return None
     if not OLLAMA_MODEL:
         log_maillog(f"Ollama skipped: No model specified in OLLAMA_MODEL and none found on {OLLAMA_HOST}", syslog.LOG_WARNING if HAS_SYSLOG else None)
@@ -813,32 +864,60 @@ def main():
         apply_autoreply(from_addr, start_dt, end_dt, is_always_on, custom_subject, body, lang=detected_lang, ai_parsed=False)
         sys.exit(0)
 
-    # 6. If Ollama was configured but failed/unreachable, and the user sent a natural language vacation email (no #)
+    # 6. Fallback Notifications when user sent a natural language email with vacation keywords in Subject (no #)
+    has_vacation_intent = check_vacation_intent(subject_raw)
+
+    # Case A: Ollama was configured but failed/unreachable/timed out
     if ollama_attempted and not ollama_result:
         log_maillog(f"Ollama NLU unreachable or failed; checking if email requires offline notice for {from_addr}", syslog.LOG_WARNING if HAS_SYSLOG else None)
-        # Check if subject matches common vacation words
-        vacation_keywords = ["休假", "請假", "请假", "出差", "不在", "nghỉ", "công tác", "vacation", "holiday", "leave", "out of office"]
-        if any(k in subject_raw.lower() for k in vacation_keywords):
+        if has_vacation_intent:
             ai_down_notices = {
                 "zh-TW": (
                     "【自動回覆通知】AI 服務暫時無法連線",
-                    f"您好：\n\n系統偵測到您的信件包含休假或公出需求，但本機端 AI (Ollama) 伺服器暫時無法連線或處理超時。\n\n若需立即啟用自動回覆，請改用標準指令格式發信給自己：\n例如：主旨填寫 #autoreply 9/10~9/12 出差中\n"
+                    f"您好：\n\n系統偵測到您的郵件主旨包含休假或公出需求，但本機端 AI (Ollama) 伺服器暫時無法連線或處理超時。\n\n若需立即啟用自動回覆，請改用標準指令格式發信給自己：\n\n【標準指令速查表】\n1. 指定日期區間：主旨填寫 #autoreply 9/10~9/12 出差中\n2. 常態開啟回覆：主旨填寫 #autoreply on 暫離\n3. 停用自動回覆：主旨填寫 #autoreply off\n\n（信件內文可自訂回覆內容，若留空將自動套用標準樣板）\n"
                 ),
                 "zh-CN": (
-                    "【自动回复通知】AI 服务暂时无法连线",
-                    f"您好：\n\n系统检测到您的邮件包含休假或出差需求，但本地端 AI (Ollama) 服务器暂时无法连接或处理超时。\n\n若需立即启用自动回复，请改用标准指令格式发信给自己：\n例如：主题填写 #autoreply 9/10~9/12 出差中\n"
+                    "【自动回复通知】AI 服务暂时无法连接",
+                    f"您好：\n\n系统检测到您的邮件主题包含休假或出差需求，但本地端 AI (Ollama) 服务器暂时无法连接或处理超时。\n\n若需立即启用自动回复，请改用标准指令格式发信给自己：\n\n【标准指令速查表】\n1. 指定日期区间：主题填写 #autoreply 9/10~9/12 出差中\n2. 常态开启回复：主题填写 #autoreply on 暂离\n3. 停用自动回复：主题填写 #autoreply off\n\n（邮件正文可自定义回复内容，若留空将自动套用标准模板）\n"
                 ),
                 "vi": (
                     "[Thông báo tự động trả lời] Dịch vụ AI tạm thời không phản hồi",
-                    f"Xin chào:\n\nHệ thống nhận thấy email của bạn có nhu cầu nghỉ phép hoặc công tác, nhưng máy chủ AI (Ollama) cục bộ tạm thời không thể kết nối hoặc đã hết thời gian chờ.\n\nĐể kích hoạt tính năng tự động trả lời ngay lập tức, vui lòng sử dụng cú pháp chuẩn gửi cho chính mình:\nVí dụ: Tiêu đề '#autoreply 10/9~12/9 Đi công tác'\n"
+                    f"Xin chào:\n\nHệ thống nhận thấy tiêu đề email của bạn có nhu cầu nghỉ phép hoặc công tác, nhưng máy chủ AI (Ollama) cục bộ tạm thời không thể kết nối hoặc đã hết thời gian chờ.\n\nĐể kích hoạt tính năng tự động trả lời ngay lập tức, vui lòng sử dụng cú pháp lệnh chuẩn gửi cho chính mình:\n\n[Bảng tra cứu cú pháp chuẩn]\n1. Khoảng thời gian: Tiêu đề '#autoreply 10/9~12/9 Đi công tác'\n2. Bật thường trực: Tiêu đề '#autoreply on Tạm vắng'\n3. Tắt tự động trả lời: Tiêu đề '#autoreply off'\n\n(Nội dung email có thể tùy chỉnh, nếu để trống hệ thống sẽ áp dụng mẫu chuẩn)\n"
                 ),
                 "en": (
                     "[Auto-Reply Notification] AI Service Temporarily Unreachable",
-                    f"Hello,\n\nThe system detected leave or out-of-office keywords in your email, but the local AI (Ollama) server is temporarily unreachable or timed out.\n\nTo enable auto-reply immediately, please send an email to yourself using the standard command syntax:\nFor example: Subject '#autoreply 9/10~9/12 Out of Office'\n"
+                    f"Hello,\n\nThe system detected leave or out-of-office keywords in your email subject, but the local AI (Ollama) server is temporarily unreachable or timed out.\n\nTo enable auto-reply immediately, please send an email to yourself using the standard command syntax:\n\n[Standard Command Cheat Sheet]\n1. Date Range: Subject '#autoreply 9/10~9/12 Out of Office'\n2. Always-On: Subject '#autoreply on Away'\n3. Disable: Subject '#autoreply off'\n\n(You may customize the auto-reply body in the email text; if left blank, a standard template will be used)\n"
                 )
             }
             s_down, b_down = ai_down_notices.get(detected_lang, ai_down_notices["zh-TW"])
             send_notification(from_addr, s_down, b_down)
+            sys.exit(0)
+
+    # Case B: Ollama was not configured (pure mail server environment)
+    if not OLLAMA_HOST:
+        if has_vacation_intent:
+            log_maillog(f"Ollama NLU not configured; notifying user {from_addr} of vacation intent and standard syntax", syslog.LOG_INFO if HAS_SYSLOG else None)
+            unconfigured_notices = {
+                "zh-TW": (
+                    "【自動回覆通知】未啟用 AI 自動回覆服務",
+                    f"您好：\n\n系統偵測到您的郵件主旨包含休假或公出需求，但本郵件伺服器目前未啟用 AI (Ollama) 自然語言解析服務。\n\n若需啟用自動回覆，請改用標準指令格式發信給自己：\n\n【標準指令速查表】\n1. 指定日期區間：主旨填寫 #autoreply 9/10~9/12 出差中\n2. 常態開啟回覆：主旨填寫 #autoreply on 暫離\n3. 停用自動回覆：主旨填寫 #autoreply off\n\n（信件內文可自訂回覆內容，若留空將自動套用標準樣板）\n"
+                ),
+                "zh-CN": (
+                    "【自动回复通知】未启用 AI 自动回复服务",
+                    f"您好：\n\n系统检测到您的邮件主题包含休假或出差需求，但本邮件服务器目前未启用 AI (Ollama) 自然语言解析服务。\n\n若需启用自动回复，请改用标准指令格式发信给自己：\n\n【标准指令速查表】\n1. 指定日期区间：主题填写 #autoreply 9/10~9/12 出差中\n2. 常态开启回复：主题填写 #autoreply on 暂离\n3. 停用自动回复：主题填写 #autoreply off\n\n（邮件正文可自定义回复内容，若留空将自动套用标准模板）\n"
+                ),
+                "vi": (
+                    "[Thông báo tự động trả lời] Chưa cấu hình dịch vụ AI tự động trả lời",
+                    f"Xin chào:\n\nHệ thống nhận thấy tiêu đề email của bạn có nhu cầu nghỉ phép hoặc công tác, nhưng máy chủ email hiện chưa cấu hình dịch vụ phân tích ngôn ngữ tự nhiên AI (Ollama).\n\nĐể kích hoạt tính năng tự động trả lời, vui lòng sử dụng cú pháp lệnh chuẩn gửi cho chính mình:\n\n[Bảng tra cứu cú pháp chuẩn]\n1. Khoảng thời gian: Tiêu đề '#autoreply 10/9~12/9 Đi công tác'\n2. Bật thường trực: Tiêu đề '#autoreply on Tạm vắng'\n3. Tắt tự động trả lời: Tiêu đề '#autoreply off'\n\n(Nội dung email có thể tùy chỉnh, nếu để trống hệ thống sẽ áp dụng mẫu chuẩn)\n"
+                ),
+                "en": (
+                    "[Auto-Reply Notification] AI Auto-Reply Service Not Configured",
+                    f"Hello,\n\nThe system detected leave or out-of-office keywords in your email subject, but the AI (Ollama) NLU service is not configured on this server.\n\nTo enable auto-reply, please send an email to yourself using the standard command syntax:\n\n[Standard Command Cheat Sheet]\n1. Date Range: Subject '#autoreply 9/10~9/12 Out of Office'\n2. Always-On: Subject '#autoreply on Away'\n3. Disable: Subject '#autoreply off'\n\n(You may customize the auto-reply body in the email text; if left blank, a standard template will be used)\n"
+                )
+            }
+            s_unconf, b_unconf = unconfigured_notices.get(detected_lang, unconfigured_notices["zh-TW"])
+            send_notification(from_addr, s_unconf, b_unconf)
+            sys.exit(0)
 
     # Otherwise, normal note-to-self mail, simply keep in inbox
     sys.exit(0)
