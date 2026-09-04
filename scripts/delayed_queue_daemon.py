@@ -15,11 +15,41 @@ delayed_queue_daemon.py - Postfix 出站暫存佇列守護精靈 (Layer 1 Delay 
 
 import json
 import os
+import re
+import shutil
 import signal
 import subprocess
 import sys
 import time
 from typing import Callable, Dict, List, Optional
+
+# 確保能搜尋到 /usr/sbin, /usr/local/sbin 等二進位檔
+default_paths = ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"]
+current_path = os.environ.get("PATH", "")
+path_parts = current_path.split(os.pathsep) if current_path else []
+for p in reversed(default_paths):
+    if p not in path_parts:
+        path_parts.insert(0, p)
+os.environ["PATH"] = os.pathsep.join(path_parts)
+
+
+def get_bin_path(name: str) -> str:
+    """尋找可執行檔的路徑，優先檢查 PATH，若找不到則檢查標準 Linux 系統目錄"""
+    found = shutil.which(name)
+    if found:
+        return found
+    candidates = [
+        f"/usr/sbin/{name}",
+        f"/usr/local/sbin/{name}",
+        f"/usr/bin/{name}",
+        f"/usr/local/bin/{name}",
+        f"/sbin/{name}",
+        f"/bin/{name}",
+    ]
+    for c in candidates:
+        if os.path.exists(c) and os.access(c, os.X_OK):
+            return c
+    return name
 
 try:
     import syslog
@@ -134,9 +164,10 @@ def sync_submission_hold_map(enabled: bool, delay_seconds: int, map_path: str = 
 def get_queued_hold_messages(run_cmd: Optional[Callable] = None) -> List[Dict]:
     """使用 postqueue -j 檢索 Hold 佇列中的郵件清單"""
     cmd_exec = run_cmd or subprocess.run
+    postqueue_bin = get_bin_path("postqueue")
     messages = []
     try:
-        proc = cmd_exec(["postqueue", "-j"], capture_output=True, text=True, check=False)
+        proc = cmd_exec([postqueue_bin, "-j"], capture_output=True, text=True, check=False)
         if proc.returncode == 0 and proc.stdout:
             for line in proc.stdout.splitlines():
                 line = line.strip()
@@ -153,12 +184,40 @@ def get_queued_hold_messages(run_cmd: Optional[Callable] = None) -> List[Dict]:
     return messages
 
 
+def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
+    """
+    檢查 Hold 佇列中的郵件是否為收回請求信：
+    比對主旨是否包含 #recall、Recall:、撤回:、收回:，或帶有 Exchange 原生收回標頭。
+    收回信應享有 0 秒即刻直通 (Fast-Pass) 權限，完全不需等待 10 秒。
+    """
+    cmd_exec = run_cmd or subprocess.run
+    postcat_bin = get_bin_path("postcat")
+    try:
+        proc = cmd_exec([postcat_bin, "-h", qid], capture_output=True, text=True, check=False)
+        if proc.returncode == 0 and proc.stdout:
+            for line in proc.stdout.splitlines():
+                line = line.strip()
+                if line.lower().startswith("subject:"):
+                    sub = line[8:].strip()
+                    if re.search(r'#recall\b', sub, re.IGNORECASE) or re.match(r'^(?:Recall|撤回|收回)\s*[:：]', sub, re.IGNORECASE):
+                        return True
+                elif line.lower().startswith("x-ms-exchange-organization-recall-action:"):
+                    return True
+    except Exception:
+        pass
+    return False
+
+
 def process_hold_queue(delay_seconds: int, enabled: bool, now_ts: Optional[float] = None, run_cmd: Optional[Callable] = None) -> int:
     """
     掃描 Hold 佇列並放行到期的信件：
+    - 若信件為收回指令 (#recall, Recall: 等)，享受 0 秒即刻穿透放行 (Fast-Pass)。
+    - 一般信件則等待滿 delay_seconds (預設 10 秒) 後放行。
     回傳放行（release）的郵件數量。
     """
     cmd_exec = run_cmd or subprocess.run
+    postsuper_bin = get_bin_path("postsuper")
+    postqueue_bin = get_bin_path("postqueue")
     current_time = time.time() if now_ts is None else now_ts
     released_count = 0
 
@@ -168,16 +227,22 @@ def process_hold_queue(delay_seconds: int, enabled: bool, now_ts: Optional[float
         arrival_ts = msg.get("arrival_time", current_time)
         age = current_time - arrival_ts
 
-        # 若未啟用收回，或延遲秒數為 0，或已達留置秒數
-        if not enabled or delay_seconds <= 0 or age >= delay_seconds:
+        # 檢查是否為收回指令信 (若是則享有 0 秒直通放行特權)
+        is_recall = is_recall_message(qid, run_cmd=cmd_exec)
+
+        # 若未啟用收回，或延遲秒數為 0，或為收回信 (0s 穿透)，或已達留置秒數
+        if not enabled or delay_seconds <= 0 or is_recall or age >= delay_seconds:
             try:
-                cmd = ["postsuper", "-H", qid]
+                cmd = [postsuper_bin, "-H", qid]
                 res = cmd_exec(cmd, capture_output=True, text=True, check=False)
                 if res.returncode == 0:
                     released_count += 1
                     # 立即透過 postqueue -i 喚醒 qmgr 排程即刻派送，終結預設 300 秒之 deferred 延遲
-                    cmd_exec(["postqueue", "-i", qid], capture_output=True, text=True, check=False)
-                    log(f"Released and scheduled immediate delivery for message {qid} (sender: {msg.get('sender')}, held {age:.1f}s)")
+                    cmd_exec([postqueue_bin, "-i", qid], capture_output=True, text=True, check=False)
+                    if is_recall:
+                        log(f"Fast-passed recall command message {qid} immediately (0s delay, held {age:.1f}s)")
+                    else:
+                        log(f"Released and scheduled immediate delivery for message {qid} (sender: {msg.get('sender')}, held {age:.1f}s)")
                 else:
                     log(f"Failed to release {qid}: {res.stderr.strip()}", syslog.LOG_WARNING)
             except Exception as e:
@@ -186,7 +251,7 @@ def process_hold_queue(delay_seconds: int, enabled: bool, now_ts: Optional[float
     # 若本輪有釋放任何信件，執行 postqueue -f 確保所有釋放信件立即觸發派送
     if released_count > 0:
         try:
-            cmd_exec(["postqueue", "-f"], capture_output=True, text=True, check=False)
+            cmd_exec([postqueue_bin, "-f"], capture_output=True, text=True, check=False)
         except Exception:
             pass
 
@@ -196,8 +261,9 @@ def process_hold_queue(delay_seconds: int, enabled: bool, now_ts: Optional[float
 def cancel_hold_message(queue_id: str, run_cmd: Optional[Callable] = None) -> bool:
     """從 Hold 佇列中強制抹除指定信件 (postsuper -d)"""
     cmd_exec = run_cmd or subprocess.run
+    postsuper_bin = get_bin_path("postsuper")
     try:
-        res = cmd_exec(["postsuper", "-d", queue_id], capture_output=True, text=True, check=False)
+        res = cmd_exec([postsuper_bin, "-d", queue_id], capture_output=True, text=True, check=False)
         if res.returncode == 0:
             log(f"Successfully killed message in hold queue: {queue_id}")
             return True

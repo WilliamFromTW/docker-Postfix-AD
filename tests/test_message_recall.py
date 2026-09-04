@@ -104,7 +104,58 @@ class TestDelayedQueueDaemon(unittest.TestCase):
 
         res = delayed_queue_daemon.cancel_hold_message("TEST_QID", run_cmd=mock_cmd)
         self.assertTrue(res)
-        mock_cmd.assert_called_once_with(["postsuper", "-d", "TEST_QID"], capture_output=True, text=True, check=False)
+        mock_cmd.assert_called_once()
+        called_args = mock_cmd.call_args[0][0]
+        self.assertTrue(called_args[0].endswith("postsuper"))
+        self.assertEqual(called_args[1:], ["-d", "TEST_QID"])
+
+    def test_is_recall_message(self):
+        """測試佇列中辨識收回信件 (#recall, Recall:, X-MS-Exchange)"""
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            qid = cmd[2]
+            if cmd_base == "postcat":
+                if qid == "QID_RECALL":
+                    return MagicMock(returncode=0, stdout="Subject: #recall 專案進度\n", stderr="")
+                elif qid == "QID_OUTLOOK":
+                    return MagicMock(returncode=0, stdout="Subject: Recall: 專案進度\n", stderr="")
+                elif qid == "QID_HEADER":
+                    return MagicMock(returncode=0, stdout="X-MS-Exchange-Organization-Recall-Action: delete\n", stderr="")
+                else:
+                    return MagicMock(returncode=0, stdout="Subject: 一般業務郵件\n", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_RECALL", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_HEADER", run_cmd=mock_cmd))
+        self.assertFalse(delayed_queue_daemon.is_recall_message("QID_NORMAL", run_cmd=mock_cmd))
+
+    def test_process_hold_queue_fast_pass_recall(self):
+        """測試收回指令信件享 0 秒直通特權 (未滿 10 秒即刻放行)"""
+        now = 1000.0
+        # MSG_RECALL 僅進入佇列 2 秒 (未滿 10 秒)，但為主旨 #recall 之收回信
+        mock_queue = json.dumps({
+            "queue_name": "hold",
+            "queue_id": "MSG_RECALL",
+            "arrival_time": 998.0, # 2s ago (< 10s)
+            "sender": "boss@smile.taipei"
+        })
+
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "postqueue" and cmd[1] == "-j":
+                return MagicMock(returncode=0, stdout=mock_queue, stderr="")
+            elif cmd_base == "postcat" and cmd[2] == "MSG_RECALL":
+                return MagicMock(returncode=0, stdout="Subject: Fwd: #recall 緊急撤回\n", stderr="")
+            elif cmd_base == "postsuper" and cmd[1] == "-H":
+                return MagicMock(returncode=0, stdout="", stderr="")
+            elif cmd_base == "postqueue":
+                return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        released = delayed_queue_daemon.process_hold_queue(delay_seconds=10, enabled=True, now_ts=now, run_cmd=mock_cmd)
+        # 即使只進佇列 2 秒，也必須被立即放行
+        self.assertEqual(released, 1)
 
 
 class TestHandleRecall(unittest.TestCase):
