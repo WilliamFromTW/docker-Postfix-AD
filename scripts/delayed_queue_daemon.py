@@ -184,10 +184,23 @@ def get_queued_hold_messages(run_cmd: Optional[Callable] = None) -> List[Dict]:
     return messages
 
 
+from email.header import decode_header, make_header
+
+
+def decode_mime_words(raw: str) -> str:
+    """解碼 RFC 2047 MIME 編碼字串 (例如 =?UTF-8?B?...?=)"""
+    if not raw:
+        return ""
+    try:
+        return str(make_header(decode_header(raw))).strip()
+    except Exception:
+        return raw.strip()
+
+
 def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
     """
     檢查 Hold 佇列中的郵件是否為收回請求信：
-    比對主旨是否包含 #recall、Recall:、撤回:、收回:，或帶有 Exchange 原生收回標頭。
+    比對主旨（支援 RFC 2047 Base64 解碼）是否包含 #recall、Recall:、撤回:、收回:，或帶有 Exchange 原生收回標頭。
     收回信應享有 0 秒即刻直通 (Fast-Pass) 權限，完全不需等待 10 秒。
     """
     cmd_exec = run_cmd or subprocess.run
@@ -198,9 +211,12 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
             for line in proc.stdout.splitlines():
                 line = line.strip()
                 if line.lower().startswith("subject:"):
-                    sub = line[8:].strip()
-                    if re.search(r'#recall\b', sub, re.IGNORECASE) or re.match(r'^(?:Recall|撤回|收回)\s*[:：]', sub, re.IGNORECASE):
-                        return True
+                    raw_sub = line[8:].strip()
+                    # 同時檢查原始字串與解碼後的字串
+                    decoded_sub = decode_mime_words(raw_sub)
+                    for sub_text in [decoded_sub, raw_sub]:
+                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.match(r'^(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
+                            return True
                 elif line.lower().startswith("x-ms-exchange-organization-recall-action:"):
                     return True
     except Exception:

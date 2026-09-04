@@ -119,6 +119,8 @@ class TestDelayedQueueDaemon(unittest.TestCase):
                     return MagicMock(returncode=0, stdout="Subject: #recall 專案進度\n", stderr="")
                 elif qid == "QID_OUTLOOK":
                     return MagicMock(returncode=0, stdout="Subject: Recall: 專案進度\n", stderr="")
+                elif qid == "QID_MIME":
+                    return MagicMock(returncode=0, stdout="Subject: =?UTF-8?B?I3JlY2FsbCDmuKzntao=?=\n", stderr="")
                 elif qid == "QID_HEADER":
                     return MagicMock(returncode=0, stdout="X-MS-Exchange-Organization-Recall-Action: delete\n", stderr="")
                 else:
@@ -127,6 +129,7 @@ class TestDelayedQueueDaemon(unittest.TestCase):
 
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_RECALL", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_MIME", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_HEADER", run_cmd=mock_cmd))
         self.assertFalse(delayed_queue_daemon.is_recall_message("QID_NORMAL", run_cmd=mock_cmd))
 
@@ -354,18 +357,37 @@ Message-ID: <{target_id}>
         self.assertIn("client@gmail.com", payload_text)
 
     def test_clean_subject(self):
-        """測試主旨徹底清理 (#recall, Fwd:, Re:, 轉寄:, 撤回:)"""
-        s1 = "#recall 測試郵件"
-        self.assertEqual(handle_recall.clean_subject(s1), "測試郵件")
+        """測試主旨徹底清理 (相容回覆 Re:, 轉寄 Fwd:, 轉寄:, 回覆: 以及 #recall 各種排列組合)"""
+        test_cases = {
+            "#recall 測試郵件": "測試郵件",
+            "#recall Re: 測試郵件": "測試郵件",
+            "Re: #recall 測試郵件": "測試郵件",
+            "Re: #recall: 測試郵件": "測試郵件",
+            "回覆: #recall 測試郵件": "測試郵件",
+            "Fwd: #recall 專案計畫": "專案計畫",
+            "#recall Fwd: 專案計畫": "專案計畫",
+            "#recall 轉寄: 專案計畫": "專案計畫",
+            "轉寄: 專案計畫 #recall": "專案計畫",
+            "Re: FW: 轉寄: #recall 開會通知": "開會通知",
+            "Recall: 機密檔案": "機密檔案",
+            "#recall": "",
+        }
+        for raw, expected in test_cases.items():
+            self.assertEqual(handle_recall.clean_subject(raw), expected, f"Failed on subject: {raw}")
 
-        s2 = "Fwd: #recall 專案計畫"
-        self.assertEqual(handle_recall.clean_subject(s2), "專案計畫")
-
-        s3 = "Re: FW: 轉寄: #recall 開會通知"
-        self.assertEqual(handle_recall.clean_subject(s3), "開會通知")
-
-        s4 = "Recall: 機密檔案"
-        self.assertEqual(handle_recall.clean_subject(s4), "機密檔案")
+    def test_search_body_for_original_subject(self):
+        """測試當主旨只寫 #recall 時，自動從內文引言區塊提取原主旨"""
+        body = """
+----- 原始郵件 -----
+寄件者: boss@smile.taipei
+收件者: team@smile.taipei
+主旨: 核心系統維護公告
+日期: 2026-09-04
+"""
+        msg = MIMEText(body)
+        msg["Subject"] = "#recall"
+        orig_sub = handle_recall.search_body_for_original_subject(msg)
+        self.assertEqual(orig_sub, "核心系統維護公告")
 
     def test_loop_prevention(self):
         """測試防自觸發迴圈 (Auto-Submitted, postmaster, 回報信)"""

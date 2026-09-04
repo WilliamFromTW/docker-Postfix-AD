@@ -132,17 +132,55 @@ def decode_mime_words(raw_header: Optional[str]) -> str:
 
 
 def clean_subject(raw_subject: str) -> str:
-    """徹底清理主旨中的 #recall、收回關鍵字以及回覆/轉寄前綴 (Re:, Fwd:, FW:, 轉寄:, 轉發:)"""
-    cleaned = decode_mime_words(raw_subject)
-    # 移除 #recall 標籤（不論大小寫及在主旨任何位置）
-    cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE)
-    # 移除收回前綴
-    cleaned = re.sub(r'^(?:Recall|撤回|收回)\s*[:：]\s*', '', cleaned, flags=re.IGNORECASE)
-    # 循環移除 Re: / Fwd: / FW: / 轉寄: / 轉發: 前綴
-    prefix_pattern = r'^(?:re|fwd|fw|轉寄|轉發)\s*[:：]\s*'
-    while re.search(prefix_pattern, cleaned, flags=re.IGNORECASE):
-        cleaned = re.sub(prefix_pattern, '', cleaned, count=1, flags=re.IGNORECASE).strip()
-    return cleaned.strip()
+    """
+    徹底清理主旨中的 #recall、收回關鍵字以及所有回覆/轉寄前綴：
+    相容：Re:, RE:, Fwd:, FW:, 轉寄:, 轉發:, 回覆:, 回复:, Recall:, 撤回:, 收回:, 冒號等
+    不論順序如何（如 #recall Re:, Re: #recall, Fwd: #recall, 轉寄: #recall），
+    循環清理直到還原為最原始的純淨主旨。
+    """
+    cleaned = decode_mime_words(raw_subject).strip()
+    while True:
+        prev = cleaned
+        # 1. 移除 #recall 標籤 (不論在開頭、中間或結尾)
+        cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE).strip()
+        # 2. 移除開頭殘留冒號與空白
+        cleaned = re.sub(r'^[:：]\s*', '', cleaned).strip()
+        # 3. 移除收回/撤回/Recall 前綴
+        cleaned = re.sub(r'^(?:recall|撤回|收回)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        # 4. 循環移除所有語言的回覆/轉寄前綴
+        cleaned = re.sub(r'^(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        if cleaned == prev:
+            break
+    return cleaned
+
+
+def search_body_for_original_subject(msg: email.message.Message) -> Optional[str]:
+    """從郵件內文 (特別是轉發或回覆的引言區塊) 搜尋原始主旨"""
+    body_parts = []
+    try:
+        if msg.is_multipart():
+            for part in msg.walk():
+                ctype = part.get_content_type()
+                if ctype in ["text/plain", "text/html"]:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+        else:
+            payload = msg.get_payload(decode=True)
+            if payload:
+                body_parts.append(payload.decode("utf-8", errors="ignore"))
+    except Exception:
+        pass
+
+    combined = "\n".join(body_parts)
+    # 匹配引言區塊中的 主旨 / 標題 / Subject
+    match = re.search(r'(?:Subject|主旨|標題)\s*[:：]\s*([^\r\n<]+)', combined, re.IGNORECASE)
+    if match:
+        sub = match.group(1).strip()
+        cleaned = clean_subject(sub)
+        if cleaned:
+            return cleaned
+    return None
 
 
 def is_recall_trigger(msg: email.message.Message) -> Tuple[bool, str]:
@@ -226,7 +264,7 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
     2. References (最後一個 ID)
     3. X-MS-Exchange-Original-Message-Id
     4. 內文解析 (轉發信中包含的原始 Message-ID)
-    5. 搜尋發件者 Sent 備份信箱比對主旨 (Fallback)
+    5. 搜尋發件者 Sent 備份信箱比對主旨 (Fallback，支援回覆與轉發)
     """
     # 1. In-Reply-To
     in_reply_to = msg.get("In-Reply-To")
@@ -249,33 +287,59 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
         if ids:
             return ids[-1]
 
-    # 4. 內文解析 (轉發區塊)
+    # 4. 內文解析 (轉發/回覆區塊)
     body_msg_id = search_body_for_message_id(msg)
     if body_msg_id:
         return body_msg_id
 
-    # 5. Fallback: 由主旨搜尋 Sent 信箱 (多信匣支援)
+    # 5. Fallback: 由主旨搜尋 Sent 信箱 (多信匣支援 + 動態信匣偵測)
     clean_sub = clean_subject(msg.get("Subject", ""))
-    if clean_sub and sender:
+    if not clean_sub:
+        # 若主旨只有 #recall，嘗試從內文引言區塊提取原主旨
+        clean_sub = search_body_for_original_subject(msg) or ""
+
+    if sender:
         cmd_exec = run_cmd or subprocess.run
         doveadm_bin = get_bin_path("doveadm")
-        sent_candidates = ["Sent", "Sent Items", "Sent Messages", "INBOX.Sent"]
+
+        # 動態偵測使用者的 Sent 目錄名稱
+        sent_candidates = []
+        try:
+            list_res = cmd_exec([doveadm_bin, "mailbox", "list", "-u", sender], capture_output=True, text=True, check=False)
+            if list_res.returncode == 0 and list_res.stdout:
+                for line in list_res.stdout.splitlines():
+                    box = line.strip()
+                    if any(k in box.lower() for k in ["sent", "寄件"]):
+                        if box not in sent_candidates:
+                            sent_candidates.append(box)
+        except Exception:
+            pass
+
+        for default_box in ["Sent", "Sent Items", "Sent Messages", "INBOX.Sent"]:
+            if default_box not in sent_candidates:
+                sent_candidates.append(default_box)
 
         for folder in sent_candidates:
             try:
+                search_args = ["mailbox", folder]
+                if clean_sub:
+                    search_args.extend(["HEADER", "Subject", clean_sub])
+
                 # 方式 A：直接 fetch header
                 fetch_res = cmd_exec(
-                    [doveadm_bin, "fetch", "-u", sender, "hdr.message-id", "mailbox", folder, "HEADER", "Subject", clean_sub],
+                    [doveadm_bin, "fetch", "-u", sender, "hdr.message-id"] + search_args,
                     capture_output=True, text=True, check=False
                 )
                 if fetch_res.returncode == 0 and fetch_res.stdout:
-                    matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
+                    matches = re.findall(r'<([^>]+@[^>]+)>', fetch_res.stdout)
+                    if not matches:
+                        matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
                     if matches:
                         return matches[-1]
 
                 # 方式 B：search 取得 GUID 後 fetch
                 res = cmd_exec(
-                    [doveadm_bin, "search", "-u", sender, "mailbox", folder, "HEADER", "Subject", clean_sub],
+                    [doveadm_bin, "search", "-u", sender] + search_args,
                     capture_output=True, text=True, check=False
                 )
                 if res.returncode == 0 and res.stdout.strip():
@@ -293,7 +357,9 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
                         capture_output=True, text=True, check=False
                     )
                     if fetch_res2.returncode == 0 and fetch_res2.stdout:
-                        matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res2.stdout, re.IGNORECASE)
+                        matches = re.findall(r'<([^>]+@[^>]+)>', fetch_res2.stdout)
+                        if not matches:
+                            matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res2.stdout, re.IGNORECASE)
                         if matches:
                             return matches[-1]
             except Exception as e:
