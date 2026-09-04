@@ -233,7 +233,8 @@ VACATION_INTENT_KEYWORDS = [
     # 中文（繁體 / 簡體）
     "休假", "請假", "请假", "出差", "公出", "不在", "外出",
     "特休", "年假", "病假", "事假", "放假", "公休", "補休", "补休",
-    "銷假", "销假", "暫離", "暂离",
+    "銷假", "销假", "暫離", "暂离", "連休", "排休", "輪休", "調休", "调休",
+    "起休", "自休", "小休",
     # 英文
     "vacation", "holiday", "leave", "out of office", "ooo",
     "day off", "days off", "annual leave", "sick leave",
@@ -242,15 +243,32 @@ VACATION_INTENT_KEYWORDS = [
     "nghỉ", "nghỉ phép", "nghỉ ốm", "công tác", "vắng mặt", "đi vắng"
 ]
 
+# 動態自然語言意圖正規表達式（如：休三天、休3天、休半天、休到週五、今天起休、請兩天等）
+VACATION_INTENT_PATTERNS = [
+    # 休X天 / 休X日 / 休X週 / 休半天 (例如：休三天、休3天、休半天、休2.5天)
+    re.compile(r"休\s*[0-9０-９一二兩三四五六七八九十半\.]+\s*(?:天|日|週|周|個?星期|個?月|小時|hrs?)", re.IGNORECASE),
+    # 請X天 / 請半天 (例如：請三天、請3天、請半天)
+    re.compile(r"(?:請|请)\s*[0-9０-９一二兩三四五六七八九十半\.]+\s*(?:天|日|週|周|個?星期|個?月|小時|hrs?)", re.IGNORECASE),
+    # 休到 / 休至 / 請到 / 請至
+    re.compile(r"(?:休|請|请)\s*(?:到|至)", re.IGNORECASE),
+    # 起休 / 開始休
+    re.compile(r"(?:起休|開始休|开始休)", re.IGNORECASE),
+    # 英文動態語法 (taking days off, off today, off until Monday)
+    re.compile(r"(?:take|taking)\s+(?:a\s+)?(?:day|days|time)\s+off", re.IGNORECASE),
+    re.compile(r"\boff\s+(?:today|tomorrow|this\s+week|next\s+week|until|from)\b", re.IGNORECASE),
+]
+
 def check_vacation_intent(subject):
     """
-    Checks whether the email subject contains vacation/leave intent keywords.
+    Checks whether the email subject contains vacation/leave intent keywords or patterns.
     Strictly inspects subject only to prevent false positives from body notes or forwarded emails.
     """
     if not subject:
         return False
     s_lower = subject.lower()
-    return any(kw.lower() in s_lower for kw in VACATION_INTENT_KEYWORDS)
+    if any(kw.lower() in s_lower for kw in VACATION_INTENT_KEYWORDS):
+        return True
+    return any(pat.search(subject) for pat in VACATION_INTENT_PATTERNS)
 
 VIETNAMESE_CHARS_RE = re.compile(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]")
 CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
