@@ -399,28 +399,40 @@ def check_and_cancel_hold_queue(
     return False
 
 
-def expunge_internal_mailbox(recipient: str, target_msg_id: str, max_hours: int, run_cmd: Optional[subprocess.run] = None) -> Tuple[str, str]:
+def expunge_internal_mailbox(
+    recipient: str,
+    target_msg_id: str,
+    max_hours: int,
+    sender: str = "",
+    run_cmd: Optional[subprocess.run] = None
+) -> Tuple[str, str]:
     """
     第二層 (Layer 2): 同網域內部信箱強制抹除
+    嚴格比對 Message-ID 與原信發件者 From (只有原發件者有權收回自己的信件)
     回傳 (status, reason)
     status: 'SUCCESS' | 'EXPIRED' | 'NOT_FOUND' | 'ERROR'
     """
     cmd_exec = run_cmd or subprocess.run
     doveadm_bin = get_bin_path("doveadm")
 
+    # 構建檢索條件：Message-ID 加上寄件者 From 雙重驗證
+    criteria = ["HEADER", "Message-ID", f"<{target_msg_id}>"]
+    if sender:
+        criteria.extend(["HEADER", "From", sender])
+
     try:
         # 1. 搜尋目標信件是否在 INBOX 中
-        search_cmd = [doveadm_bin, "search", "-u", recipient, "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        search_cmd = [doveadm_bin, "search", "-u", recipient, "mailbox", "INBOX"] + criteria
         search_res = cmd_exec(search_cmd, capture_output=True, text=True, check=False)
         if search_res.returncode != 0 or not search_res.stdout.strip():
             # 搜尋全信匣 (包含使用者自訂資料夾)
-            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailboxes", "*"] + criteria
             search_res = cmd_exec(search_cmd2, capture_output=True, text=True, check=False)
             if search_res.returncode != 0 or not search_res.stdout.strip():
-                return "NOT_FOUND", "信件不存在或已被刪除"
+                return "NOT_FOUND", "信件不存在或非發起者所寄出"
 
         # 2. 獲取信件接收時間 (date.saved 或 date.received)
-        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "INBOX", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "INBOX"] + criteria
         fetch_res = cmd_exec(fetch_cmd, capture_output=True, text=True, check=False)
         saved_ts = None
         if fetch_res.returncode == 0 and fetch_res.stdout:
@@ -435,11 +447,11 @@ def expunge_internal_mailbox(recipient: str, target_msg_id: str, max_hours: int,
             if age_hours > max_hours:
                 return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
 
-        # 3. 執行強制抹除 (doveadm expunge 無視 SEEN 旗標強制物理抹除)
-        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailboxes", "*", "HEADER", "Message-ID", f"<{target_msg_id}>"]
+        # 3. 執行強制抹除 (doveadm expunge 嚴格限定 Message-ID 與 From 雙重條件)
+        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailboxes", "*"] + criteria
         exp_res = cmd_exec(expunge_cmd, capture_output=True, text=True, check=False)
         if exp_res.returncode == 0:
-            log(f"[Layer 2 Success] Expunged message <{target_msg_id}> from user {recipient}")
+            log(f"[Layer 2 Success] Expunged message <{target_msg_id}> from user {recipient} (sender: {sender or 'any'})")
             return "SUCCESS", "已從收件者信箱強制抹除 (已讀/未讀均銷毀)"
         else:
             return "ERROR", f"抹除操作失敗: {exp_res.stderr.strip()}"
@@ -708,7 +720,7 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
                     "reason": "外部信箱 (已攔截收回通知信，無法自第三方伺服器刪除)"
                 })
             else:
-                st, reason = expunge_internal_mailbox(r, target_msg_id, max_hours, run_cmd=cmd_exec)
+                st, reason = expunge_internal_mailbox(r, target_msg_id, max_hours, sender=sender_addr, run_cmd=cmd_exec)
                 results.append({
                     "recipient": r,
                     "internal": True,

@@ -282,6 +282,40 @@ Message-ID: <{target_id}>
         self.assertEqual(status, "EXPIRED")
         self.assertIn("已超過收回時效", reason)
 
+    def test_expunge_internal_mailbox_sender_verification(self):
+        """測試第二層：只有原寄件者能抹除信件 (防範同事惡意收回他人信件)"""
+        target_id = "SEC-TEST-001"
+        recipient = "victim@smile.taipei"
+        author = "alice@smile.taipei"
+        attacker = "bob@smile.taipei"
+        received_ts = int(time.time()) - 300
+
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm":
+                # 檢查指令是否有帶入 HEADER From 條件
+                if "From" in cmd:
+                    from_idx = cmd.index("From") + 1
+                    expected_from = cmd[from_idx]
+                    # 只有 From == alice 時，收件者信箱才能找到該信
+                    if expected_from == author:
+                        if cmd[1] in ["search", "expunge"]:
+                            return MagicMock(returncode=0, stdout="GUID-SEC-123\n", stderr="")
+                        elif cmd[1] == "fetch":
+                            return MagicMock(returncode=0, stdout=f"{received_ts}\n", stderr="")
+                    else:
+                        # 攻擊者 Bob 嘗試抹除，信箱查無此信 (因為原信是 Alice 寄的)
+                        return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        # 1. 真正寄件者 Alice 收回：成功
+        status1, reason1 = handle_recall.expunge_internal_mailbox(recipient, target_id, max_hours=2, sender=author, run_cmd=mock_cmd)
+        self.assertEqual(status1, "SUCCESS")
+
+        # 2. 偽造/非原作者 Bob 嘗試收回：失敗 (NOT_FOUND)
+        status2, reason2 = handle_recall.expunge_internal_mailbox(recipient, target_id, max_hours=2, sender=attacker, run_cmd=mock_cmd)
+        self.assertEqual(status2, "NOT_FOUND")
+
     def test_build_status_report_multilingual(self):
         """測試四國語言報告生成 (zh-TW, zh-CN, en, vi)"""
         results = [
