@@ -131,8 +131,9 @@ if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/bin/cp default.private /var/lib/rspamd/dkim/${DOMAIN_NAME}.dkim.key
 fi
 
-if [ ! -f "/etc/dovecot/dh.pem" ];  then
-  /usr/bin/openssl dhparam 4096 > /etc/dovecot/dh.pem
+if [ ! -f "/etc/dovecot/dh.pem" ]; then
+  echo "Generating 2048-bit Diffie-Hellman parameters for TLS (takes ~10s)..."
+  /usr/bin/openssl dhparam 2048 > /etc/dovecot/dh.pem
 fi
 
 /usr/bin/chown -R vmail:vmail /home/vmail&
