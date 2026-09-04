@@ -367,6 +367,33 @@ Message-ID: <{target_id}>
         self.assertIn("colleague@smile.taipei", payload_text)
         self.assertIn("client@gmail.com", payload_text)
 
+    def test_build_status_report_dynamic_config(self):
+        """測試報告內容是否能動態反映 delay_seconds 與 max_hours 設定"""
+        results = [
+            {"recipient": "staff@domain.com", "internal": True, "status": "SUCCESS", "reason": "已抹除"}
+        ]
+        report = handle_recall.build_status_report(
+            sender="boss@domain.com",
+            target_subject="重要通知",
+            target_msg_id="ID-999@domain.com",
+            trigger_type="mobile_hash",
+            results=results,
+            delay_seconds=30,
+            max_hours=4
+        )
+        payload_text = report.get_payload(0).get_payload(decode=True).decode("utf-8")
+        payload_html = report.get_payload(1).get_payload(decode=True).decode("utf-8")
+
+        # 驗證動態秒數與時數有被填入
+        self.assertIn("30 秒", payload_text)
+        self.assertIn("4 小時", payload_text)
+        self.assertIn("30 秒", payload_html)
+        self.assertIn("4 小時", payload_html)
+        self.assertIn("4 hours", payload_text)
+        self.assertIn("30s", payload_text)
+        self.assertIn("4 giờ", payload_text)
+        self.assertIn("30 giây", payload_text)
+
     def test_clean_subject(self):
         """測試主旨徹底清理 (相容回覆 Re:, 轉寄 Fwd:, 轉寄:, 回覆: 以及 #recall 各種排列組合)"""
         test_cases = {

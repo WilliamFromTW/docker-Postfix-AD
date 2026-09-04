@@ -561,7 +561,9 @@ def build_status_report(
     target_subject: str,
     target_msg_id: str,
     trigger_type: str,
-    results: List[Dict[str, str]]
+    results: List[Dict[str, str]],
+    delay_seconds: int = 10,
+    max_hours: int = 2
 ) -> MIMEMultipart:
     """生成繁中、簡中、英文、越南文四國語言彙總報告郵件"""
     clean_sub = clean_subject(target_subject)
@@ -612,24 +614,24 @@ def build_status_report(
 
 ----------------------------------------------------------------------
 【繁體中文說明】
-- 第一層佇列攔截：10 秒內收回之郵件已在伺服器出站佇列銷毀，內外部收件人皆未收到。
-- 第二層信箱抹除：同網域收件人之郵件已在 2 小時時效內強制抹除 (包含已讀與未讀)。
+- 第一層佇列攔截：{delay_seconds} 秒內收回之郵件已在伺服器出站佇列銷毀，內外部收件人皆未收到。
+- 第二層信箱抹除：同網域收件人之郵件已在 {max_hours} 小時時效內強制抹除 (包含已讀與未讀)。
 - 外部收件人說明：外部第三方伺服器不支援跨站抹除，但系統已攔截所有收回通知，避免打擾對方。
 - POP3 備註：若同仁使用 POP3 且已下載至本機電腦，伺服器已抹除但本機硬碟檔案無法遠端銷毀。
 
 【简体中文说明】
-- 第一层队列拦截：10 秒内收回之邮件已在出站队列销毁，内外部收件人均未收到。
-- 第二层邮箱抹除：同域名收件人之邮件已在 2 小时时效内强制抹除 (包含已读与未读)。
+- 第一层队列拦截：{delay_seconds} 秒内收回之邮件已在出站队列销毁，内外部收件人均未收到。
+- 第二层邮箱抹除：同域名收件人之邮件已在 {max_hours} 小时时效内强制抹除 (包含已读与未读)。
 - 外部收件人说明：外部第三方服务器不支持跨站抹除，但系统已拦截所有收回通知，避免打扰客户。
 
 【English Notes】
-- Layer 1 (Queue Buffer): Recalls within 10s were deleted in the queue; no recipients received it.
-- Layer 2 (Mailbox Expunge): Internal recipients had the message expunged regardless of read status.
+- Layer 1 (Queue Buffer): Recalls within {delay_seconds}s were deleted in the queue; no recipients received it.
+- Layer 2 (Mailbox Expunge): Internal recipients had the message expunged within {max_hours} hours regardless of read status.
 - External Recipients: Cannot remotely delete from external servers; recall notices were suppressed.
 
 【Ghi chú tiếng Việt】
-- Lớp 1 (Hàng đợi trễ): Thư thu hồi trong 10 giây đã bị xóa khỏi hàng đợi máy chủ.
-- Lớp 2 (Xóa hộp thư): Thư của người nhận nội bộ đã bị xóa cưỡng chế (bao gồm đã đọc và chưa đọc).
+- Lớp 1 (Hàng đợi trễ): Thư thu hồi trong {delay_seconds} giây đã bị xóa khỏi hàng đợi máy chủ.
+- Lớp 2 (Xóa hộp thư): Thư của người nhận nội bộ đã bị xóa cưỡng chế trong vòng {max_hours} giờ (bao gồm đã đọc và chưa đọc).
 - Người nhận bên ngoài: Không thể xóa trên máy chủ bên thứ ba; thông báo thu hồi đã bị chặn.
 ======================================================================
 """
@@ -671,10 +673,10 @@ def build_status_report(
 
                 <div style="margin-top: 28px; padding: 16px; background-color: #f8f9fa; border-radius: 6px; font-size: 12px; color: #495057;">
                     <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #212529;">注意事項與安全宣告 / System Notes</h4>
-                    <p style="margin: 4px 0;"><strong>繁體中文：</strong>同網域信箱信件已於 2 小時時效內強制抹除（無論同仁是否已讀）。外部郵件若逾 10 秒暫存已無法從第三方伺服器刪除，但系統已全數攔截撤回通知信避免尷尬。若同仁使用 POP3 且已收至本機，本機硬碟複本無法遠端銷毀。</p>
-                    <p style="margin: 4px 0;"><strong>简体中文：</strong>同域名邮箱邮件已于 2 小时时效内强制抹除（无论同事是否已读）。外部邮件若逾 10 秒暂存已无法从第三方服务器删除，但系统已全数拦截撤回通知信避免打扰。若同事使用 POP3 且已收取至本地，本地硬盘副本无法远程销毁。</p>
-                    <p style="margin: 4px 0;"><strong>English:</strong> Internal mailbox messages are forcefully expunged within 2 hours regardless of read/unread status. For external recipients, recall notices are suppressed. POP3 messages already downloaded cannot be wiped remotely.</p>
-                    <p style="margin: 4px 0;"><strong>Tiếng Việt:</strong> Thư nội bộ đã bị xóa cưỡng chế trong vòng 2 giờ bất kể đã đọc hay chưa. Thông báo thu hồi gửi ra ngoài đã bị chặn.</p>
+                    <p style="margin: 4px 0;"><strong>繁體中文：</strong>同網域信箱信件已於 {max_hours} 小時時效內強制抹除（無論同仁是否已讀）。外部郵件若逾 {delay_seconds} 秒暫存已無法從第三方伺服器刪除，但系統已全數攔截撤回通知信避免尷尬。若同仁使用 POP3 且已收至本機，本機硬碟複本無法遠端銷毀。</p>
+                    <p style="margin: 4px 0;"><strong>简体中文：</strong>同域名邮箱邮件已于 {max_hours} 小时时效内强制抹除（无论同事是否已读）。外部邮件若逾 {delay_seconds} 秒暂存已无法从第三方服务器删除，但系统已全数拦截撤回通知信避免打扰。若同事使用 POP3 且已收取至本地，本地硬盘副本无法远程销毁。</p>
+                    <p style="margin: 4px 0;"><strong>English:</strong> Internal mailbox messages are forcefully expunged within {max_hours} hours regardless of read/unread status. For external recipients, recall notices are suppressed. POP3 messages already downloaded cannot be wiped remotely.</p>
+                    <p style="margin: 4px 0;"><strong>Tiếng Việt:</strong> Thư nội bộ đã bị xóa cưỡng chế trong vòng {max_hours} giờ bất kể đã đọc hay chưa. Thông báo thu hồi gửi ra ngoài đã bị chặn.</p>
                 </div>
             </div>
         </div>
@@ -762,6 +764,9 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
     # 4. 第一層 (Layer 1): 佇列暫存檢查 (10 秒內)
     hold_recips: List[str] = []
     queue_killed = check_and_cancel_hold_queue(target_msg_id, sender_addr, run_cmd=cmd_exec, out_recipients=hold_recips)
+    delay_seconds = cfg.get("RECALL_DELAY_SECONDS", 10)
+    max_hours = cfg.get("RECALL_MAX_HOURS", 2)
+
     if queue_killed:
         if hold_recips and (len(recipients) == 1 and recipients[0].lower() == sender_addr.lower()):
             recipients = hold_recips
@@ -771,11 +776,10 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
                 "recipient": r,
                 "internal": is_int,
                 "status": "SUCCESS",
-                "reason": "在出站佇列 (10s 暫存) 中成功攔截銷毀，未送出"
+                "reason": f"在出站佇列 ({delay_seconds}s 暫存) 中成功攔截銷毀，未送出"
             })
     else:
-        # 5. 第二層 (Layer 2): 信箱強制抹除 (2 小時內)
-        max_hours = cfg.get("RECALL_MAX_HOURS", 2)
+        # 5. 第二層 (Layer 2): 信箱強制抹除 (時效內)
         for r in recipients:
             is_int = is_internal_recipient(r, sender_domain, run_cmd=cmd_exec)
             if not is_int:
@@ -800,7 +804,9 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
         target_subject=msg.get("Subject", ""),
         target_msg_id=target_msg_id,
         trigger_type=trigger_type,
-        results=results
+        results=results,
+        delay_seconds=delay_seconds,
+        max_hours=max_hours
     )
     send_report_email(report, sender_addr, sender_domain=sender_domain, run_cmd=cmd_exec)
 
