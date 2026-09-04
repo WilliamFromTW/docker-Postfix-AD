@@ -492,13 +492,13 @@ def expunge_internal_mailbox(
         search_res = cmd_exec(search_cmd, capture_output=True, text=True, check=False)
         if search_res.returncode != 0 or not search_res.stdout.strip():
             # 搜尋全信匣 (包含使用者自訂資料夾)
-            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailboxes", "*"] + criteria
+            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailbox", "*"] + criteria
             search_res = cmd_exec(search_cmd2, capture_output=True, text=True, check=False)
             if search_res.returncode != 0 or not search_res.stdout.strip():
                 return "NOT_FOUND", "信件不存在或非發起者所寄出"
 
         # 2. 獲取信件接收時間 (date.saved 或 date.received)
-        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "INBOX"] + criteria
+        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "*"] + criteria
         fetch_res = cmd_exec(fetch_cmd, capture_output=True, text=True, check=False)
         saved_ts = None
         if fetch_res.returncode == 0 and fetch_res.stdout:
@@ -514,7 +514,7 @@ def expunge_internal_mailbox(
                 return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
 
         # 3. 執行強制抹除 (doveadm expunge 嚴格限定 Message-ID 與 From 雙重條件)
-        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailboxes", "*"] + criteria
+        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailbox", "*"] + criteria
         exp_res = cmd_exec(expunge_cmd, capture_output=True, text=True, check=False)
         if exp_res.returncode == 0:
             log(f"[Layer 2 Success] Expunged message <{target_msg_id}> from user {recipient} (sender: {sender or 'any'})")

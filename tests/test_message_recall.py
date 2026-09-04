@@ -253,18 +253,23 @@ Message-ID: <{target_id}>
         # 模擬 30 分鐘前送達 (1800 秒前)
         received_ts = int(time.time()) - 1800
 
+        recorded_cmds = []
         def mock_cmd(cmd, **kwargs):
+            recorded_cmds.append(cmd)
+            self.assertNotIn("mailboxes", cmd, "doveadm CLI does not accept plural 'mailboxes'")
             if cmd[0] == "doveadm" and cmd[1] == "search":
                 return MagicMock(returncode=0, stdout="GUID-12345\n", stderr="")
             elif cmd[0] == "doveadm" and cmd[1] == "fetch":
                 return MagicMock(returncode=0, stdout=f"{received_ts}\n", stderr="")
             elif cmd[0] == "doveadm" and cmd[1] == "expunge":
+                self.assertIn("mailbox", cmd)
                 return MagicMock(returncode=0, stdout="", stderr="")
             return MagicMock(returncode=1, stdout="", stderr="")
 
         status, reason = handle_recall.expunge_internal_mailbox(recipient, target_id, max_hours=2, run_cmd=mock_cmd)
         self.assertEqual(status, "SUCCESS")
         self.assertIn("已讀/未讀均銷毀", reason)
+        self.assertTrue(any(c[1] == "expunge" for c in recorded_cmds))
 
     def test_expunge_internal_mailbox_expired(self):
         """測試第二層：超過 2 小時拒絕抹除 (保護時效)"""
