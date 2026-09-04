@@ -173,11 +173,11 @@
                   </div>
                   <div class="col-md-3">
                     <label for="inputOllamaModel" class="form-label" data-i18n="ollamaModel">AI 模型名稱 (OLLAMA_MODEL)</label>
-                    <input type="text" class="form-control" id="inputOllamaModel" value="qwen2.5:7b" placeholder="qwen2.5:7b">
+                    <input type="text" class="form-control" id="inputOllamaModel" data-i18n-placeholder="placeholderOllamaModel" placeholder="例如 qwen2.5:7b (選填)">
                   </div>
                   <div class="col-md-3">
                     <label for="inputOllamaTimeout" class="form-label" data-i18n="ollamaTimeout">連線超時秒數 (OLLAMA_TIMEOUT)</label>
-                    <input type="number" class="form-control" id="inputOllamaTimeout" value="5" min="1" max="60">
+                    <input type="number" class="form-control" id="inputOllamaTimeout" value="60" min="1" max="300">
                   </div>
                 </div>
               </div>
@@ -259,7 +259,8 @@
           ollamaHostHelp: "LAN independent GPU server URL. Leave empty to use legacy regex auto-reply only.",
           ollamaModel: "AI Model Name (OLLAMA_MODEL)",
           ollamaTimeout: "Timeout Seconds (OLLAMA_TIMEOUT)",
-          placeholderOllamaHost: "http://192.168.1.100:11434"
+          placeholderOllamaHost: "http://192.168.1.100:11434",
+          placeholderOllamaModel: "e.g. qwen2.5:7b (Optional, auto-detected)"
         },
         "zh-TW": {
           docTitle: "Postfix 郵件伺服器 + Rspamd + Active Directory 設定產生器",
@@ -306,7 +307,8 @@
           ollamaHostHelp: "區網獨立 GPU 伺服器網址，留空則維持純傳統 Regex 請假設定",
           ollamaModel: "AI 模型名稱 (OLLAMA_MODEL)",
           ollamaTimeout: "連線超時秒數 (OLLAMA_TIMEOUT)",
-          placeholderOllamaHost: "http://192.168.1.100:11434"
+          placeholderOllamaHost: "http://192.168.1.100:11434",
+          placeholderOllamaModel: "例如 qwen2.5:7b (選填，自動偵測)"
         },
         "zh-CN": {
           docTitle: "Postfix 邮件服务器 + Rspamd + Active Directory 配置生成器",
@@ -353,7 +355,8 @@
           ollamaHostHelp: "局域网独立 GPU 服务器网址，留空则维持纯传统 Regex 请假配置",
           ollamaModel: "AI 模型名称 (OLLAMA_MODEL)",
           ollamaTimeout: "连接超时秒数 (OLLAMA_TIMEOUT)",
-          placeholderOllamaHost: "http://192.168.1.100:11434"
+          placeholderOllamaHost: "http://192.168.1.100:11434",
+          placeholderOllamaModel: "例如 qwen2.5:7b (选填，自动探测)"
         },
         vi: {
           docTitle: "Công cụ tạo cấu hình Postfix + Rspamd + Active Directory",
@@ -400,7 +403,8 @@
           ollamaHostHelp: "Địa chỉ máy chủ GPU độc lập trong mạng LAN. Để trống để sử dụng Regex truyền thống.",
           ollamaModel: "Tên mô hình AI (OLLAMA_MODEL)",
           ollamaTimeout: "Thời gian chờ giây (OLLAMA_TIMEOUT)",
-          placeholderOllamaHost: "http://192.168.1.100:11434"
+          placeholderOllamaHost: "http://192.168.1.100:11434",
+          placeholderOllamaModel: "Ví dụ: qwen2.5:7b (Tùy chọn)"
         }
       };
 
@@ -468,8 +472,8 @@
         var enableQuota = $("#inputEnableQuota").is(":checked") ? "true" : "false";
         var enableLdaps = $("#inputEnableLdaps").is(":checked") ? "true" : "false";
         var ollamaHost = $("#inputOllamaHost").val().trim();
-        var ollamaModel = $("#inputOllamaModel").val().trim() || "qwen2.5:7b";
-        var ollamaTimeout = $("#inputOllamaTimeout").val().trim() || "5";
+        var ollamaModel = $("#inputOllamaModel").val().trim();
+        var ollamaTimeout = $("#inputOllamaTimeout").val().trim() || "60";
 
         // Docker / Podman CLI 額外選項
         var cliOptional = "";
@@ -487,7 +491,9 @@
         }
         if (ollamaHost !== "") {
           cliOptional += " -e OLLAMA_HOST='" + ollamaHost + "' \\\n";
-          cliOptional += " -e OLLAMA_MODEL='" + ollamaModel + "' \\\n";
+          if (ollamaModel !== "") {
+            cliOptional += " -e OLLAMA_MODEL='" + ollamaModel + "' \\\n";
+          }
           cliOptional += " -e OLLAMA_TIMEOUT='" + ollamaTimeout + "' \\\n";
         }
 
@@ -579,7 +585,9 @@
         }
         if (ollamaHost !== "") {
           composeEnv += "      - OLLAMA_HOST='" + ollamaHost + "'\n";
-          composeEnv += "      - OLLAMA_MODEL='" + ollamaModel + "'\n";
+          if (ollamaModel !== "") {
+            composeEnv += "      - OLLAMA_MODEL='" + ollamaModel + "'\n";
+          }
           composeEnv += "      - OLLAMA_TIMEOUT='" + ollamaTimeout + "'\n";
         }
 
