@@ -18,18 +18,12 @@ if not anyof (
     if anyof (
         exists "X-MS-Exchange-Organization-Recall-Action",
         header :matches "Subject" ["*#recall*", "*#RECALL*"],
-        allof (
-            header :matches "Subject" [
-                "Recall:*", "Recall：*", "Re: Recall:*", "RE: Recall:*", "Fwd: Recall:*", "FW: Recall:*",
-                "撤回:*", "撤回：*", "Re: 撤回:*", "RE: 撤回:*", "Fwd: 撤回:*", "FW: 撤回:*",
-                "收回:*", "收回：*", "Re: 收回:*", "RE: 收回:*", "Fwd: 收回:*", "FW: 收回:*",
-                "回收:*", "回收：*", "Re: 回收:*", "RE: 回收:*", "Fwd: 回收:*", "FW: 回收:*"
-            ],
-            anyof (
-                exists "In-Reply-To",
-                exists "References"
-            )
-        )
+        header :matches "Subject" [
+            "Recall:*", "Recall：*", "Re: Recall:*", "RE: Recall:*", "Fwd: Recall:*", "FW: Recall:*",
+            "撤回:*", "撤回：*", "Re: 撤回:*", "RE: 撤回:*", "Fwd: 撤回:*", "FW: 撤回:*",
+            "收回:*", "收回：*", "Re: 收回:*", "RE: 收回:*", "Fwd: 收回:*", "FW: 收回:*",
+            "回收:*", "回收：*", "Re: 回收:*", "RE: 回收:*", "Fwd: 回收:*", "FW: 回收:*"
+        ]
     ) {
         pipe :copy "handle_recall.py";
         discard;
