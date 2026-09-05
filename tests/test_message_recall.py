@@ -766,6 +766,38 @@ Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
         self.assertEqual(status, "SUCCESS")
         self.assertIn("強制抹除", reason)
 
+    def test_expunge_fallback_to_subject_only_deletes_latest(self):
+        """測試主旨保底抹除時，若存在多封相同主旨信件，嚴格只抹除最新的一封 (UID 100)，保留舊信 (UID 50)"""
+        now = time.time()
+        expunged_uids = []
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm":
+                if cmd[1] == "search":
+                    # 搜尋命中兩封同主旨信件：UID 50 (較早) 與 UID 100 (較新)
+                    return MagicMock(returncode=0, stdout="guid-inbox 50\nguid-inbox 100\n", stderr="")
+                elif cmd[1] == "fetch":
+                    return MagicMock(returncode=0, stdout=f"hdr.subject: Subject: test\ndate.saved: {int(now - 60)}\n", stderr="")
+                elif cmd[1] == "expunge":
+                    if "100" in cmd:
+                        expunged_uids.append("100")
+                    elif "50" in cmd:
+                        expunged_uids.append("50")
+                    return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        status, reason = handle_recall.expunge_internal_mailbox(
+            recipient="william@smile.taipei",
+            target_msg_id="UNKNOWN",
+            max_hours=2,
+            sender="william2@smile.taipei",
+            clean_sub="test",
+            run_cmd=mock_cmd
+        )
+        self.assertEqual(status, "SUCCESS")
+        # 嚴格驗證只抹除了最新的一封 UID 100，UID 50 絕未被調用抹除
+        self.assertEqual(expunged_uids, ["100"])
+
 
 if __name__ == "__main__":
     unittest.main()

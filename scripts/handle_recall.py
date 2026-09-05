@@ -700,6 +700,8 @@ def expunge_internal_mailbox(
                         if del_res.returncode == 0:
                             log(f"[Layer 2 Success] Expunged message by subject match '{c_sub}' from user {recipient} (sender: {sender})")
                             expunged_any = True
+                            # 防呆：嚴格限定一次收回只銷毀最新一封，絕不連帶刪除較早發出的同主旨正常信件
+                            break
 
                 if expunged_any:
                     return "SUCCESS", "已從收件者信箱強制抹除 (主旨與發件者比對成功銷毀)"
