@@ -154,6 +154,20 @@ def clean_subject(raw_subject: str) -> str:
     return cleaned
 
 
+def decode_payload(payload: bytes, part_charset: Optional[str] = None) -> str:
+    """嘗試根據標頭指定的 charset 或常見中文編碼 (Big5, CP950, UTF-8) 解碼郵件內文"""
+    charsets_to_try = [part_charset] if part_charset else []
+    charsets_to_try.extend(["utf-8", "big5", "cp950", "gb18030", "latin1"])
+    for enc in charsets_to_try:
+        if not enc:
+            continue
+        try:
+            return payload.decode(enc)
+        except Exception:
+            pass
+    return payload.decode("utf-8", errors="ignore")
+
+
 def is_outlook_recall_body(msg: email.message.Message) -> bool:
     """檢查信件內文是否符合微軟 Outlook 原生收回通知特徵 (樣板語句)"""
     body_parts = []
@@ -164,11 +178,11 @@ def is_outlook_recall_body(msg: email.message.Message) -> bool:
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
                     if payload:
-                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+                        body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
             if payload:
-                body_parts.append(payload.decode("utf-8", errors="ignore"))
+                body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:
         pass
 
@@ -196,11 +210,11 @@ def search_body_for_original_subject(msg: email.message.Message) -> Optional[str
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
                     if payload:
-                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+                        body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
             if payload:
-                body_parts.append(payload.decode("utf-8", errors="ignore"))
+                body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:
         pass
 
@@ -272,11 +286,11 @@ def search_body_for_message_id(msg: email.message.Message) -> Optional[str]:
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
                     if payload:
-                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+                        body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
             if payload:
-                body_parts.append(payload.decode("utf-8", errors="ignore"))
+                body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:
         pass
 

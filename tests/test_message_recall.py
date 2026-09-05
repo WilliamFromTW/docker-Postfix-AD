@@ -627,5 +627,43 @@ Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
             mock_re_inject.assert_called_once()
 
 
+    def test_big5_outlook_recall_detection(self):
+        """測試 Windows 繁體中文 Outlook 以 Big5 編碼之郵件主旨與內文解析"""
+        import base64
+        raw_msg_str = (
+            "From: william2@kafeiou.pw\r\n"
+            "To: william@kafeiou.pw\r\n"
+            "Subject: =?big5?B?pl6mrDogdGVzdA==?=\r\n"
+            "MIME-Version: 1.0\r\n"
+            "Content-Type: text/plain; charset=\"big5\"\r\n"
+            "Content-Transfer-Encoding: base64\r\n"
+            "\r\n"
+        )
+        body_big5 = "william2 想要收回郵件 \"test\"。".encode("big5")
+        raw_email_bytes = raw_msg_str.encode("utf-8") + base64.b64encode(body_big5)
+
+        msg = email.message_from_bytes(raw_email_bytes)
+        # 1. 驗證 is_recall_trigger 正確識別
+        is_rec, ttype = handle_recall.is_recall_trigger(msg)
+        self.assertTrue(is_rec)
+        self.assertEqual(ttype, "outlook_subject")
+
+        # 2. 驗證 clean_subject 能由 Big5 主旨還原原始主旨 test
+        self.assertEqual(handle_recall.clean_subject(msg.get("Subject")), "test")
+
+        # 3. 驗證 is_outlook_recall_body 支援 Big5 內文解碼
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg))
+
+    def test_sieve_pattern_guardrail_big5(self):
+        """驗證 Sieve 嚴格開頭比對：符合 pl6mr (回收:)，但絕不誤判 資源回收:"""
+        import fnmatch
+        sieve_pattern = "=?*?B?pl6mr*"
+        outlook_subj = "=?big5?B?pl6mrDogdGVzdA==?="
+        recycle_subj = "=?big5?B?uOq3vaZepqw6..."
+
+        self.assertTrue(fnmatch.fnmatchcase(outlook_subj.lower(), sieve_pattern.lower()))
+        self.assertFalse(fnmatch.fnmatchcase(recycle_subj.lower(), sieve_pattern.lower()))
+
+
 if __name__ == "__main__":
     unittest.main()

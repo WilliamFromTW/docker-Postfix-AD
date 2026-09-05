@@ -23,6 +23,17 @@ if not anyof (
             "撤回:*", "撤回：*", "Re: 撤回:*", "RE: 撤回:*", "Fwd: 撤回:*", "FW: 撤回:*",
             "收回:*", "收回：*", "Re: 收回:*", "RE: 收回:*", "Fwd: 收回:*", "FW: 收回:*",
             "回收:*", "回收：*", "Re: 回收:*", "RE: 回收:*", "Fwd: 回收:*", "FW: 回收:*"
+        ],
+        # 雙重保險：支援 RFC 2047 MIME Base64 原始字串匹配 (Big5 與 UTF-8，嚴格開頭比對無前置 *)
+        # Big5: pl6mr (回收:), pqymX (收回:), uk2mX (撤回:)
+        # UTF-8: 5Zue5pS2 (回收:), 5pS25Zue (收回:), 5pKk5Zue (撤回:)
+        header :matches "Subject" [
+            "=?*?B?pl6mr*", "=?*?b?pl6mr*", "Re: =?*?B?pl6mr*", "RE: =?*?B?pl6mr*", "Fwd: =?*?B?pl6mr*", "FW: =?*?B?pl6mr*",
+            "=?*?B?pqymX*", "=?*?b?pqymX*", "Re: =?*?B?pqymX*", "RE: =?*?B?pqymX*",
+            "=?*?B?uk2mX*", "=?*?b?uk2mX*", "Re: =?*?B?uk2mX*", "RE: =?*?B?uk2mX*",
+            "=?*?B?5Zue5pS2*", "=?*?b?5Zue5pS2*", "Re: =?*?B?5Zue5pS2*", "RE: =?*?B?5Zue5pS2*",
+            "=?*?B?5pS25Zue*", "=?*?b?5pS25Zue*", "Re: =?*?B?5pS25Zue*", "RE: =?*?B?5pS25Zue*",
+            "=?*?B?5pKk5Zue*", "=?*?b?5pKk5Zue*", "Re: =?*?B?5pKk5Zue*", "RE: =?*?B?5pKk5Zue*"
         ]
     ) {
         pipe :copy "handle_recall.py";
