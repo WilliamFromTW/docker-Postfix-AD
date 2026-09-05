@@ -188,14 +188,17 @@ import email
 from email.header import decode_header, make_header
 
 
-def decode_mime_words(raw: str) -> str:
-    """解碼 RFC 2047 MIME 編碼字串 (例如 =?UTF-8?B?...?=)"""
+def decode_mime_words(raw: any) -> str:
+    """解碼 RFC 2047 MIME 編碼字串 (例如 =?UTF-8?B?...?=)，若為純文字或已解碼字串則直接回傳"""
     if not raw:
         return ""
-    try:
-        return str(make_header(decode_header(raw))).strip()
-    except Exception:
-        return raw.strip()
+    raw_str = str(raw).strip()
+    if "=?" in raw_str and "?=" in raw_str:
+        try:
+            return str(make_header(decode_header(raw_str))).strip()
+        except Exception:
+            pass
+    return raw_str
 
 
 def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
@@ -213,7 +216,9 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
             log(f"postcat -q -h failed for {qid}: returncode={proc.returncode}, stderr={proc.stderr.strip()}", syslog.LOG_WARNING)
         if proc.returncode == 0 and proc.stdout:
             # 1. 透過標準 email 套件完整解析（自動還原多行折疊標頭）
-            recall_pattern = r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收)\s*[:：]'
+            recall_words = r'(?:recall|撤回|收回|回收|取り消し|取消|thu\s+hồi)'
+            reply_words = r'(?:re|fwd|fw|轉寄|轉發|回覆|回复|返信|転送|trả\s*lời|chuyển\s*tiếp)'
+            recall_pattern = rf'^(?:{reply_words}\s*[:：]?\s*)*{recall_words}\s*[:：]'
             try:
                 msg = email.message_from_string(proc.stdout)
                 if msg.get("X-MS-Exchange-Organization-Recall-Action"):

@@ -121,22 +121,25 @@ def load_config(config_path: str = CONFIG_PATH) -> Dict[str, any]:
     return cfg
 
 
-def decode_mime_words(raw_header: Optional[str]) -> str:
-    """解碼 RFC 2047 編碼字串 (例如 =?UTF-8?B?...?=)"""
+def decode_mime_words(raw_header: any) -> str:
+    """解碼 RFC 2047 編碼字串 (例如 =?UTF-8?B?...?=)，若為純文字或已解碼字串則直接回傳"""
     if not raw_header:
         return ""
-    try:
-        return str(make_header(decode_header(raw_header))).strip()
-    except Exception:
-        return str(raw_header).strip()
+    header_str = str(raw_header).strip()
+    if "=?" in header_str and "?=" in header_str:
+        try:
+            return str(make_header(decode_header(header_str))).strip()
+        except Exception:
+            pass
+    return header_str
 
 
 def clean_subject(raw_subject: str) -> str:
     """
     徹底清理主旨中的 #recall、收回關鍵字以及所有回覆/轉寄前綴：
-    相容：Re:, RE:, Fwd:, FW:, 轉寄:, 轉發:, 回覆:, 回复:, Recall:, 撤回:, 收回:, 冒號等
-    不論順序如何（如 #recall Re:, Re: #recall, Fwd: #recall, 轉寄: #recall），
-    循環清理直到還原為最原始的純淨主旨。
+    相容繁中/簡中/英文/日文/越南文：
+    Recall:, 撤回:, 收回:, 回收:, 取り消し:, 取消:, Thu hồi:, Re:, Fwd:, FW:, 轉寄:, 轉發:, 回覆:, 回复:, 返信:, 転送:, Trả lời:, Chuyển tiếp: 等
+    不論順序如何，循環清理直到還原為最原始的純淨主旨。
     """
     cleaned = decode_mime_words(raw_subject).strip()
     while True:
@@ -145,19 +148,26 @@ def clean_subject(raw_subject: str) -> str:
         cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE).strip()
         # 2. 移除開頭殘留冒號與空白
         cleaned = re.sub(r'^[:：]\s*', '', cleaned).strip()
-        # 3. 移除收回/撤回/Recall/回收 前綴
-        cleaned = re.sub(r'^(?:recall|撤回|收回|回收)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
-        # 4. 循環移除所有語言的回覆/轉寄前綴
-        cleaned = re.sub(r'^(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        # 3. 移除多語系收回/撤回/Recall/回收/取り消し/取消/Thu hồi 前綴
+        cleaned = re.sub(r'^(?:recall|撤回|收回|回收|取り消し|取消|thu\s+hồi)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        # 4. 循環移除各語言的回覆/轉寄前綴
+        cleaned = re.sub(r'^(?:re|fwd|fw|轉寄|轉發|回覆|回复|返信|転送|trả\s*lời|chuyển\s*tiếp)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
         if cleaned == prev:
             break
     return cleaned
 
 
-def decode_payload(payload: bytes, part_charset: Optional[str] = None) -> str:
-    """嘗試根據標頭指定的 charset 或常見中文編碼 (Big5, CP950, UTF-8) 解碼郵件內文"""
+def decode_payload(payload: any, part_charset: Optional[str] = None) -> str:
+    """嘗試根據標頭指定的 charset 或常見多國語言編碼 (Big5, CP950, GB18030, GBK, GB2312, CP932, Shift_JIS, EUC-JP, ISO-2022-JP, UTF-8) 解碼郵件內文"""
+    if isinstance(payload, str):
+        return payload
+    if not isinstance(payload, (bytes, bytearray)):
+        return str(payload)
     charsets_to_try = [part_charset] if part_charset else []
-    charsets_to_try.extend(["utf-8", "big5", "cp950", "gb18030", "latin1"])
+    charsets_to_try.extend([
+        "utf-8", "big5", "cp950", "gb18030", "gbk", "gb2312",
+        "cp932", "shift_jis", "euc-jp", "iso-2022-jp", "latin1"
+    ])
     for enc in charsets_to_try:
         if not enc:
             continue
@@ -169,7 +179,7 @@ def decode_payload(payload: bytes, part_charset: Optional[str] = None) -> str:
 
 
 def is_outlook_recall_body(msg: email.message.Message) -> bool:
-    """檢查信件內文是否符合微軟 Outlook 原生收回通知特徵 (樣板語句)"""
+    """檢查信件內文是否符合微軟 Outlook 原生收回通知特徵 (跨語系樣板語句)"""
     body_parts = []
     try:
         if msg.is_multipart():
@@ -177,10 +187,14 @@ def is_outlook_recall_body(msg: email.message.Message) -> bool:
                 ctype = part.get_content_type()
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
+                    if payload is None:
+                        payload = part.get_payload(decode=False)
                     if payload:
                         body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
+            if payload is None:
+                payload = msg.get_payload(decode=False)
             if payload:
                 body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:
@@ -188,10 +202,22 @@ def is_outlook_recall_body(msg: email.message.Message) -> bool:
 
     combined = " ".join(body_parts)
     patterns = [
+        # 繁體中文 / 簡體中文
         r'想(?:要)?(?:收回|回收|撤回)郵件',
         r'想(?:要)?(?:收回|回收|撤回)邮件',
+        # 英文
         r'would like to recall the message',
         r'wants to recall the message',
+        # 日文
+        r'取り消しを希望',
+        r'メッセージの取り消し',
+        r'取り消したい',
+        # 越南文
+        r'muốn thu hồi',
+        r'thu hồi thư',
+        r'thu hồi tin nhắn',
+        r'thu hồi thông báo',
+        # Exchange / Outlook 官方類別標記
         r'IPM\.Outlook\.Recall',
     ]
     for pat in patterns:
@@ -209,10 +235,14 @@ def search_body_for_original_subject(msg: email.message.Message) -> Optional[str
                 ctype = part.get_content_type()
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
+                    if payload is None:
+                        payload = part.get_payload(decode=False)
                     if payload:
                         body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
+            if payload is None:
+                payload = msg.get_payload(decode=False)
             if payload:
                 body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:
@@ -259,8 +289,10 @@ def is_recall_trigger(msg: email.message.Message) -> Tuple[bool, str]:
     if re.search(r'#recall\b', subject, re.IGNORECASE):
         return True, "mobile_hash"
 
-    # 3. 檢查 Outlook 原生主旨 (開頭為 Recall:, 撤回:, 收回:, 回收:)
-    if re.match(r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收)\s*[:：]', subject, re.IGNORECASE):
+    # 3. 檢查 Outlook 原生主旨 (開頭為 Recall:, 撤回:, 收回:, 回收:, 取り消し:, 取消:, Thu hồi:)
+    recall_words = r'(?:recall|撤回|收回|回收|取り消し|取消|thu\s+hồi)'
+    reply_words = r'(?:re|fwd|fw|轉寄|轉發|回覆|回复|返信|転送|trả\s*lời|chuyển\s*tiếp)'
+    if re.match(rf'^(?:{reply_words}\s*[:：]?\s*)*{recall_words}\s*[:：]', subject, re.IGNORECASE):
         return True, "outlook_subject"
 
     return False, ""
@@ -285,10 +317,14 @@ def search_body_for_message_id(msg: email.message.Message) -> Optional[str]:
                 ctype = part.get_content_type()
                 if ctype in ["text/plain", "text/html"]:
                     payload = part.get_payload(decode=True)
+                    if payload is None:
+                        payload = part.get_payload(decode=False)
                     if payload:
                         body_parts.append(decode_payload(payload, part.get_content_charset()))
         else:
             payload = msg.get_payload(decode=True)
+            if payload is None:
+                payload = msg.get_payload(decode=False)
             if payload:
                 body_parts.append(decode_payload(payload, msg.get_content_charset()))
     except Exception:

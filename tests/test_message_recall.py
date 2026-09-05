@@ -654,15 +654,66 @@ Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
         # 3. 驗證 is_outlook_recall_body 支援 Big5 內文解碼
         self.assertTrue(handle_recall.is_outlook_recall_body(msg))
 
-    def test_sieve_pattern_guardrail_big5(self):
-        """驗證 Sieve 嚴格開頭比對：符合 pl6mr (回收:)，但絕不誤判 資源回收:"""
-        import fnmatch
-        sieve_pattern = "=?*?B?pl6mr*"
-        outlook_subj = "=?big5?B?pl6mrDogdGVzdA==?="
-        recycle_subj = "=?big5?B?uOq3vaZepqw6..."
+    def test_multi_language_outlook_recall_detection(self):
+        """測試簡體中文(GBK)、日文(CP932/UTF-8)與越南文(UTF-8)之收回解析與內文識別"""
+        import base64
 
-        self.assertTrue(fnmatch.fnmatchcase(outlook_subj.lower(), sieve_pattern.lower()))
-        self.assertFalse(fnmatch.fnmatchcase(recycle_subj.lower(), sieve_pattern.lower()))
+        # 1. 簡體中文 (GBK: s7e72 = 撤回:)
+        gbk_subj_b64 = base64.b64encode("撤回: 紧急通知".encode("gbk")).decode("ascii")
+        gbk_body_b64 = base64.b64encode("张三 想要撤回邮件 \"紧急通知\"。".encode("gbk")).decode("ascii")
+        gbk_msg_raw = (
+            f"From: user@kafeiou.pw\r\n"
+            f"To: victim@kafeiou.pw\r\n"
+            f"Subject: =?GBK?B?{gbk_subj_b64}?=\r\n"
+            f"Content-Type: text/plain; charset=\"gbk\"\r\n"
+            f"Content-Transfer-Encoding: base64\r\n\r\n{gbk_body_b64}"
+        ).encode("latin1")
+        msg_gbk = email.message_from_bytes(gbk_msg_raw)
+        is_rec, ttype = handle_recall.is_recall_trigger(msg_gbk)
+        self.assertTrue(is_rec)
+        self.assertEqual(ttype, "outlook_subject")
+        self.assertEqual(handle_recall.clean_subject(msg_gbk.get("Subject")), "紧急通知")
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_gbk))
+
+        # 2. 日文 (取り消し: 與 取消:)
+        jp_subj = "取り消し: 会議日程のご連絡"
+        jp_subj_b64 = base64.b64encode(jp_subj.encode("utf-8")).decode("ascii")
+        jp_body = "田中 太郎 が次のメッセージの取り消しを希望しています: 会議日程のご連絡。"
+        raw_jp = (
+            f"Subject: =?UTF-8?B?{jp_subj_b64}?=\r\n"
+            f"Content-Type: text/plain; charset=utf-8\r\n\r\n{jp_body}"
+        ).encode("utf-8")
+        msg_jp = email.message_from_bytes(raw_jp)
+        is_rec, ttype = handle_recall.is_recall_trigger(msg_jp)
+        self.assertTrue(is_rec)
+        self.assertEqual(handle_recall.clean_subject(jp_subj), "会議日程のご連絡")
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_jp))
+
+        # 3. 越南文 (Thu hồi:)
+        vn_subj = "Thu hồi: Báo cáo công việc tuần này"
+        vn_subj_b64 = base64.b64encode(vn_subj.encode("utf-8")).decode("ascii")
+        vn_body = "Nguyen Van A muốn thu hồi thư: Báo cáo công việc tuần này."
+        raw_vn = (
+            f"Subject: =?UTF-8?B?{vn_subj_b64}?=\r\n"
+            f"Content-Type: text/plain; charset=utf-8\r\n\r\n{vn_body}"
+        ).encode("utf-8")
+        msg_vn = email.message_from_bytes(raw_vn)
+        is_rec, ttype = handle_recall.is_recall_trigger(msg_vn)
+        self.assertTrue(is_rec)
+        self.assertEqual(handle_recall.clean_subject(vn_subj), "Báo cáo công việc tuần này")
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_vn))
+
+    def test_multi_language_guardrails(self):
+        """測試防誤殺阻擋機制：非收回郵件絕不被誤判"""
+        # 1. 取消訂閱 (含有 取消 但非 取消:)
+        msg_sub = email.message_from_string("Subject: 取消訂閱: 電子報電子週刊\r\n\r\n這是退訂信")
+        is_rec, _ = handle_recall.is_recall_trigger(msg_sub)
+        self.assertFalse(is_rec)
+
+        # 2. 資源回收 (含有 回收 但非 回收:)
+        msg_recycle = email.message_from_string("Subject: 資源回收: 垃圾分類注意事項\r\n\r\n請同仁配合分類")
+        is_rec, _ = handle_recall.is_recall_trigger(msg_recycle)
+        self.assertFalse(is_rec)
 
 
 if __name__ == "__main__":
