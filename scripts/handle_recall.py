@@ -157,6 +157,20 @@ def clean_subject(raw_subject: str) -> str:
     return cleaned
 
 
+def is_recall_subject(raw_sub: str) -> bool:
+    """檢查主旨是否為收回指令信 (Recall:, 撤回:, 收回:, 回收:, 取り消し:, 取消:, Thu hồi:, #recall)"""
+    if not raw_sub:
+        return False
+    decoded = decode_mime_words(raw_sub).strip()
+    if re.search(r'#recall\b', decoded, re.IGNORECASE):
+        return True
+    recall_words = r'(?:recall|撤回|收回|回收|取り消し|取消|thu\s+hồi)'
+    reply_words = r'(?:re|fwd|fw|轉寄|轉發|回覆|回复|返信|転送|trả\s*lời|chuyển\s*tiếp)'
+    if re.match(rf'^(?:{reply_words}\s*[:：]?\s*)*{recall_words}\s*[:：]', decoded, re.IGNORECASE):
+        return True
+    return False
+
+
 def decode_payload(payload: any, part_charset: Optional[str] = None) -> str:
     """嘗試根據標頭指定的 charset 或常見多國語言編碼 (Big5, CP950, GB18030, GBK, GB2312, CP932, Shift_JIS, EUC-JP, ISO-2022-JP, UTF-8) 解碼郵件內文"""
     if isinstance(payload, str):
@@ -348,33 +362,39 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
     4. 內文解析 (轉發信中包含的原始 Message-ID)
     5. 搜尋發件者 Sent 備份信箱比對主旨 (Fallback，支援回覆與轉發)
     """
+    current_msg_id = clean_message_id(msg.get("Message-ID", ""))
+
     # 1. In-Reply-To
     in_reply_to = msg.get("In-Reply-To")
     if in_reply_to:
         cid = clean_message_id(in_reply_to)
-        if cid:
+        if cid and cid != current_msg_id:
             return cid
 
     # 2. X-MS-Exchange-Original-Message-Id
     orig_id = msg.get("X-MS-Exchange-Original-Message-Id")
     if orig_id:
         cid = clean_message_id(orig_id)
-        if cid:
+        if cid and cid != current_msg_id:
             return cid
 
     # 3. References
     references = msg.get("References")
     if references:
         ids = re.findall(r'<([^>]+)>', references)
-        if ids:
-            return ids[-1]
+        for cand in reversed(ids):
+            cand_clean = clean_message_id(cand)
+            if cand_clean and cand_clean != current_msg_id:
+                return cand_clean
 
     # 4. 內文解析 (轉發/回覆區塊)
     body_msg_id = search_body_for_message_id(msg)
     if body_msg_id:
-        return body_msg_id
+        cid = clean_message_id(body_msg_id)
+        if cid and cid != current_msg_id:
+            return cid
 
-    # 5. Fallback: 由主旨搜尋 Sent 信箱 (多信匣支援 + 動態信匣偵測)
+    # 5. Fallback: 由主旨搜尋 Sent 信箱 (多信匣支援 + 動態信匣偵測，逐筆過濾排除收回指令信)
     clean_sub = clean_subject(msg.get("Subject", ""))
     if not clean_sub:
         # 若主旨只有 #recall，嘗試從內文引言區塊提取原主旨
@@ -407,43 +427,69 @@ def extract_target_message_id(msg: email.message.Message, sender: str, run_cmd: 
                 if clean_sub:
                     search_args.extend(["HEADER", "Subject", clean_sub])
 
-                # 方式 A：直接 fetch header
-                fetch_res = cmd_exec(
-                    [doveadm_bin, "fetch", "-u", sender, "hdr.message-id"] + search_args,
-                    capture_output=True, text=True, check=False
-                )
-                if fetch_res.returncode == 0 and fetch_res.stdout:
-                    matches = re.findall(r'<([^>]+@[^>]+)>', fetch_res.stdout)
-                    if not matches:
-                        matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
-                    if matches:
-                        return matches[-1]
-
-                # 方式 B：search 取得 GUID 後 fetch
+                # 透過 doveadm search 搜尋候選清單 (由新到舊逐筆檢視)
                 res = cmd_exec(
                     [doveadm_bin, "search", "-u", sender] + search_args,
                     capture_output=True, text=True, check=False
                 )
                 if res.returncode == 0 and res.stdout.strip():
                     lines = res.stdout.strip().splitlines()
-                    last_line = lines[-1].strip()
-                    tokens = last_line.split()
-                    query = ["mailbox", folder]
-                    if len(tokens) >= 2:
-                        query.extend(["mailbox-guid", tokens[0], "uid", tokens[1]])
-                    elif len(tokens) == 1:
-                        query.extend(["mailbox-guid", tokens[0]])
+                    for line in reversed(lines):
+                        tokens = line.strip().split()
+                        if not tokens:
+                            continue
+                        query = ["mailbox", folder]
+                        if len(tokens) >= 2:
+                            query.extend(["mailbox-guid", tokens[0], "uid", tokens[1]])
+                        elif len(tokens) == 1:
+                            query.extend(["mailbox-guid", tokens[0]])
 
-                    fetch_res2 = cmd_exec(
-                        [doveadm_bin, "fetch", "-u", sender, "hdr.message-id"] + query,
-                        capture_output=True, text=True, check=False
-                    )
-                    if fetch_res2.returncode == 0 and fetch_res2.stdout:
-                        matches = re.findall(r'<([^>]+@[^>]+)>', fetch_res2.stdout)
-                        if not matches:
-                            matches = re.findall(r'Message-ID:\s*<([^>]+)>', fetch_res2.stdout, re.IGNORECASE)
-                        if matches:
-                            return matches[-1]
+                        fetch_res = cmd_exec(
+                            [doveadm_bin, "fetch", "-u", sender, "hdr.message-id hdr.subject"] + query,
+                            capture_output=True, text=True, check=False
+                        )
+                        if fetch_res.returncode == 0 and fetch_res.stdout:
+                            c_msg_id = ""
+                            mid_m = re.search(r'Message-ID:\s*<([^>]+)>', fetch_res.stdout, re.IGNORECASE)
+                            if mid_m:
+                                c_msg_id = clean_message_id(mid_m.group(1))
+                            else:
+                                mid_m2 = re.findall(r'<([^>]+@[^>]+)>', fetch_res.stdout)
+                                if mid_m2:
+                                    c_msg_id = clean_message_id(mid_m2[0])
+
+                            if not c_msg_id or (current_msg_id and c_msg_id == current_msg_id):
+                                continue
+
+                            c_sub = ""
+                            sub_m = re.search(r'Subject:\s*([^\r\n]+)', fetch_res.stdout, re.IGNORECASE)
+                            if sub_m:
+                                c_sub = sub_m.group(1).strip()
+
+                            # 若這封信本身是收回信 (例如 回收: test)，則跳過
+                            if is_recall_subject(c_sub):
+                                continue
+
+                            log(f"Found original target Message-ID <{c_msg_id}> in {folder} for sender {sender} (Subject: {c_sub})")
+                            return c_msg_id
+
+                # 備用直接 fetch header (相容無 GUID 模式)
+                fetch_res_all = cmd_exec(
+                    [doveadm_bin, "fetch", "-u", sender, "hdr.message-id hdr.subject"] + search_args,
+                    capture_output=True, text=True, check=False
+                )
+                if fetch_res_all.returncode == 0 and fetch_res_all.stdout:
+                    for block in re.split(r'\n\s*\n', fetch_res_all.stdout):
+                        sub_m = re.search(r'Subject:\s*([^\r\n]+)', block, re.IGNORECASE)
+                        c_sub = sub_m.group(1).strip() if sub_m else ""
+                        if is_recall_subject(c_sub):
+                            continue
+                        mid_m = re.search(r'Message-ID:\s*<([^>]+)>', block, re.IGNORECASE)
+                        if mid_m:
+                            c_id = clean_message_id(mid_m.group(1))
+                            if c_id and c_id != current_msg_id:
+                                log(f"Found original target Message-ID <{c_id}> via direct fetch in {folder} (Subject: {c_sub})")
+                                return c_id
             except Exception as e:
                 log(f"Sent mailbox fallback search failed in {folder}: {e}", syslog.LOG_WARNING)
 
@@ -552,61 +598,115 @@ def expunge_internal_mailbox(
     target_msg_id: str,
     max_hours: int,
     sender: str = "",
+    clean_sub: str = "",
     run_cmd: Optional[subprocess.run] = None
 ) -> Tuple[str, str]:
     """
     第二層 (Layer 2): 同網域內部信箱強制抹除
-    嚴格比對 Message-ID 與原信發件者 From (只有原發件者有權收回自己的信件)
+    優先以 Message-ID + From 雙重驗證檢索抹除。
+    若 Message-ID 未命中，自動啟動主旨保底 (From + Subject + max_hours 檢索)。
     回傳 (status, reason)
     status: 'SUCCESS' | 'EXPIRED' | 'NOT_FOUND' | 'ERROR'
     """
     cmd_exec = run_cmd or subprocess.run
     doveadm_bin = get_bin_path("doveadm")
 
-    # 構建檢索條件：Message-ID 加上寄件者 From 雙重驗證
-    criteria = ["HEADER", "Message-ID", f"<{target_msg_id}>"]
-    if sender:
-        criteria.extend(["HEADER", "From", sender])
+    # 1. 方式一：以 Message-ID 檢索
+    if target_msg_id and target_msg_id != "UNKNOWN":
+        clean_id = clean_message_id(target_msg_id)
+        criteria_list = [
+            ["HEADER", "Message-ID", f"<{clean_id}>"],
+            ["HEADER", "Message-ID", clean_id]
+        ]
 
-    try:
-        # 1. 搜尋目標信件是否在 INBOX 中
-        search_cmd = [doveadm_bin, "search", "-u", recipient, "mailbox", "INBOX"] + criteria
-        search_res = cmd_exec(search_cmd, capture_output=True, text=True, check=False)
-        if search_res.returncode != 0 or not search_res.stdout.strip():
-            # 搜尋全信匣 (包含使用者自訂資料夾)
-            search_cmd2 = [doveadm_bin, "search", "-u", recipient, "mailbox", "*"] + criteria
-            search_res = cmd_exec(search_cmd2, capture_output=True, text=True, check=False)
-            if search_res.returncode != 0 or not search_res.stdout.strip():
-                return "NOT_FOUND", "信件不存在或非發起者所寄出"
+        for base_crit in criteria_list:
+            crit = list(base_crit)
+            if sender:
+                crit.extend(["HEADER", "From", sender])
 
-        # 2. 獲取信件接收時間 (date.saved 或 date.received)
-        fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "*"] + criteria
-        fetch_res = cmd_exec(fetch_cmd, capture_output=True, text=True, check=False)
-        saved_ts = None
-        if fetch_res.returncode == 0 and fetch_res.stdout:
-            for line in fetch_res.stdout.splitlines():
-                line = line.strip()
-                if line.isdigit():
-                    saved_ts = int(line)
-                    break
+            try:
+                # 搜尋全信匣
+                search_cmd = [doveadm_bin, "search", "-u", recipient, "mailbox", "*"] + crit
+                search_res = cmd_exec(search_cmd, capture_output=True, text=True, check=False)
+                if search_res.returncode == 0 and search_res.stdout.strip():
+                    fetch_cmd = [doveadm_bin, "fetch", "-u", recipient, "date.saved", "mailbox", "*"] + crit
+                    fetch_res = cmd_exec(fetch_cmd, capture_output=True, text=True, check=False)
+                    saved_ts = None
+                    if fetch_res.returncode == 0 and fetch_res.stdout:
+                        for line in fetch_res.stdout.splitlines():
+                            line = line.strip()
+                            if line.isdigit():
+                                saved_ts = int(line)
+                                break
 
-        if saved_ts:
-            age_hours = (time.time() - saved_ts) / 3600.0
-            if age_hours > max_hours:
-                return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
+                    if saved_ts:
+                        age_hours = (time.time() - saved_ts) / 3600.0
+                        if age_hours > max_hours:
+                            return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
 
-        # 3. 執行強制抹除 (doveadm expunge 嚴格限定 Message-ID 與 From 雙重條件)
-        expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailbox", "*"] + criteria
-        exp_res = cmd_exec(expunge_cmd, capture_output=True, text=True, check=False)
-        if exp_res.returncode == 0:
-            log(f"[Layer 2 Success] Expunged message <{target_msg_id}> from user {recipient} (sender: {sender or 'any'})")
-            return "SUCCESS", "已從收件者信箱強制抹除 (已讀/未讀均銷毀)"
-        else:
-            return "ERROR", f"抹除操作失敗: {exp_res.stderr.strip()}"
+                    # 執行強制抹除
+                    expunge_cmd = [doveadm_bin, "expunge", "-u", recipient, "mailbox", "*"] + crit
+                    exp_res = cmd_exec(expunge_cmd, capture_output=True, text=True, check=False)
+                    if exp_res.returncode == 0:
+                        log(f"[Layer 2 Success] Expunged message <{clean_id}> from user {recipient} (sender: {sender or 'any'})")
+                        return "SUCCESS", "已從收件者信箱強制抹除 (已讀/未讀均銷毀)"
+            except Exception as e:
+                log(f"Message-ID expunge search error for {recipient}: {e}", syslog.LOG_WARNING)
 
-    except Exception as e:
-        log(f"Expunge error for recipient {recipient}: {e}", syslog.LOG_ERR)
-        return "ERROR", str(e)
+    # 2. 方式二：主旨保底檢索 (Subject + From + 時效內，排除收回指令信)
+    if clean_sub and sender:
+        log(f"Attempting fallback expunge in {recipient} inbox via From: {sender}, Subject: {clean_sub}")
+        try:
+            sub_criteria = ["mailbox", "INBOX", "HEADER", "From", sender, "HEADER", "Subject", clean_sub]
+            res = cmd_exec([doveadm_bin, "search", "-u", recipient] + sub_criteria, capture_output=True, text=True, check=False)
+            if res.returncode == 0 and res.stdout.strip():
+                lines = res.stdout.strip().splitlines()
+                expunged_any = False
+                for line in reversed(lines):
+                    tokens = line.strip().split()
+                    if not tokens:
+                        continue
+                    query = ["mailbox", "INBOX"]
+                    if len(tokens) >= 2:
+                        query.extend(["mailbox-guid", tokens[0], "uid", tokens[1]])
+                    elif len(tokens) == 1:
+                        query.extend(["mailbox-guid", tokens[0]])
+
+                    fetch_res = cmd_exec(
+                        [doveadm_bin, "fetch", "-u", recipient, "hdr.subject date.saved"] + query,
+                        capture_output=True, text=True, check=False
+                    )
+                    if fetch_res.returncode == 0 and fetch_res.stdout:
+                        c_sub = ""
+                        sub_m = re.search(r'Subject:\s*([^\r\n]+)', fetch_res.stdout, re.IGNORECASE)
+                        if sub_m:
+                            c_sub = sub_m.group(1).strip()
+                        # 排除收回指令信
+                        if is_recall_subject(c_sub):
+                            continue
+
+                        saved_ts = None
+                        for s_line in fetch_res.stdout.splitlines():
+                            s_line = s_line.strip()
+                            if s_line.isdigit():
+                                saved_ts = int(s_line)
+                                break
+                        if saved_ts:
+                            age_hours = (time.time() - saved_ts) / 3600.0
+                            if age_hours > max_hours:
+                                return "EXPIRED", f"已超過收回時效 ({max_hours} 小時)"
+
+                        del_res = cmd_exec([doveadm_bin, "expunge", "-u", recipient] + query, capture_output=True, text=True, check=False)
+                        if del_res.returncode == 0:
+                            log(f"[Layer 2 Success] Expunged message by subject match '{c_sub}' from user {recipient} (sender: {sender})")
+                            expunged_any = True
+
+                if expunged_any:
+                    return "SUCCESS", "已從收件者信箱強制抹除 (主旨與發件者比對成功銷毀)"
+        except Exception as e:
+            log(f"Subject fallback expunge error for {recipient}: {e}", syslog.LOG_ERR)
+
+    return "NOT_FOUND", "信件不存在或非發起者所寄出"
 
 
 def extract_original_recipients_from_sent(sender: str, target_msg_id: str, run_cmd: Optional[subprocess.run] = None) -> List[str]:
@@ -839,6 +939,10 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
 
     # 2. 提取目標 Message-ID
     target_msg_id = extract_target_message_id(msg, sender_addr, run_cmd=cmd_exec)
+    clean_sub = clean_subject(msg.get("Subject", ""))
+    if not clean_sub:
+        clean_sub = search_body_for_original_subject(msg) or ""
+
     if not target_msg_id:
         # 防呆保底：若以主旨前綴觸發但內文並非收回樣板語句且查無原信，極可能是普通業務信，啟動保底投遞
         if trigger_type == "outlook_subject" and not is_outlook_recall_body(msg):
@@ -846,22 +950,26 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
             re_inject_email(raw_email_bytes, run_cmd=cmd_exec)
             return False
 
-        log("Cannot identify target Message-ID for recall.", syslog.LOG_WARNING)
-        # 發送目標未找到通知
-        report = build_status_report(
-            sender=sender_addr,
-            target_subject=msg.get("Subject", ""),
-            target_msg_id="UNKNOWN",
-            trigger_type=trigger_type,
-            results=[{"recipient": sender_addr, "internal": True, "status": "ERROR", "reason": "無法解析原郵件 Message-ID (No In-Reply-To, References, or Sent mailbox match)"}]
-        )
-        send_report_email(report, sender_addr, sender_domain=sender_domain, run_cmd=cmd_exec)
-        return True
+        if not clean_sub:
+            log("Cannot identify target Message-ID or subject for recall.", syslog.LOG_WARNING)
+            # 發送目標未找到通知
+            report = build_status_report(
+                sender=sender_addr,
+                target_subject=msg.get("Subject", ""),
+                target_msg_id="UNKNOWN",
+                trigger_type=trigger_type,
+                results=[{"recipient": sender_addr, "internal": True, "status": "ERROR", "reason": "無法解析原郵件 Message-ID 或主旨 (No In-Reply-To, References, or Sent mailbox match)"}]
+            )
+            send_report_email(report, sender_addr, sender_domain=sender_domain, run_cmd=cmd_exec)
+            return True
+
+        log(f"Target Message-ID not found in Sent, will attempt subject fallback for: {clean_sub}", syslog.LOG_INFO)
+        target_msg_id = "UNKNOWN"
 
     # 3. 提取收件人清單
     recipients = get_all_recipients(msg)
     # 若為轉發或自寄給自己的信 (recipients 僅有寄件者本人)，嘗試從寄件備份 Sent 中提取真正原信收件者
-    orig_recips = extract_original_recipients_from_sent(sender_addr, target_msg_id, run_cmd=cmd_exec)
+    orig_recips = extract_original_recipients_from_sent(sender_addr, target_msg_id, run_cmd=cmd_exec) if target_msg_id and target_msg_id != "UNKNOWN" else []
     if orig_recips:
         if not recipients or (len(recipients) == 1 and recipients[0].lower() == sender_addr.lower()):
             recipients = orig_recips
@@ -877,7 +985,7 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
 
     # 4. 第一層 (Layer 1): 佇列暫存檢查 (10 秒內)
     hold_recips: List[str] = []
-    queue_killed = check_and_cancel_hold_queue(target_msg_id, sender_addr, run_cmd=cmd_exec, out_recipients=hold_recips)
+    queue_killed = check_and_cancel_hold_queue(target_msg_id, sender_addr, run_cmd=cmd_exec, out_recipients=hold_recips) if target_msg_id and target_msg_id != "UNKNOWN" else False
     delay_seconds = cfg.get("RECALL_DELAY_SECONDS", 10)
     max_hours = cfg.get("RECALL_MAX_HOURS", 2)
 
@@ -904,7 +1012,7 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
                     "reason": "外部信箱 (已攔截收回通知信，無法自第三方伺服器刪除)"
                 })
             else:
-                st, reason = expunge_internal_mailbox(r, target_msg_id, max_hours, sender=sender_addr, run_cmd=cmd_exec)
+                st, reason = expunge_internal_mailbox(r, target_msg_id, max_hours, sender=sender_addr, clean_sub=clean_sub, run_cmd=cmd_exec)
                 results.append({
                     "recipient": r,
                     "internal": True,

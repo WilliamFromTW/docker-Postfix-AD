@@ -715,6 +715,57 @@ Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
         is_rec, _ = handle_recall.is_recall_trigger(msg_recycle)
         self.assertFalse(is_rec)
 
+    def test_sent_mailbox_skips_recall_messages(self):
+        """測試 Sent 備份搜尋時，自動排除收回指令信與自身 Message-ID，準確鎖定真正原信"""
+        recall_msg = MIMEText('想要收回郵件 "test"')
+        recall_msg["Subject"] = "回收: test"
+        recall_msg["Message-ID"] = "<RECALL-COMMAND-MSG-999@smile.taipei>"
+        recall_msg["From"] = "william2@smile.taipei"
+        recall_msg["To"] = "william@smile.taipei"
+
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm":
+                if cmd[1] == "search":
+                    # 模擬 search 命中兩封信：UID 10 (原信) 與 UID 20 (收回信)
+                    return MagicMock(returncode=0, stdout="guid-box 10\nguid-box 20\n", stderr="")
+                elif cmd[1] == "fetch":
+                    if "20" in cmd:
+                        # UID 20 是收回信自身
+                        return MagicMock(returncode=0, stdout="hdr.subject: Subject: 回收: test\nhdr.message-id: Message-ID: <RECALL-COMMAND-MSG-999@smile.taipei>\n", stderr="")
+                    elif "10" in cmd:
+                        # UID 10 是真正的原信
+                        return MagicMock(returncode=0, stdout="hdr.subject: Subject: test\nhdr.message-id: Message-ID: <ORIGINAL-TARGET-MSG-111@smile.taipei>\n", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        target_id = handle_recall.extract_target_message_id(recall_msg, "william2@smile.taipei", run_cmd=mock_cmd)
+        self.assertEqual(target_id, "ORIGINAL-TARGET-MSG-111@smile.taipei")
+
+    def test_expunge_fallback_to_subject(self):
+        """測試當 Message-ID 為 UNKNOWN 時，自動透過 From + Subject 保底抹除收件者原信"""
+        now = time.time()
+        def mock_cmd(cmd, **kwargs):
+            cmd_base = os.path.basename(cmd[0])
+            if cmd_base == "doveadm":
+                if cmd[1] == "search" and "HEADER" in cmd and "test" in cmd:
+                    return MagicMock(returncode=0, stdout="guid-inbox 100\n", stderr="")
+                elif cmd[1] == "fetch" and "100" in cmd:
+                    return MagicMock(returncode=0, stdout=f"hdr.subject: Subject: test\ndate.saved: {int(now - 60)}\n", stderr="")
+                elif cmd[1] == "expunge":
+                    return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=1, stdout="", stderr="")
+
+        status, reason = handle_recall.expunge_internal_mailbox(
+            recipient="william@smile.taipei",
+            target_msg_id="UNKNOWN",
+            max_hours=2,
+            sender="william2@smile.taipei",
+            clean_sub="test",
+            run_cmd=mock_cmd
+        )
+        self.assertEqual(status, "SUCCESS")
+        self.assertIn("強制抹除", reason)
+
 
 if __name__ == "__main__":
     unittest.main()
