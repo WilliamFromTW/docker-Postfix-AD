@@ -213,7 +213,7 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
             log(f"postcat -q -h failed for {qid}: returncode={proc.returncode}, stderr={proc.stderr.strip()}", syslog.LOG_WARNING)
         if proc.returncode == 0 and proc.stdout:
             # 1. 透過標準 email 套件完整解析（自動還原多行折疊標頭）
-            recall_pattern = r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收|回顧)\s*[:：]'
+            recall_pattern = r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收)\s*[:：]'
             try:
                 msg = email.message_from_string(proc.stdout)
                 if msg.get("X-MS-Exchange-Organization-Recall-Action"):

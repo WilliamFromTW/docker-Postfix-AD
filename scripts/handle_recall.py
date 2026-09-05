@@ -145,8 +145,8 @@ def clean_subject(raw_subject: str) -> str:
         cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE).strip()
         # 2. 移除開頭殘留冒號與空白
         cleaned = re.sub(r'^[:：]\s*', '', cleaned).strip()
-        # 3. 移除收回/撤回/Recall/回收/回顧 前綴
-        cleaned = re.sub(r'^(?:recall|撤回|收回|回收|回顧)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        # 3. 移除收回/撤回/Recall/回收 前綴
+        cleaned = re.sub(r'^(?:recall|撤回|收回|回收)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
         # 4. 循環移除所有語言的回覆/轉寄前綴
         cleaned = re.sub(r'^(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
         if cleaned == prev:
@@ -245,8 +245,8 @@ def is_recall_trigger(msg: email.message.Message) -> Tuple[bool, str]:
     if re.search(r'#recall\b', subject, re.IGNORECASE):
         return True, "mobile_hash"
 
-    # 3. 檢查 Outlook 原生主旨 (開頭為 Recall:, 撤回:, 收回:, 回收:, 回顧:)
-    if re.match(r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收|回顧)\s*[:：]', subject, re.IGNORECASE):
+    # 3. 檢查 Outlook 原生主旨 (開頭為 Recall:, 撤回:, 收回:, 回收:)
+    if re.match(r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收)\s*[:：]', subject, re.IGNORECASE):
         return True, "outlook_subject"
 
     return False, ""
