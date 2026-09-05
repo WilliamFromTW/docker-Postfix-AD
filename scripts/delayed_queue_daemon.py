@@ -213,6 +213,7 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
             log(f"postcat -q -h failed for {qid}: returncode={proc.returncode}, stderr={proc.stderr.strip()}", syslog.LOG_WARNING)
         if proc.returncode == 0 and proc.stdout:
             # 1. 透過標準 email 套件完整解析（自動還原多行折疊標頭）
+            recall_pattern = r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收|回顧)\s*[:：]'
             try:
                 msg = email.message_from_string(proc.stdout)
                 if msg.get("X-MS-Exchange-Organization-Recall-Action"):
@@ -221,7 +222,7 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
                 if raw_sub:
                     decoded_sub = decode_mime_words(raw_sub)
                     for sub_text in [decoded_sub, raw_sub]:
-                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(r'(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
+                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(recall_pattern, sub_text, re.IGNORECASE):
                             return True
             except Exception:
                 pass
@@ -233,7 +234,7 @@ def is_recall_message(qid: str, run_cmd: Optional[Callable] = None) -> bool:
                     raw_sub = line[8:].strip()
                     decoded_sub = decode_mime_words(raw_sub)
                     for sub_text in [decoded_sub, raw_sub]:
-                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(r'(?:Recall|撤回|收回)\s*[:：]', sub_text, re.IGNORECASE):
+                        if re.search(r'#recall\b', sub_text, re.IGNORECASE) or re.search(recall_pattern, sub_text, re.IGNORECASE):
                             return True
                 elif line.lower().startswith("x-ms-exchange-organization-recall-action:"):
                     return True

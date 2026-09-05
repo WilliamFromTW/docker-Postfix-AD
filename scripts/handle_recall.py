@@ -145,13 +145,45 @@ def clean_subject(raw_subject: str) -> str:
         cleaned = re.sub(r'#recall\b', '', cleaned, flags=re.IGNORECASE).strip()
         # 2. 移除開頭殘留冒號與空白
         cleaned = re.sub(r'^[:：]\s*', '', cleaned).strip()
-        # 3. 移除收回/撤回/Recall 前綴
-        cleaned = re.sub(r'^(?:recall|撤回|收回)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        # 3. 移除收回/撤回/Recall/回收/回顧 前綴
+        cleaned = re.sub(r'^(?:recall|撤回|收回|回收|回顧)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
         # 4. 循環移除所有語言的回覆/轉寄前綴
         cleaned = re.sub(r'^(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*', '', cleaned, flags=re.IGNORECASE).strip()
         if cleaned == prev:
             break
     return cleaned
+
+
+def is_outlook_recall_body(msg: email.message.Message) -> bool:
+    """檢查信件內文是否符合微軟 Outlook 原生收回通知特徵 (樣板語句)"""
+    body_parts = []
+    try:
+        if msg.is_multipart():
+            for part in msg.walk():
+                ctype = part.get_content_type()
+                if ctype in ["text/plain", "text/html"]:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        body_parts.append(payload.decode("utf-8", errors="ignore"))
+        else:
+            payload = msg.get_payload(decode=True)
+            if payload:
+                body_parts.append(payload.decode("utf-8", errors="ignore"))
+    except Exception:
+        pass
+
+    combined = " ".join(body_parts)
+    patterns = [
+        r'想(?:要)?(?:收回|回收|撤回)郵件',
+        r'想(?:要)?(?:收回|回收|撤回)邮件',
+        r'would like to recall the message',
+        r'wants to recall the message',
+        r'IPM\.Outlook\.Recall',
+    ]
+    for pat in patterns:
+        if re.search(pat, combined, re.IGNORECASE):
+            return True
+    return False
 
 
 def search_body_for_original_subject(msg: email.message.Message) -> Optional[str]:
@@ -213,8 +245,8 @@ def is_recall_trigger(msg: email.message.Message) -> Tuple[bool, str]:
     if re.search(r'#recall\b', subject, re.IGNORECASE):
         return True, "mobile_hash"
 
-    # 3. 檢查 Outlook 原生主旨
-    if re.match(r'^(?:Recall|撤回|收回)\s*[:：]', subject, re.IGNORECASE):
+    # 3. 檢查 Outlook 原生主旨 (開頭為 Recall:, 撤回:, 收回:, 回收:, 回顧:)
+    if re.match(r'^(?:(?:re|fwd|fw|轉寄|轉發|回覆|回复)\s*[:：]?\s*)*(?:recall|撤回|收回|回收|回顧)\s*[:：]', subject, re.IGNORECASE):
         return True, "outlook_subject"
 
     return False, ""
@@ -706,6 +738,29 @@ def send_report_email(report_msg: MIMEMultipart, recipient: str, sender_domain: 
         log(f"send_report_email exception: {e}", syslog.LOG_ERR)
 
 
+def re_inject_email(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = None) -> bool:
+    """
+    防呆保底重投遞機制：
+    若郵件誤入收回流程或經判定非收回指令，為防止郵件遺失，
+    在信頭加入 X-Recall-Processed: pass 旗標後透過本機 sendmail 重新投遞，
+    Sieve 收到帶有此旗標之郵件會直接放行存入收件匣，防止無限迴圈。
+    """
+    cmd_exec = run_cmd or subprocess.run
+    sendmail_bin = get_bin_path("sendmail")
+    try:
+        header_tag = b"X-Recall-Processed: pass\r\n"
+        tagged_bytes = header_tag + raw_email_bytes
+        proc = cmd_exec([sendmail_bin, "-t", "-oi"], input=tagged_bytes, check=False)
+        if proc.returncode == 0:
+            log("Fallback delivery: Successfully re-injected email to recipients.")
+            return True
+        else:
+            log(f"Fallback delivery warning: sendmail returned {proc.returncode}", syslog.LOG_WARNING)
+    except Exception as e:
+        log(f"Fallback delivery failed: {e}", syslog.LOG_ERR)
+    return False
+
+
 def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = None) -> bool:
     """處理收回核心入口流程"""
     cmd_exec = run_cmd or subprocess.run
@@ -719,11 +774,14 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
     # 1. 檢驗是否為收回信件
     is_recall, trigger_type = is_recall_trigger(msg)
     if not is_recall:
+        log("Recall guardrail: Not a recall message. Re-injecting original message via fallback delivery to prevent mail loss.", syslog.LOG_WARNING)
+        re_inject_email(raw_email_bytes, run_cmd=cmd_exec)
         return False
 
     sender_addr = parseaddr(msg.get("From", ""))[1].strip()
     if not sender_addr:
-        log("Cannot process recall: Missing From header.", syslog.LOG_WARNING)
+        log("Cannot process recall: Missing From header. Re-injecting to prevent loss.", syslog.LOG_WARNING)
+        re_inject_email(raw_email_bytes, run_cmd=cmd_exec)
         return False
 
     sender_domain = sender_addr.split("@", 1)[1] if "@" in sender_addr else ""
@@ -732,6 +790,12 @@ def process_recall(raw_email_bytes: bytes, run_cmd: Optional[subprocess.run] = N
     # 2. 提取目標 Message-ID
     target_msg_id = extract_target_message_id(msg, sender_addr, run_cmd=cmd_exec)
     if not target_msg_id:
+        # 防呆保底：若以主旨前綴觸發但內文並非收回樣板語句且查無原信，極可能是普通業務信，啟動保底投遞
+        if trigger_type == "outlook_subject" and not is_outlook_recall_body(msg):
+            log("Recall guardrail: Subject matched prefix but body is regular email and no original message found. Fallback delivering to recipient.", syslog.LOG_INFO)
+            re_inject_email(raw_email_bytes, run_cmd=cmd_exec)
+            return False
+
         log("Cannot identify target Message-ID for recall.", syslog.LOG_WARNING)
         # 發送目標未找到通知
         report = build_status_report(

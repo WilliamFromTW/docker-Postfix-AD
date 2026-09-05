@@ -2,9 +2,14 @@ require ["vnd.dovecot.pipe", "copy", "variables", "envelope", "subaddress"];
 
 # -------------------------------------------------------------
 # 0. 企業級雙層郵件收回 (Two-Tier Message Recall) 全域攔截處理
-# 支援 Outlook 原生收回 (X-MS-Exchange 標頭, Recall:, 撤回:) 與行動端 (#recall)
-# 排除系統回報信與自動回信，嚴防自觸發迴圈
+# 支援 Outlook 原生收回 (X-MS-Exchange 標頭, Recall:, 撤回:, 收回:, 回收:, 回顧:) 與行動端 (#recall)
+# 具備四重防呆防誤殺：防自觸發迴圈、開頭嚴格比對、原信關聯檢查、保底重投遞
 # -------------------------------------------------------------
+if exists "X-Recall-Processed" {
+    keep;
+    stop;
+}
+
 if not anyof (
     header :matches "Subject" ["*郵件收回狀態報告*", "*Message Recall Status*"],
     header :matches "Auto-Submitted" ["auto-generated", "auto-replied"],
@@ -12,7 +17,20 @@ if not anyof (
 ) {
     if anyof (
         exists "X-MS-Exchange-Organization-Recall-Action",
-        header :matches "Subject" ["*#recall*", "*#RECALL*", "*Recall:*", "*Recall：*", "*撤回:*", "*撤回：*", "*收回:*", "*收回：*"]
+        header :matches "Subject" ["*#recall*", "*#RECALL*"],
+        allof (
+            header :matches "Subject" [
+                "Recall:*", "Recall：*", "Re: Recall:*", "RE: Recall:*", "Fwd: Recall:*", "FW: Recall:*",
+                "撤回:*", "撤回：*", "Re: 撤回:*", "RE: 撤回:*", "Fwd: 撤回:*", "FW: 撤回:*",
+                "收回:*", "收回：*", "Re: 收回:*", "RE: 收回:*", "Fwd: 收回:*", "FW: 收回:*",
+                "回收:*", "回收：*", "Re: 回收:*", "RE: 回收:*", "Fwd: 回收:*", "FW: 回收:*",
+                "回顧:*", "回顧：*", "Re: 回顧:*", "RE: 回顧:*", "Fwd: 回顧:*", "FW: 回顧:*"
+            ],
+            anyof (
+                exists "In-Reply-To",
+                exists "References"
+            )
+        )
     ) {
         pipe :copy "handle_recall.py";
         discard;

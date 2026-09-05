@@ -120,6 +120,16 @@ class TestDelayedQueueDaemon(unittest.TestCase):
                     return MagicMock(returncode=0, stdout="Subject: #recall 專案進度\n", stderr="")
                 elif qid == "QID_OUTLOOK":
                     return MagicMock(returncode=0, stdout="Subject: Recall: 專案進度\n", stderr="")
+                elif qid == "QID_OUTLOOK_TW":
+                    return MagicMock(returncode=0, stdout="Subject: 回收: 專案進度\n", stderr="")
+                elif qid == "QID_OUTLOOK_TW2":
+                    return MagicMock(returncode=0, stdout="Subject: 回收：專案進度\n", stderr="")
+                elif qid == "QID_OUTLOOK_RE":
+                    return MagicMock(returncode=0, stdout="Subject: Re: 回收: 專案進度\n", stderr="")
+                elif qid == "QID_FALSE_POS1":
+                    return MagicMock(returncode=0, stdout="Subject: 資源回收: 垃圾分類注意事項\n", stderr="")
+                elif qid == "QID_FALSE_POS2":
+                    return MagicMock(returncode=0, stdout="Subject: 設備回收: 報廢筆電整理\n", stderr="")
                 elif qid == "QID_MIME":
                     return MagicMock(returncode=0, stdout="Subject: =?UTF-8?B?I3JlY2FsbCDmuKzntao=?=\n", stderr="")
                 elif qid == "QID_HEADER":
@@ -132,9 +142,15 @@ class TestDelayedQueueDaemon(unittest.TestCase):
 
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_RECALL", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK_TW", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK_TW2", run_cmd=mock_cmd))
+        self.assertTrue(delayed_queue_daemon.is_recall_message("QID_OUTLOOK_RE", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_MIME", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_HEADER", run_cmd=mock_cmd))
         self.assertTrue(delayed_queue_daemon.is_recall_message("QID_FOLDED", run_cmd=mock_cmd))
+        # 驗證防誤殺：主旨中間包含「回收:」者絕不被誤判為收回指令信
+        self.assertFalse(delayed_queue_daemon.is_recall_message("QID_FALSE_POS1", run_cmd=mock_cmd))
+        self.assertFalse(delayed_queue_daemon.is_recall_message("QID_FALSE_POS2", run_cmd=mock_cmd))
         self.assertFalse(delayed_queue_daemon.is_recall_message("QID_NORMAL", run_cmd=mock_cmd))
 
     def test_process_hold_queue_fast_pass_recall(self):
@@ -192,6 +208,31 @@ class TestHandleRecall(unittest.TestCase):
         self.assertTrue(is_rec)
         self.assertEqual(t_type, "outlook_subject")
 
+        # 3b. 繁中 Outlook 原生收回 (回收:, 回收：, 回顧:)
+        msg3b = MIMEText("test body")
+        msg3b["Subject"] = "回收: test"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg3b)
+        self.assertTrue(is_rec)
+        self.assertEqual(t_type, "outlook_subject")
+
+        msg3c = MIMEText("test body")
+        msg3c["Subject"] = "回收：緊急通知"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg3c)
+        self.assertTrue(is_rec)
+        self.assertEqual(t_type, "outlook_subject")
+
+        msg3d = MIMEText("test body")
+        msg3d["Subject"] = "Re: 回收: test"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg3d)
+        self.assertTrue(is_rec)
+        self.assertEqual(t_type, "outlook_subject")
+
+        msg3e = MIMEText("test body")
+        msg3e["Subject"] = "回顧: 季度檢討"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg3e)
+        self.assertTrue(is_rec)
+        self.assertEqual(t_type, "outlook_subject")
+
         # 4. 行動端 #recall 關鍵字
         msg4 = MIMEText("test body")
         msg4["Subject"] = "#recall Re: 專案時程表"
@@ -199,10 +240,20 @@ class TestHandleRecall(unittest.TestCase):
         self.assertTrue(is_rec)
         self.assertEqual(t_type, "mobile_hash")
 
-        # 5. 一般信件 (非收回)
+        # 5. 一般信件 (非收回，包含資源回收防誤殺)
         msg5 = MIMEText("test body")
         msg5["Subject"] = "Re: 一般業務信件"
         is_rec, t_type = handle_recall.is_recall_trigger(msg5)
+        self.assertFalse(is_rec)
+
+        msg5b = MIMEText("test body")
+        msg5b["Subject"] = "資源回收: 垃圾分類注意事項"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg5b)
+        self.assertFalse(is_rec)
+
+        msg5c = MIMEText("test body")
+        msg5c["Subject"] = "設備回收: 報廢清單"
+        is_rec, t_type = handle_recall.is_recall_trigger(msg5c)
         self.assertFalse(is_rec)
 
     def test_extract_target_message_id(self):
@@ -408,6 +459,11 @@ Message-ID: <{target_id}>
             "轉寄: 專案計畫 #recall": "專案計畫",
             "Re: FW: 轉寄: #recall 開會通知": "開會通知",
             "Recall: 機密檔案": "機密檔案",
+            "回收: test": "test",
+            "回收：測試郵件": "測試郵件",
+            "Re: 回收: 專案計畫": "專案計畫",
+            "回顧: 季度檢討": "季度檢討",
+            "資源回收: 垃圾分類": "資源回收: 垃圾分類",
             "#recall": "",
         }
         for raw, expected in test_cases.items():
@@ -516,6 +572,57 @@ Message-ID: <FORWARDED-MSG-ID-888@smile.taipei>
         called_args = mock_cmd.call_args[0][0]
         self.assertIn("-f", called_args)
         self.assertIn("postmaster@kafeiou.pw", called_args)
+
+    def test_is_outlook_recall_body(self):
+        """測試微軟 Outlook 原生收回制式語句指紋檢測"""
+        msg_tw = MIMEText('William (william2@kafeiou.pw) 想要收回郵件 "test"。')
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_tw))
+
+        msg_tw2 = MIMEText('想要回收郵件 "開會通知"')
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_tw2))
+
+        msg_cn = MIMEText('张三 想要撤回邮件 "重要通知"')
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_cn))
+
+        msg_en = MIMEText('Alice would like to recall the message, "Project plan".')
+        self.assertTrue(handle_recall.is_outlook_recall_body(msg_en))
+
+        msg_normal = MIMEText('各位好，請大家於週五前將報廢筆電整理繳回以利回收作業，謝謝！')
+        self.assertFalse(handle_recall.is_outlook_recall_body(msg_normal))
+
+    def test_re_inject_email(self):
+        """測試防呆保底重投遞機制：標記 X-Recall-Processed 並呼叫 sendmail"""
+        raw_email = b"From: sender@domain.com\r\nTo: recip@domain.com\r\nSubject: test\r\n\r\nbody"
+        mock_cmd = MagicMock()
+        mock_cmd.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        res = handle_recall.re_inject_email(raw_email, run_cmd=mock_cmd)
+        self.assertTrue(res)
+        mock_cmd.assert_called_once()
+        called_cmd = mock_cmd.call_args[0][0]
+        called_input = mock_cmd.call_args[1].get("input") or mock_cmd.call_args[0][1]
+        self.assertTrue(called_cmd[0].endswith("sendmail"))
+        self.assertIn(b"X-Recall-Processed: pass\r\n", called_input)
+
+    def test_fallback_delivery_guardrail_for_normal_email(self):
+        """測試防呆防誤殺：若主旨為 回收: 但內文為普通業務且查無原信，啟動保底重投遞，絕不吃信"""
+        normal_mail = (
+            "From: colleague@smile.taipei\r\n"
+            "To: team@smile.taipei\r\n"
+            "Subject: 回收: 辦公室報廢筆電登記說明\r\n"
+            "In-Reply-To: <NON-EXISTENT-THREAD@smile.taipei>\r\n"
+            "\r\n"
+            "各位好，請各組於下週將報廢筆電統計後繳回，謝謝！\r\n"
+        ).encode("utf-8")
+
+        mock_cmd = MagicMock()
+        mock_cmd.return_value = MagicMock(returncode=1, stdout="", stderr="")
+
+        with patch("handle_recall.re_inject_email") as mock_re_inject:
+            mock_re_inject.return_value = True
+            res = handle_recall.process_recall(normal_mail, run_cmd=mock_cmd)
+            self.assertFalse(res)
+            mock_re_inject.assert_called_once()
 
 
 if __name__ == "__main__":
