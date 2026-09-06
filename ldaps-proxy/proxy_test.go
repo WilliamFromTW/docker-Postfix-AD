@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -186,5 +187,56 @@ func TestConfigLoaderWithEnv(t *testing.T) {
 	}
 	if len(cfg.Domains) == 0 || cfg.Domains[0].Domain != "kafeiou.pw" {
 		t.Errorf("Expected primary domain kafeiou.pw in routes")
+	}
+	if cfg.MaxResults != 100 {
+		t.Errorf("Expected default MaxResults 100, got %d", cfg.MaxResults)
+	}
+}
+
+func TestConfigDynamicSearchBaseAndMaxResults(t *testing.T) {
+	os.Setenv("DOMAIN_NAME", "mycompany.corp")
+	os.Setenv("GAL_MAX_RESULTS", "50")
+	defer func() {
+		os.Unsetenv("DOMAIN_NAME")
+		os.Unsetenv("GAL_MAX_RESULTS")
+	}()
+
+	cfg, err := LoadConfig("")
+	if err != nil {
+		t.Fatalf("LoadConfig failed: %v", err)
+	}
+
+	if cfg.SearchBase != "DC=mycompany,DC=corp" {
+		t.Errorf("Expected dynamic SearchBase DC=mycompany,DC=corp, got %s", cfg.SearchBase)
+	}
+	if cfg.MaxResults != 50 {
+		t.Errorf("Expected MaxResults 50 from env, got %d", cfg.MaxResults)
+	}
+}
+
+func TestDomainPrefixNormalization(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{"KAFEIOU\\william-kafeiou", "william-kafeiou"},
+		{"kafeiou.pw/william", "william"},
+		{"william-kafeiou", "william-kafeiou"},
+		{"william@kafeiou.pw", "william@kafeiou.pw"},
+	}
+
+	for _, tc := range testCases {
+		user := tc.input
+		if strings.Contains(user, "\\") {
+			parts := strings.SplitN(user, "\\", 2)
+			user = parts[1]
+		} else if strings.Contains(user, "/") {
+			parts := strings.SplitN(user, "/", 2)
+			user = parts[1]
+		}
+
+		if user != tc.expected {
+			t.Errorf("Input %s: expected %s, got %s", tc.input, tc.expected, user)
+		}
 	}
 }

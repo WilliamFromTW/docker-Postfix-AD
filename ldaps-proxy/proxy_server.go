@@ -148,22 +148,11 @@ func (s *ProxyServer) getBackendGC() (*ldap.Conn, error) {
 
 		// 2. 對於 Port 3268 / 389：先建立 TCP 連線，並自動升級 StartTLS 傳輸加密 (滿足 AD "Transport encryption required" 要求)
 		conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s", addr),
-			ldap.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}),
+			ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}),
 		)
 		if err == nil {
 			if tlsErr := conn.StartTLS(tlsConfig); tlsErr == nil {
 				return conn, nil
-			}
-
-			// 若 StartTLS 協商失敗，嘗試備援探測 AD 是否開啟 3269 (LDAPS GC)
-			ldapsAddr := fmt.Sprintf("%s:3269", backend.Host)
-			ldapsConn, ldapsErr := ldap.DialURL(fmt.Sprintf("ldaps://%s", ldapsAddr),
-				ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}),
-				ldap.DialWithTLSConfig(tlsConfig),
-			)
-			if ldapsErr == nil {
-				conn.Close()
-				return ldapsConn, nil
 			}
 
 			// 若無法升級 TLS，返回原明文連線以相容未開啟 TLS 的純內網測試環境
@@ -241,6 +230,17 @@ func (s *ProxyServer) HandleBind(w ldapserver.ResponseWriter, m *ldapserver.Mess
 	if m.Client != nil && m.Client.Addr() != nil {
 		clientAddr = m.Client.Addr().String()
 	}
+
+	// 支援 Windows Outlook 及各類客戶端可能帶入之 DOMAIN\user 或 domain/user 格式
+	if strings.Contains(rawUser, "\\") {
+		parts := strings.SplitN(rawUser, "\\", 2)
+		rawUser = parts[1]
+	} else if strings.Contains(rawUser, "/") {
+		parts := strings.SplitN(rawUser, "/", 2)
+		rawUser = parts[1]
+	}
+
+	s.logAudit("[BIND_REQUEST] client=%s user=%q", clientAddr, rawUser)
 
 	// 1. 匿名 Bind 檢查 (常用於初次探測)
 	if rawUser == "" && password == "" {
@@ -358,6 +358,9 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 		entry.AddAttribute(message.AttributeDescription("subschemaSubentry"), message.AttributeValue("CN=Aggregate,CN=Schema,CN=Configuration,"+s.cfg.SearchBase))
 		entry.AddAttribute(message.AttributeDescription("defaultNamingContext"), message.AttributeValue(s.cfg.SearchBase))
 		entry.AddAttribute(message.AttributeDescription("namingContexts"), message.AttributeValue(s.cfg.SearchBase))
+		entry.AddAttribute(message.AttributeDescription("rootDomainNamingContext"), message.AttributeValue(s.cfg.SearchBase))
+		entry.AddAttribute(message.AttributeDescription("schemaNamingContext"), message.AttributeValue("CN=Schema,CN=Configuration,"+s.cfg.SearchBase))
+		entry.AddAttribute(message.AttributeDescription("configurationNamingContext"), message.AttributeValue("CN=Configuration,"+s.cfg.SearchBase))
 		entry.AddAttribute(message.AttributeDescription("supportedLDAPVersion"), message.AttributeValue("3"))
 		entry.AddAttribute(message.AttributeDescription("supportedCapabilities"), message.AttributeValue("1.2.840.113556.1.4.800"))
 		w.Write(entry)
@@ -389,9 +392,14 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 		searchBase = s.cfg.SearchBase
 	}
 
+	maxRes := s.cfg.MaxResults
+	if maxRes <= 0 {
+		maxRes = 100
+	}
+
 	sizeLimit := int(r.SizeLimit())
-	if sizeLimit <= 0 || sizeLimit > 1000 {
-		sizeLimit = 500
+	if sizeLimit <= 0 || sizeLimit > maxRes {
+		sizeLimit = maxRes
 	}
 
 	timeLimit := int(r.TimeLimit())
@@ -399,8 +407,13 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 		timeLimit = 30
 	}
 
-	if filterStr == "" {
-		filterStr = "(objectClass=*)"
+	// 通訊錄保護防呆：強制只查詢啟用狀態且具備電子郵件信箱的真人員工，剔除電腦、群組與停用帳號
+	galGuardrail := "(&(objectCategory=person)(objectClass=user)(mail=*)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+
+	if filterStr == "" || strings.EqualFold(filterStr, "(objectClass=*)") || strings.EqualFold(filterStr, "(objectclass=*)") {
+		filterStr = galGuardrail
+	} else if !strings.Contains(strings.ToLower(baseObject), "schema") && !strings.Contains(strings.ToLower(filterStr), "objectcategory") {
+		filterStr = fmt.Sprintf("(&%s%s)", galGuardrail, filterStr)
 	}
 
 	// 僅轉發白名單允許之屬性
@@ -440,10 +453,24 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 	// 3. 過濾敏感屬性並回傳白名單通訊錄欄位
 	returnedCount := 0
 	for _, beEntry := range sr.Entries {
+		if returnedCount >= maxRes {
+			break
+		}
+
+		// 確保具備有效電子郵件地址
+		mail := beEntry.GetAttributeValue("mail")
+		if strings.TrimSpace(mail) == "" {
+			continue
+		}
+
 		resEntry := ldapserver.NewSearchResultEntry(beEntry.DN)
+		hasDisplayName := false
 		for _, attr := range beEntry.Attributes {
 			if !s.isAllowedAttr(attr.Name) {
 				continue
+			}
+			if strings.EqualFold(attr.Name, "displayName") && len(attr.Values) > 0 {
+				hasDisplayName = true
 			}
 			var vals []message.AttributeValue
 			for _, v := range attr.Values {
@@ -451,6 +478,18 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 			}
 			resEntry.AddAttribute(message.AttributeDescription(attr.Name), vals...)
 		}
+
+		// 若 AD 物件缺少 displayName，以 cn 或 mail 填補，確保 Outlook 介面能正常呈現通訊錄名稱
+		if !hasDisplayName {
+			disp := beEntry.GetAttributeValue("cn")
+			if disp == "" {
+				disp = mail
+			}
+			if disp != "" {
+				resEntry.AddAttribute(message.AttributeDescription("displayName"), message.AttributeValue(disp))
+			}
+		}
+
 		w.Write(resEntry)
 		returnedCount++
 	}
@@ -464,6 +503,47 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 	}
 	s.logAudit("[SEARCH] client=%s user=%q base=%q filter=%q entries=%d",
 		clientAddr, username, searchBase, filterStr, returnedCount)
+}
+
+type diagnosticConn struct {
+	net.Conn
+	ps       *ProxyServer
+	firstMsg sync.Once
+}
+
+func (c *diagnosticConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	if n > 0 {
+		c.firstMsg.Do(func() {
+			if b[0] == 0x16 {
+				c.ps.logAudit("[TCP_TLS_START] client=%s initiated TLS handshake (Record type 0x16)", c.RemoteAddr())
+			} else if b[0] == 0x30 {
+				c.ps.logAudit("[PLAINTEXT_WARN] client=%s sent unencrypted LDAP (0x30) to TLS port 3269! Client MUST enable SSL/TLS in account settings.", c.RemoteAddr())
+			} else {
+				c.ps.logAudit("[TCP_DATA] client=%s first_byte=0x%02x", c.RemoteAddr(), b[0])
+			}
+		})
+	}
+	return n, err
+}
+
+func (c *diagnosticConn) Close() error {
+	c.ps.logAudit("[TCP_DISCONNECT] client=%s disconnected", c.RemoteAddr())
+	return c.Conn.Close()
+}
+
+type diagnosticListener struct {
+	net.Listener
+	ps *ProxyServer
+}
+
+func (l *diagnosticListener) Accept() (net.Conn, error) {
+	conn, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	l.ps.logAudit("[TCP_CONNECT] client=%s connected to port 3269", conn.RemoteAddr())
+	return &diagnosticConn{Conn: conn, ps: l.ps}, nil
 }
 
 // Start 啟動 TLS 3269 監聽服務
@@ -492,7 +572,8 @@ func (s *ProxyServer) Start() error {
 	}
 
 	return server.ListenAndServe(s.cfg.ListenAddr, func(srv *ldapserver.Server) {
-		srv.Listener = tls.NewListener(srv.Listener, tlsConfig)
+		diagListener := &diagnosticListener{Listener: srv.Listener, ps: s}
+		srv.Listener = tls.NewListener(diagListener, tlsConfig)
 	})
 }
 

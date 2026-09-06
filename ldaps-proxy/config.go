@@ -46,6 +46,7 @@ type Config struct {
 	SearchBase   string        `yaml:"search_base"`
 	BindDN       string        `yaml:"bind_dn"`
 	BindPW       string        `yaml:"bind_pw"`
+	MaxResults   int           `yaml:"max_results"`
 }
 
 // 預設通訊錄白名單欄位
@@ -80,6 +81,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		CooldownSec:  30,
 		CooldownMin:  0,
 		WindowMin:    5,
+		MaxResults:   100,
 		AllowedAttrs: DefaultAllowedAttrs,
 	}
 
@@ -92,23 +94,42 @@ func LoadConfig(configPath string) (*Config, error) {
 		}
 	}
 
+	if maxResStr := os.Getenv("GAL_MAX_RESULTS"); maxResStr != "" {
+		var mr int
+		if _, err := fmt.Sscanf(maxResStr, "%d", &mr); err == nil && mr > 0 {
+			cfg.MaxResults = mr
+		}
+	}
+
 	// 2. 從環境變數自動推導未指定之項目
 	hostIP := os.Getenv("HOST_IP")
 	if hostIP == "" {
 		hostIP = "127.0.0.1"
 	}
 
-	searchBase := os.Getenv("SEARCH_BASE")
-	if searchBase == "" {
-		searchBase = "DC=example,DC=com"
-	}
-	if cfg.SearchBase == "" {
-		cfg.SearchBase = searchBase
-	}
-
 	domainName := os.Getenv("DOMAIN_NAME")
 	if domainName == "" {
 		domainName = "example.com"
+	}
+
+	searchBase := os.Getenv("SEARCH_BASE")
+	if searchBase == "" {
+		parts := strings.Split(domainName, ".")
+		var dcParts []string
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				dcParts = append(dcParts, "DC="+p)
+			}
+		}
+		if len(dcParts) > 0 {
+			searchBase = strings.Join(dcParts, ",")
+		} else {
+			searchBase = "DC=example,DC=com"
+		}
+	}
+	if cfg.SearchBase == "" {
+		cfg.SearchBase = searchBase
 	}
 
 	if cfg.BindDN == "" {
