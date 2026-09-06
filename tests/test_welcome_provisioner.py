@@ -53,13 +53,24 @@ class TestWelcomeProvisioner(unittest.TestCase):
         cert_type = welcome_provisioner.detect_certificate_type(cert_path=fake_cert_file, host_name="mail.example.com")
         self.assertEqual(cert_type, "self_signed")
 
-        ps_cmd = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com")
+        ps_cmd = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "zh-TW")
         self.assertIn("3269", ps_cmd)
         self.assertIn("$mailServer = 'mail.example.com'", ps_cmd)
         self.assertIn("TcpClient", ps_cmd)
         self.assertIn("LocalMachine", ps_cmd)
-        self.assertIn("Administrator", ps_cmd)
+        self.assertIn("try {", ps_cmd)
+        self.assertIn("catch {", ps_cmd)
+        self.assertIn("成功匯入", ps_cmd)
+        self.assertIn("憑證匯入失敗", ps_cmd)
         self.assertNotIn('\\""', ps_cmd)
+
+        # 測試英文與越文語系
+        ps_en = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "en")
+        self.assertIn("Certificate Added Successfully", ps_en)
+        self.assertIn("Failed to import certificate", ps_en)
+
+        ps_vi = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "vi")
+        self.assertIn("Da them chung chi", ps_vi)
 
     def test_hostname_dynamic_resolution(self):
         """測試主機名稱多層動態解析"""
