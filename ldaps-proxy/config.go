@@ -32,21 +32,22 @@ type DomainRoute struct {
 
 // Config 包含 LDAPS GAL Proxy 的完整運行參數
 type Config struct {
-	ListenAddr   string        `yaml:"listen_addr"`
-	CertFile     string        `yaml:"cert_file"`
-	KeyFile      string        `yaml:"key_file"`
-	LogFile      string        `yaml:"log_file"`
-	DefaultGC    []BackendDC   `yaml:"default_gc"`
-	Domains      []DomainRoute `yaml:"domains"`
-	AllowedAttrs []string      `yaml:"allowed_attrs"`
-	MaxFailures  int           `yaml:"max_failures"`
-	CooldownMin  int           `yaml:"cooldown_min"`
-	CooldownSec  int           `yaml:"cooldown_sec"`
-	WindowMin    int           `yaml:"window_min"`
-	SearchBase   string        `yaml:"search_base"`
-	BindDN       string        `yaml:"bind_dn"`
-	BindPW       string        `yaml:"bind_pw"`
-	MaxResults   int           `yaml:"max_results"`
+	ListenAddr      string        `yaml:"listen_addr"`
+	PlainListenAddr string        `yaml:"plain_listen_addr"`
+	CertFile        string        `yaml:"cert_file"`
+	KeyFile         string        `yaml:"key_file"`
+	LogFile         string        `yaml:"log_file"`
+	DefaultGC       []BackendDC   `yaml:"default_gc"`
+	Domains         []DomainRoute `yaml:"domains"`
+	AllowedAttrs    []string      `yaml:"allowed_attrs"`
+	MaxFailures     int           `yaml:"max_failures"`
+	CooldownMin     int           `yaml:"cooldown_min"`
+	CooldownSec     int           `yaml:"cooldown_sec"`
+	WindowMin       int           `yaml:"window_min"`
+	SearchBase      string        `yaml:"search_base"`
+	BindDN          string        `yaml:"bind_dn"`
+	BindPW          string        `yaml:"bind_pw"`
+	MaxResults      int           `yaml:"max_results"`
 }
 
 // 預設通訊錄白名單欄位
@@ -75,14 +76,15 @@ var DefaultAllowedAttrs = []string{
 // LoadConfig 載入配置檔案，若檔案不存在則從環境變數自動推導
 func LoadConfig(configPath string) (*Config, error) {
 	cfg := &Config{
-		ListenAddr:   ":3269",
-		LogFile:      "/var/log/ldaps-gal-proxy.log",
-		MaxFailures:  5,
-		CooldownSec:  30,
-		CooldownMin:  0,
-		WindowMin:    5,
-		MaxResults:   100,
-		AllowedAttrs: DefaultAllowedAttrs,
+		ListenAddr:      ":3269",
+		PlainListenAddr: ":3268",
+		LogFile:         "/var/log/ldaps-gal-proxy.log",
+		MaxFailures:     5,
+		CooldownSec:     30,
+		CooldownMin:     0,
+		WindowMin:       5,
+		MaxResults:      100,
+		AllowedAttrs:    DefaultAllowedAttrs,
 	}
 
 	// 1. 若配置檔存在則優先讀取
@@ -91,6 +93,16 @@ func LoadConfig(configPath string) (*Config, error) {
 			if err := yaml.Unmarshal(data, cfg); err != nil {
 				return nil, fmt.Errorf("failed to parse config %s: %w", configPath, err)
 			}
+		}
+	}
+
+	if pAddr := os.Getenv("GAL_PLAIN_ADDR"); pAddr != "" {
+		cfg.PlainListenAddr = pAddr
+	} else if pPort := os.Getenv("GAL_PLAIN_PORT"); pPort != "" {
+		if !strings.HasPrefix(pPort, ":") {
+			cfg.PlainListenAddr = ":" + pPort
+		} else {
+			cfg.PlainListenAddr = pPort
 		}
 	}
 

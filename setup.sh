@@ -203,6 +203,7 @@ if [ ! -f "/etc/ldaps-proxy/config.yaml" ]; then
   cat << 'EOF' > /etc/ldaps-proxy/config.yaml
 # LDAPS GAL Proxy 設定檔 (留空則自動繼承容器既有之 HOST_IP、SEARCH_BASE、DOMAIN_NAME)
 listen_addr: ":3269"
+plain_listen_addr: ":3268"
 log_file: "/var/log/ldaps-gal-proxy.log"
 max_failures: 3
 cooldown_min: 10

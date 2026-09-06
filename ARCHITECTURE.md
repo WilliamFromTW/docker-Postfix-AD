@@ -423,13 +423,13 @@ RECALL_MAX_HOURS=2         # Layer 2 same-domain expunge time limit in hours
 
 ---
 
-## 📇 7. Go LDAPS Global Address List (GAL) Proxy (Port 3269 -> 3268)
+## 📇 7. Go LDAPS Global Address List (GAL) Proxy (Port 3268 / 3269 -> 3268)
 
-A high-performance lightweight Go proxy (`ldaps-gal-proxy`) designed for Active Directory enterprise environments. It securely exposes standard Port **3269** (TLS/SSL) to external clients and forwards address book requests to internal AD Global Catalog on Port **3268** (plain TCP).
+A high-performance lightweight Go proxy (`ldaps-gal-proxy`) designed for Active Directory enterprise environments. It supports dual-port listening: standard Port **3268** (plain TCP, plug-and-play without certificate import) and standard Port **3269** (TLS/SSL), securely forwarding address book requests to the internal AD Global Catalog on Port **3268** (plain TCP).
 
 ```mermaid
 graph TD
-    Client["Client (Outlook / Thunderbird)"] -->|TLS Port 3269 / Credentials| Proxy["Go ldaps-gal-proxy"]
+    Client["Client (Outlook / Thunderbird)"] -->|Port 3268(Plain) or 3269(TLS) / Credentials| Proxy["Go ldaps-gal-proxy"]
     
     subgraph Proxy_Security ["Proxy Security & Filtering"]
         CheckBreaker{"Circuit Breaker<br>(Failures >= 3?)"}

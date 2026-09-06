@@ -32,13 +32,11 @@ Content-Type: text/html; charset=UTF-8
     <ul>
       <li><strong>收信服务器 (IMAP)：</strong> <code>${MAIL_SERVER}</code> (端口 <code>993</code> / SSL 加密)</li>
       <li><strong>发信服务器 (SMTP)：</strong> <code>${MAIL_SERVER}</code> (端口 <code>465</code> 或 <code>587</code> / SSL 加密)</li>
-      <li><strong>通讯录目录 (LDAPS)：</strong> <code>${MAIL_SERVER}</code> (端口 <code>3269</code> / SSL 加密)</li>
+      <li><strong>通讯录目录 (LDAP/LDAPS)：</strong> <code>${MAIL_SERVER}</code> (端口 <code>3268</code> 免证书 或 <code>3269</code> SSL 加密)</li>
       <li><strong>登录账号：</strong> <code>${USER_NAME}</code> (仅需输入账号名称，无需输入 @${DOMAIN})</li>
       <li><strong>登录密码：</strong> 您的 Windows AD 域密码</li>
     </ul>
   </div>
-
-  ${CERT_INSTRUCTION_BLOCK}
 
   <div class="step-box">
     <h3 style="margin-top:0; color:#2d3748;">📖 Outlook 快速添加通讯录步骤</h3>
@@ -49,7 +47,7 @@ Content-Type: text/html; charset=UTF-8
       <li>勾选 <strong>「此服务器要求我登录」</strong>，用户名填写 <code>${USER_NAME}</code> 与您的域密码。</li>
       <li>点击右侧 <strong>「其他设置」</strong>：
         <ul>
-          <li>在「连接」标签页中，将端口改为 <strong><code>3269</code></strong>，并勾选 <strong>「使用安全套接字层 (SSL)」</strong>。</li>
+          <li>在「连接」标签页中，将端口改为 <strong><code>3268</code></strong>（<strong>不勾选</strong> SSL），若使用 <strong><code>3269</code></strong> 请勾选「使用安全套接字层 (SSL)」。</li>
           <li>在「搜索」标签页中，搜索基准选择 <strong>「自定义」</strong> 并输入 <code>${SEARCH_BASE}</code>。</li>
         </ul>
       </li>

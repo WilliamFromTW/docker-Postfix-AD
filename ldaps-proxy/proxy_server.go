@@ -41,14 +41,16 @@ type ClientSession struct {
 
 // ProxyServer 是 LDAPS GAL Proxy 的核心服務結構
 type ProxyServer struct {
-	cfg       *Config
-	cb        *CircuitBreaker
-	server    *ldapserver.Server
-	logFile   *os.File
-	logMu     sync.Mutex
-	isRunning bool
-	sessions  map[string]*ClientSession
-	sessMu    sync.RWMutex
+	cfg         *Config
+	cb          *CircuitBreaker
+	serverTLS   *ldapserver.Server
+	serverPlain *ldapserver.Server
+	stopChan    chan struct{}
+	logFile     *os.File
+	logMu       sync.Mutex
+	isRunning   bool
+	sessions    map[string]*ClientSession
+	sessMu      sync.RWMutex
 }
 
 // NewProxyServer 建立 LDAPS GAL Proxy 伺服器
@@ -69,6 +71,7 @@ func NewProxyServer(cfg *Config) (*ProxyServer, error) {
 	ps := &ProxyServer{
 		cfg:      cfg,
 		cb:       cb,
+		stopChan: make(chan struct{}),
 		sessions: make(map[string]*ClientSession),
 	}
 
@@ -508,6 +511,7 @@ func (s *ProxyServer) HandleSearch(w ldapserver.ResponseWriter, m *ldapserver.Me
 type diagnosticConn struct {
 	net.Conn
 	ps       *ProxyServer
+	port     string
 	firstMsg sync.Once
 }
 
@@ -516,11 +520,19 @@ func (c *diagnosticConn) Read(b []byte) (n int, err error) {
 	if n > 0 {
 		c.firstMsg.Do(func() {
 			if b[0] == 0x16 {
-				c.ps.logAudit("[TCP_TLS_START] client=%s initiated TLS handshake (Record type 0x16)", c.RemoteAddr())
+				if c.port == "3268" {
+					c.ps.logAudit("[TLS_ON_PLAIN_WARN] client=%s initiated TLS handshake on plaintext port 3268! Client should uncheck SSL/TLS or use port 3269.", c.RemoteAddr())
+				} else {
+					c.ps.logAudit("[TCP_TLS_START] client=%s initiated TLS handshake (Record type 0x16) on port %s", c.RemoteAddr(), c.port)
+				}
 			} else if b[0] == 0x30 {
-				c.ps.logAudit("[PLAINTEXT_WARN] client=%s sent unencrypted LDAP (0x30) to TLS port 3269! Client MUST enable SSL/TLS in account settings.", c.RemoteAddr())
+				if c.port == "3269" {
+					c.ps.logAudit("[PLAINTEXT_WARN] client=%s sent unencrypted LDAP (0x30) to TLS port 3269! Client MUST enable SSL/TLS in account settings.", c.RemoteAddr())
+				} else {
+					c.ps.logAudit("[LDAP_START] client=%s initiated LDAP request (0x30) on port %s", c.RemoteAddr(), c.port)
+				}
 			} else {
-				c.ps.logAudit("[TCP_DATA] client=%s first_byte=0x%02x", c.RemoteAddr(), b[0])
+				c.ps.logAudit("[TCP_DATA] client=%s first_byte=0x%02x on port %s", c.RemoteAddr(), b[0], c.port)
 			}
 		})
 	}
@@ -528,13 +540,14 @@ func (c *diagnosticConn) Read(b []byte) (n int, err error) {
 }
 
 func (c *diagnosticConn) Close() error {
-	c.ps.logAudit("[TCP_DISCONNECT] client=%s disconnected", c.RemoteAddr())
+	c.ps.logAudit("[TCP_DISCONNECT] client=%s disconnected from port %s", c.RemoteAddr(), c.port)
 	return c.Conn.Close()
 }
 
 type diagnosticListener struct {
 	net.Listener
-	ps *ProxyServer
+	ps   *ProxyServer
+	port string
 }
 
 func (l *diagnosticListener) Accept() (net.Conn, error) {
@@ -542,48 +555,137 @@ func (l *diagnosticListener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	l.ps.logAudit("[TCP_CONNECT] client=%s connected to port 3269", conn.RemoteAddr())
-	return &diagnosticConn{Conn: conn, ps: l.ps}, nil
+	l.ps.logAudit("[TCP_CONNECT] client=%s connected to port %s", conn.RemoteAddr(), l.port)
+	return &diagnosticConn{Conn: conn, ps: l.ps, port: l.port}, nil
 }
 
-// Start 啟動 TLS 3269 監聽服務
+func extractPort(addr string, defaultPort string) string {
+	_, port, err := net.SplitHostPort(addr)
+	if err == nil && port != "" {
+		return port
+	}
+	if strings.HasPrefix(addr, ":") {
+		return strings.TrimPrefix(addr, ":")
+	}
+	return defaultPort
+}
+
+// Start 啟動通訊錄中繼服務 (支援 Port 3268 明文與 Port 3269 TLS 雙埠監聽)
 func (s *ProxyServer) Start() error {
+	if s.cfg.PlainListenAddr == "" && s.cfg.ListenAddr == "" {
+		return fmt.Errorf("no listen address configured (both ListenAddr and PlainListenAddr are empty)")
+	}
+
 	routes := ldapserver.NewRouteMux()
 	routes.Bind(s.HandleBind)
 	routes.Search(s.HandleSearch)
 
-	server := ldapserver.NewServer()
-	server.Handle(routes)
-	s.server = server
+	s.logMu.Lock()
 	s.isRunning = true
+	s.logMu.Unlock()
 
-	s.logAudit("[PROXY_START] Listening on TLS %s (Cert: %s, Key: %s)",
-		s.cfg.ListenAddr, s.cfg.CertFile, s.cfg.KeyFile)
+	errChan := make(chan error, 2)
 
-	// 確保憑證可用
-	cert, err := tls.LoadX509KeyPair(s.cfg.CertFile, s.cfg.KeyFile)
-	if err != nil {
-		return fmt.Errorf("failed to load TLS key pair (%s, %s): %w", s.cfg.CertFile, s.cfg.KeyFile, err)
+	// 1. 啟動明文 3268 監聽服務 (若有設定 PlainListenAddr)
+	if s.cfg.PlainListenAddr != "" {
+		plainPort := extractPort(s.cfg.PlainListenAddr, "3268")
+		serverPlain := ldapserver.NewServer()
+		serverPlain.Handle(routes)
+		s.serverPlain = serverPlain
+
+		s.logAudit("[PROXY_START] Listening on Plain TCP %s (Port %s)", s.cfg.PlainListenAddr, plainPort)
+		go func() {
+			err := serverPlain.ListenAndServe(s.cfg.PlainListenAddr, func(srv *ldapserver.Server) {
+				srv.Listener = &diagnosticListener{Listener: srv.Listener, ps: s, port: plainPort}
+			})
+			if err != nil {
+				s.logMu.Lock()
+				running := s.isRunning
+				s.logMu.Unlock()
+				if running {
+					s.logAudit("[PROXY_ERROR] Plain server error: %v", err)
+					select {
+					case errChan <- fmt.Errorf("plain listener error: %w", err):
+					default:
+					}
+				}
+			}
+		}()
 	}
 
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
+	// 2. 啟動 TLS 3269 監聽服務 (若有設定 ListenAddr)
+	if s.cfg.ListenAddr != "" {
+		tlsPort := extractPort(s.cfg.ListenAddr, "3269")
+
+		cert, err := tls.LoadX509KeyPair(s.cfg.CertFile, s.cfg.KeyFile)
+		if err != nil {
+			s.Stop()
+			return fmt.Errorf("failed to load TLS key pair (%s, %s): %w", s.cfg.CertFile, s.cfg.KeyFile, err)
+		}
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		}
+
+		serverTLS := ldapserver.NewServer()
+		serverTLS.Handle(routes)
+		s.serverTLS = serverTLS
+
+		s.logAudit("[PROXY_START] Listening on TLS %s (Port %s, Cert: %s, Key: %s)",
+			s.cfg.ListenAddr, tlsPort, s.cfg.CertFile, s.cfg.KeyFile)
+
+		go func() {
+			err := serverTLS.ListenAndServe(s.cfg.ListenAddr, func(srv *ldapserver.Server) {
+				diagListener := &diagnosticListener{Listener: srv.Listener, ps: s, port: tlsPort}
+				srv.Listener = tls.NewListener(diagListener, tlsConfig)
+			})
+			if err != nil {
+				s.logMu.Lock()
+				running := s.isRunning
+				s.logMu.Unlock()
+				if running {
+					s.logAudit("[PROXY_ERROR] TLS server error: %v", err)
+					select {
+					case errChan <- fmt.Errorf("TLS listener error: %w", err):
+					default:
+					}
+				}
+			}
+		}()
 	}
 
-	return server.ListenAndServe(s.cfg.ListenAddr, func(srv *ldapserver.Server) {
-		diagListener := &diagnosticListener{Listener: srv.Listener, ps: s}
-		srv.Listener = tls.NewListener(diagListener, tlsConfig)
-	})
+	select {
+	case err := <-errChan:
+		return err
+	case <-s.stopChan:
+		return nil
+	}
 }
 
 // Stop 停止伺服器
 func (s *ProxyServer) Stop() {
-	if s.server != nil && s.isRunning {
-		s.server.Stop()
-		s.isRunning = false
-		s.logAudit("[PROXY_STOP] LDAPS GAL Proxy stopped")
+	s.logMu.Lock()
+	if !s.isRunning {
+		s.logMu.Unlock()
+		return
 	}
+	s.isRunning = false
+	s.logMu.Unlock()
+
+	select {
+	case <-s.stopChan:
+	default:
+		close(s.stopChan)
+	}
+
+	if s.serverTLS != nil {
+		s.serverTLS.Stop()
+	}
+	if s.serverPlain != nil {
+		s.serverPlain.Stop()
+	}
+	s.logAudit("[PROXY_STOP] LDAPS GAL Proxy stopped")
 	if s.logFile != nil {
 		_ = s.logFile.Close()
 	}

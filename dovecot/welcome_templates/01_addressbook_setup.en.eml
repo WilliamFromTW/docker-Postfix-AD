@@ -32,13 +32,11 @@ Content-Type: text/html; charset=UTF-8
     <ul>
       <li><strong>Incoming Mail (IMAP):</strong> <code>${MAIL_SERVER}</code> (Port <code>993</code> / SSL)</li>
       <li><strong>Outgoing Mail (SMTP):</strong> <code>${MAIL_SERVER}</code> (Port <code>465</code> or <code>587</code> / SSL)</li>
-      <li><strong>Address Book Directory (LDAPS):</strong> <code>${MAIL_SERVER}</code> (Port <code>3269</code> / SSL)</li>
+      <li><strong>Address Book Directory (LDAP/LDAPS):</strong> <code>${MAIL_SERVER}</code> (Port <code>3268</code> Plain / No Cert, or <code>3269</code> SSL)</li>
       <li><strong>Username:</strong> <code>${USER_NAME}</code> (Account name only, without @${DOMAIN})</li>
       <li><strong>Password:</strong> Your Windows AD domain password</li>
     </ul>
   </div>
-
-  ${CERT_INSTRUCTION_BLOCK}
 
   <div class="step-box">
     <h3 style="margin-top:0; color:#2d3748;">📖 Outlook Address Book Configuration Steps</h3>
@@ -49,7 +47,7 @@ Content-Type: text/html; charset=UTF-8
       <li>Check <strong>"This server requires me to log on"</strong>, enter User Name: <code>${USER_NAME}</code> and your domain password.</li>
       <li>Click <strong>"More Settings ..."</strong>:
         <ul>
-          <li>Under the "Connection" tab, set Port to <strong><code>3269</code></strong>, and check <strong>"Use Secure Sockets Layer (SSL)"</strong>.</li>
+          <li>Under the "Connection" tab, set Port to <strong><code>3268</code></strong> (<strong>Uncheck</strong> SSL), or set to <strong><code>3269</code></strong> with "Use Secure Sockets Layer (SSL)" checked.</li>
           <li>Under the "Search" tab, select <strong>"Custom"</strong> search base and enter <code>${SEARCH_BASE}</code>.</li>
         </ul>
       </li>

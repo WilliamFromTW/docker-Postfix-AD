@@ -417,13 +417,13 @@ RECALL_MAX_HOURS=2         # 第二层同域名强制抹除有效时限 (小时)
 
 ---
 
-## 📇 7. Go 语言通讯录 LDAPS 中继代理 (Global Address List Proxy, Port 3269)
+## 📇 7. Go 语言通讯录 LDAPS 中继代理 (Global Address List Proxy, Port 3268 / 3269)
 
-专为 Active Directory 企业环境打造的高性能轻量级 Go 通讯录中继服务 (`ldaps-gal-proxy`)，对外安全开放微软标准 Port **3269** (TLS/SSL)，后端安全连向内网 DC 的 Global Catalog (Port **3268**，纯 TCP)。
+专为 Active Directory 企业环境打造的高性能轻量级 Go 通讯录中继服务 (`ldaps-gal-proxy`)，对外支持双端口监听：标准 Port **3268** (明文 TCP，免导入证书即插即用) 与标准 Port **3269** (TLS/SSL)，后端安全连向内网 DC 的 Global Catalog (Port **3268**，纯 TCP)。
 
 ```mermaid
 graph TD
-    Client["客户端 (Outlook / Thunderbird)"] -->|TLS 连线 Port 3269 / 帐号密码| Proxy["Go ldaps-gal-proxy"]
+    Client["客户端 (Outlook / Thunderbird)"] -->|连线 Port 3268(明文) 或 3269(TLS) / 帐号密码| Proxy["Go ldaps-gal-proxy"]
     
     subgraph Proxy_Security ["Proxy 安全过滤与防护"]
         CheckBreaker{"检查熔断器<br>(同 IP 失败 >= 3 次？)"}

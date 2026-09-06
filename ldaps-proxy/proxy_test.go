@@ -240,3 +240,48 @@ func TestDomainPrefixNormalization(t *testing.T) {
 		}
 	}
 }
+
+func TestDualPortConfig(t *testing.T) {
+	os.Setenv("GAL_PLAIN_PORT", "3268")
+	defer os.Unsetenv("GAL_PLAIN_PORT")
+
+	cfg, err := LoadConfig("")
+	if err != nil {
+		t.Fatalf("LoadConfig failed: %v", err)
+	}
+	if cfg.PlainListenAddr != ":3268" {
+		t.Errorf("Expected PlainListenAddr :3268, got %s", cfg.PlainListenAddr)
+	}
+	if cfg.ListenAddr != ":3269" {
+		t.Errorf("Expected ListenAddr :3269, got %s", cfg.ListenAddr)
+	}
+
+	// 驗證 ProxyServer 初始化時正確建立 stopChan
+	server, err := NewProxyServer(cfg)
+	if err != nil {
+		t.Fatalf("NewProxyServer failed: %v", err)
+	}
+	if server.stopChan == nil {
+		t.Fatal("stopChan should be initialized")
+	}
+}
+
+func TestExtractPort(t *testing.T) {
+	tests := []struct {
+		addr     string
+		fallback string
+		expected string
+	}{
+		{":3268", "3268", "3268"},
+		{"0.0.0.0:3269", "3269", "3269"},
+		{"127.0.0.1:8389", "389", "8389"},
+		{"invalid", "3268", "3268"},
+	}
+	for _, tc := range tests {
+		got := extractPort(tc.addr, tc.fallback)
+		if got != tc.expected {
+			t.Errorf("extractPort(%q, %q) = %q, want %q", tc.addr, tc.fallback, got, tc.expected)
+		}
+	}
+}
+

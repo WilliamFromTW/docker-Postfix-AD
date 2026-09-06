@@ -414,13 +414,13 @@ RECALL_MAX_HOURS=2         # Thời hạn xóa cưỡng chế Lớp 2 (giờ)
 
 ---
 
-## 📇 7. Go LDAPS Proxy Danh Bạ Toàn Cục (Global Address List Proxy, Port 3269)
+## 📇 7. Go LDAPS Proxy Danh Bạ Toàn Cục (Global Address List Proxy, Port 3268 / 3269)
 
-Dịch vụ proxy danh bạ viết bằng Go (`ldaps-gal-proxy`) hiệu năng cao, mở an toàn cổng tiêu chuẩn Microsoft **3269** (TLS/SSL) ra ngoài và kết nối an toàn vào Global Catalog của AD nội bộ trên cổng **3268** (TCP thuần).
+Dịch vụ proxy danh bạ viết bằng Go (`ldaps-gal-proxy`) hiệu năng cao, hỗ trợ lắng nghe cổng kép: cổng tiêu chuẩn Microsoft **3268** (TCP thuần, cắm và chạy không cần cài chứng chỉ) và cổng **3269** (TLS/SSL), kết nối an toàn vào Global Catalog của AD nội bộ trên cổng **3268** (TCP thuần).
 
 ```mermaid
 graph TD
-    Client["Client (Outlook / Thunderbird)"] -->|Kết nối TLS Port 3269 / Tài khoản mật khẩu| Proxy["Go ldaps-gal-proxy"]
+    Client["Client (Outlook / Thunderbird)"] -->|Kết nối Port 3268(Thuần) hoặc 3269(TLS) / Tài khoản mật khẩu| Proxy["Go ldaps-gal-proxy"]
     
     subgraph Proxy_Security ["Bảo Mật & Lọc Dữ Liệu"]
         CheckBreaker{"Kiểm tra Circuit Breaker<br>(Cùng IP lỗi >= 3 lần?)"}

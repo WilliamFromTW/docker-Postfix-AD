@@ -32,13 +32,11 @@ Content-Type: text/html; charset=UTF-8
     <ul>
       <li><strong>收信伺服器 (IMAP)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>993</code> / SSL 加密)</li>
       <li><strong>發信伺服器 (SMTP)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>465</code> 或 <code>587</code> / SSL 加密)</li>
-      <li><strong>通訊錄目錄 (LDAPS)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>3269</code> / SSL 加密)</li>
+      <li><strong>通訊錄目錄 (LDAP/LDAPS)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>3268</code> 免憑證 或 <code>3269</code> SSL 加密)</li>
       <li><strong>登入帳號：</strong> <code>${USER_NAME}</code> (僅需輸入帳號名稱，不需輸入 @${DOMAIN})</li>
       <li><strong>登入密碼：</strong> 您的 Windows AD 網域密碼</li>
     </ul>
   </div>
-
-  ${CERT_INSTRUCTION_BLOCK}
 
   <div class="step-box">
     <h3 style="margin-top:0; color:#2d3748;">📖 Outlook 快速新增通訊錄步驟</h3>
@@ -49,7 +47,7 @@ Content-Type: text/html; charset=UTF-8
       <li>勾選 <strong>「此伺服器需要我登入」</strong>，使用者名稱填寫 <code>${USER_NAME}</code> 與您的網域密碼。</li>
       <li>點擊右側 <strong>「其他設定」</strong>：
         <ul>
-          <li>在「連線」分頁中，將通訊埠改為 <strong><code>3269</code></strong>，並勾選 <strong>「使用安全通訊端層 (SSL)」</strong>。</li>
+          <li>在「連線」分頁中，將通訊埠改為 <strong><code>3268</code></strong>（<strong>不勾選</strong> SSL），若使用 <strong><code>3269</code></strong> 請勾選「使用安全通訊協定 (SSL) 連線」。</li>
           <li>在「搜尋」分頁中，搜尋基準選擇 <strong>「自訂」</strong> 並輸入 <code>${SEARCH_BASE}</code>。</li>
         </ul>
       </li>

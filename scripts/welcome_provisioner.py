@@ -342,65 +342,11 @@ def generate_powershell_trust_cmd(mail_server, user_lang="zh-TW"):
 }}"""
 
 
-def generate_cert_block(cert_mode, powershell_cmd, user_lang="zh-TW"):
+def generate_cert_block(cert_mode, powershell_cmd="", user_lang="zh-TW"):
     """
-    依據語言及憑證類型生成開戶信中的安全憑證指引區塊 (註明網管職責與協助方式)
+    開戶信安全指引區塊 (已精簡移除終端 PowerShell 匯入指示)
     """
-    if cert_mode == "self_signed":
-        if user_lang == "zh-CN":
-            title = "🔒 步骤 0：Windows 导入安全证书 (IT/管理员协助)"
-            desc = "本系统使用企业内部安全证书。若您的电脑受 AD 域控管理，IT 部门通常已自动下发信任；若为个人电脑或需手动设置，请联系 IT 网管或以 <strong>系统管理员身份</strong> 运行 PowerShell 执行下列命令："
-            note = "💡 提示：执行完毕后即可安全启用 Outlook 3269 (SSL) 连接。"
-        elif user_lang == "en":
-            title = "🔒 Step 0: Import Security Certificate on Windows (IT / Admin)"
-            desc = "This system uses an internal security certificate. If your PC is managed by corporate AD domain, IT administrators usually deploy this certificate automatically. For personal computers or manual setup, please contact IT support or open PowerShell as <strong>Administrator</strong> and run the following command:"
-            note = "💡 Tip: After execution, Outlook can securely connect via port 3269 (SSL)."
-        elif user_lang == "vi":
-            title = "🔒 Bước 0: Nhập chứng chỉ bảo mật trên Windows (IT / Quản trị viên)"
-            desc = "Hệ thống sử dụng chứng chỉ bảo mật nội bộ. Nếu máy tính của bạn thuộc mạng Active Directory của công ty, bộ phận CNTT thường đã tự động cài đặt. Đối với máy tính cá nhân hoặc cài đặt thủ công, vui lòng mở PowerShell với quyền <strong>Administrator</strong> và chạy lệnh sau:"
-            note = "💡 Mẹo: Sau khi chạy lệnh, Outlook có thể kết nối an toàn qua cổng 3269 (SSL)."
-        else:  # zh-TW
-            title = "🔒 步驟 0：Windows 匯入安全憑證 (IT/網管人員協助)"
-            desc = "本系統目前使用內部安全憑證。若您的電腦受公司 AD 網域管理，資訊部門 (網管) 通常已自動派送信任；若為個人電腦或需手動設定，請洽 IT 網管人員或以 <strong>系統管理員身分</strong> 開啟 PowerShell 執行下列指令："
-            note = "💡 提示：執行完畢後即可安全啟用 Outlook 3269 (SSL) 連線，無需繁瑣匯出憑證檔。"
-
-        return f"""
-  <div class="step-box" style="border-left-color: #ed8936; background: #fffaf0;">
-    <h3 style="margin-top:0; color: #c05621;">{title}</h3>
-    <p>{desc}</p>
-    <pre style="background: #1a202c; color: #ecc94b; padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre; word-wrap: normal; font-family: Consolas, 'Courier New', monospace; font-size: 0.88em;"><code>{powershell_cmd}</code></pre>
-    <p style="font-size:0.88em; color:#744210; margin-bottom:0;">{note}</p>
-  </div>
-"""
-    else:
-        if user_lang == "zh-CN":
-            return """
-  <div class="step-box" style="border-left-color: #38a169; background: #f0fff4;">
-    <h3 style="margin-top:0; color: #276749;">🛡️ 安全证书验证已启用</h3>
-    <p style="margin-bottom:0;">本系统已启用官方受信任 SSL 证书，Windows 与 Outlook 将自动信任连接，无需手动导入证书！</p>
-  </div>
-"""
-        elif user_lang == "en":
-            return """
-  <div class="step-box" style="border-left-color: #38a169; background: #f0fff4;">
-    <h3 style="margin-top:0; color: #276749;">🛡️ Trusted SSL Certificate Active</h3>
-    <p style="margin-bottom:0;">This server is secured by an official trusted SSL certificate. Windows and Outlook will connect automatically without manual certificate import!</p>
-  </div>
-"""
-        elif user_lang == "vi":
-            return """
-  <div class="step-box" style="border-left-color: #38a169; background: #f0fff4;">
-    <h3 style="margin-top:0; color: #276749;">🛡️ Đã kích hoạt chứng chỉ SSL đáng tin cậy</h3>
-    <p style="margin-bottom:0;">Hệ thống sử dụng chứng chỉ SSL chính thức được tin cậy. Windows và Outlook sẽ tự động kết nối mà không cần cài đặt chứng chỉ thủ công!</p>
-  </div>
-"""
-        else:
-            return """
-  <div class="step-box" style="border-left-color: #38a169; background: #f0fff4;">
-    <h3 style="margin-top:0; color: #276749;">🛡️ 安全憑證驗證已啟用</h3>
-    <p style="margin-bottom:0;">本系統已啟用官方受信任 SSL 憑證，Windows 及 Outlook 將自動信任連線，無需手動匯入憑證！</p>
-  </div>
-"""
+    return ""
 
 
 def find_templates_for_lang(templates_dir, user_lang):

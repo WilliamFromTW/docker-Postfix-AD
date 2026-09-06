@@ -32,13 +32,11 @@ Content-Type: text/html; charset=UTF-8
     <ul>
       <li><strong>Máy chủ nhận thư (IMAP):</strong> <code>${MAIL_SERVER}</code> (Cổng <code>993</code> / Mã hóa SSL)</li>
       <li><strong>Máy chủ gửi thư (SMTP):</strong> <code>${MAIL_SERVER}</code> (Cổng <code>465</code> hoặc <code>587</code> / Mã hóa SSL)</li>
-      <li><strong>Thư mục danh bạ (LDAPS):</strong> <code>${MAIL_SERVER}</code> (Cổng <code>3269</code> / Mã hóa SSL)</li>
+      <li><strong>Thư mục danh bạ (LDAP/LDAPS):</strong> <code>${MAIL_SERVER}</code> (Cổng <code>3268</code> Không mã hóa / Cổng <code>3269</code> SSL)</li>
       <li><strong>Tài khoản đăng nhập:</strong> <code>${USER_NAME}</code> (Chỉ nhập tên tài khoản, không nhập @${DOMAIN})</li>
       <li><strong>Mật khẩu:</strong> Mật khẩu miền Windows AD của bạn</li>
     </ul>
   </div>
-
-  ${CERT_INSTRUCTION_BLOCK}
 
   <div class="step-box">
     <h3 style="margin-top:0; color:#2d3748;">📖 Các bước thêm danh bạ vào Outlook nhanh chóng</h3>
@@ -49,7 +47,7 @@ Content-Type: text/html; charset=UTF-8
       <li>Đánh dấu chọn <strong>"Máy chủ này yêu cầu tôi đăng nhập"</strong>, Tên người dùng nhập <code>${USER_NAME}</code> và mật khẩu miền của bạn.</li>
       <li>Nhấp <strong>"Cài đặt khác..." (More Settings ...)</strong> bên phải:
         <ul>
-          <li>Tại tab "Kết nối" (Connection), đổi cổng thành <strong><code>3269</code></strong> và đánh dấu chọn <strong>"Sử dụng SSL"</strong>.</li>
+          <li>Tại tab "Kết nối" (Connection), đổi cổng thành <strong><code>3268</code></strong> (<strong>Không chọn</strong> SSL), hoặc <strong><code>3269</code></strong> nếu chọn SSL.</li>
           <li>Tại tab "Tìm kiếm" (Search), chọn cơ sở tìm kiếm <strong>"Tùy chỉnh" (Custom)</strong> và nhập <code>${SEARCH_BASE}</code>.</li>
         </ul>
       </li>
