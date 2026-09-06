@@ -1,0 +1,85 @@
+From: postmaster@${DOMAIN}
+To: ${USER_EMAIL}
+Subject: 欢迎加入！企业电子邮件使用与客户端配置指引
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8fafc; }
+  .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 28px; max-width: 680px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+  .header { border-bottom: 2px solid #3182ce; padding-bottom: 16px; margin-bottom: 24px; }
+  .header h2 { color: #2b6cb0; margin: 0; font-size: 22px; }
+  .step-box { background: #f7fafc; border-left: 4px solid #3182ce; padding: 16px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+  code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; color: #c53030; font-size: 0.95em; }
+  .info-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .info-table td { padding: 8px 10px; border-bottom: 1px solid #edf2f7; font-size: 0.95em; }
+  .info-table td:first-child { width: 35%; font-weight: 600; color: #4a5568; }
+  ol { padding-left: 20px; margin: 10px 0; }
+  li { margin-bottom: 8px; }
+  .footer { margin-top: 28px; font-size: 0.85em; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h2>🎉 欢迎新同事加入！企业电子邮件使用与配置指引</h2>
+  </div>
+  <p>亲爱的 <strong>${USER_NAME}</strong> 同事您好：</p>
+  <p>您的企业电子邮箱 <code>${USER_EMAIL}</code> 已正式开通启用！请参阅下列服务器连接参数与配置指引，以配置您的电脑或移动设备邮件客户端（如 Outlook、Thunderbird 或手机内置邮件 App）。</p>
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748; font-size:16px;">📌 服务器连接信息</h3>
+    <table class="info-table">
+      <tr>
+        <td>完整电子邮箱地址</td>
+        <td><code>${USER_EMAIL}</code></td>
+      </tr>
+      <tr>
+        <td>登录帐号名称</td>
+        <td><code>${USER_NAME}</code> (或完整邮箱)</td>
+      </tr>
+      <tr>
+        <td>登录密码</td>
+        <td>您的 Windows AD 域登录密码</td>
+      </tr>
+      <tr>
+        <td>收信服务器 (IMAP)</td>
+        <td><code>${MAIL_SERVER}</code> (端口 <code>993</code> / SSL/TLS 加密)</td>
+      </tr>
+      <tr>
+        <td>发信服务器 (SMTP)</td>
+        <td><code>${MAIL_SERVER}</code> (端口 <code>465</code> 或 <code>587</code> / SSL/TLS 加密)</td>
+      </tr>
+      <tr>
+        <td>外发服务器身份验证</td>
+        <td>需要验证 (使用与收信相同的 AD 帐号密码)</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748; font-size:16px;">📖 常用邮件客户端快速配置步骤</h3>
+    <ol>
+      <li><strong>新增帐号：</strong> 打开 Outlook、Thunderbird 或移动设备邮件应用，选择“添加帐号”并输入您的完整邮箱 <code>${USER_EMAIL}</code>。</li>
+      <li><strong>手动配置协议：</strong> 帐号类型请选择 <strong>IMAP</strong>（推荐使用 IMAP 以实现多设备邮件实时同步）。</li>
+      <li><strong>填写服务器信息：</strong>
+        <ul>
+          <li><strong>接收服务器 (IMAP)：</strong> 主机填写 <code>${MAIL_SERVER}</code>，端口设置为 <code>993</code>，加密连接类型选择 <code>SSL/TLS</code>。</li>
+          <li><strong>发送服务器 (SMTP)：</strong> 主机填写 <code>${MAIL_SERVER}</code>，端口设置为 <code>465</code> (或 <code>587</code>)，加密连接类型选择 <code>SSL/TLS</code>。</li>
+        </ul>
+      </li>
+      <li><strong>验证与安全设置：</strong> 确保勾选“我的发送服务器 (SMTP) 需要验证”，并选择“使用与接收邮件服务器相同的设置”。</li>
+      <li><strong>完成配置：</strong> 点击测试连接，通过后即可开始收发公司日常业务邮件。</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <p>💡 本邮件由系统开户流程自动发送。若在配置过程中遇到任何问题，请联系信息管理部 (IT Service Desk)。</p>
+  </div>
+</div>
+</body>
+</html>

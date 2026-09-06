@@ -72,7 +72,7 @@ docker exec -it mailserver rspamadm control reload
 
 ### 🛡️ 专案防护机制：
 1. **不拒收（Zero-Bounce）**：在 [`actions.conf`](rspamd/local.d/actions.conf) 中将 `reject` 设为 `null`，评分达 15 分以上时一律执行 `add_header`（注入 `X-Spam: YES` 与 `X-Rspamd-Action: add header`）。
-2. **自动转送隔离**：Postfix 通过 [`milter_header_checks`](postfix_config/milter_header_checks) 拦截垃圾邮件标头，自动重定向（`REDIRECT`）至环境变量必填之 **`SPAM_EMAIL`**（如 `spam@kafeiou.pw`，且系统自动将 `postmaster` 别名绑定至此邮箱）。
+2. **自动转送隔离**：Postfix 通过 [`milter_header_checks`](postfix_config/milter_header_checks) 拦截垃圾邮件标头，自动重定向（`REDIRECT`）至环境变量指定的 **`SPAM_EMAIL`**（如 `spam@kafeiou.pw`，默认值为 `postmaster`）。
 
 ---
 

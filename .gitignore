@@ -9,8 +9,6 @@ records/
 *.db
 *.log
 *.csv
-*.exe
-ldaps-gal-proxy
 openspec/
 .agent/
 .agents/

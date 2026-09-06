@@ -66,8 +66,8 @@ class TestWelcomeProvisioner(unittest.TestCase):
         for su in system_users:
             self.assertIn(su, welcome_provisioner.SYSTEM_ACCOUNTS)
 
-    def test_certificate_detection_and_powershell_gen(self):
-        """測試自簽測試憑證偵測與 PowerShell 指令生成"""
+    def test_certificate_detection(self):
+        """測試自簽測試憑證偵測"""
         fake_cert_file = os.path.join(self.test_dir, "cert.pem")
         with open(fake_cert_file, "w", encoding="utf-8") as f:
             f.write("-----BEGIN CERTIFICATE-----\n")
@@ -77,25 +77,6 @@ class TestWelcomeProvisioner(unittest.TestCase):
 
         cert_type = welcome_provisioner.detect_certificate_type(cert_path=fake_cert_file, host_name="mail.example.com")
         self.assertEqual(cert_type, "self_signed")
-
-        ps_cmd = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "zh-TW")
-        self.assertIn("3269", ps_cmd)
-        self.assertIn("$mailServer = 'mail.example.com'", ps_cmd)
-        self.assertIn("TcpClient", ps_cmd)
-        self.assertIn("LocalMachine", ps_cmd)
-        self.assertIn("try {", ps_cmd)
-        self.assertIn("catch {", ps_cmd)
-        self.assertIn("成功匯入", ps_cmd)
-        self.assertIn("憑證匯入失敗", ps_cmd)
-        self.assertNotIn('\\""', ps_cmd)
-
-        # 測試英文與越文語系
-        ps_en = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "en")
-        self.assertIn("Certificate Added Successfully", ps_en)
-        self.assertIn("Failed to import certificate", ps_en)
-
-        ps_vi = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com", "vi")
-        self.assertIn("Da them chung chi", ps_vi)
 
     def test_hostname_dynamic_resolution(self):
         """測試主機名稱多層動態解析"""
@@ -174,7 +155,7 @@ class TestWelcomeProvisioner(unittest.TestCase):
         self.assertIn("01_welcome.eml", cn_names)
 
     def test_admin_notification_formatting(self):
-        """測試網管通知信包含主機、連接埠與專用 PowerShell 信任指令"""
+        """測試網管通知信包含主機、連接埠與連線資訊"""
         sent_boxes = []
 
         def mock_send_mail(content, recipient, envelope_from="postmaster"):
@@ -190,9 +171,8 @@ class TestWelcomeProvisioner(unittest.TestCase):
                 domain="kafeiou.pw",
                 event_type="imap_login",
                 cert_mode="self_signed",
-                sent_templates=["01_addressbook_setup.zh-TW.eml"],
+                sent_templates=["01_welcome_onboarding.zh-TW.eml"],
                 mail_server="mail.kafeiou.pw",
-                powershell_cmd="& { $mailServer = 'mail.kafeiou.pw' ... }",
                 user_lang="zh-TW"
             )
 
@@ -201,9 +181,10 @@ class TestWelcomeProvisioner(unittest.TestCase):
             self.assertIn("postmaster@kafeiou.pw", sent_boxes[0]["recipient"])
             self.assertIn("【系統管理通報】", admin_mail)
             self.assertIn("mail.kafeiou.pw", admin_mail)
-            self.assertIn("3269", admin_mail)
-            self.assertIn("【網管專區】", admin_mail)
-            self.assertIn("GPO", admin_mail)
+            self.assertIn("993", admin_mail)
+            self.assertIn("465/587", admin_mail)
+            self.assertNotIn("3269", admin_mail)
+            self.assertNotIn("【網管專區】", admin_mail)
         finally:
             welcome_provisioner.send_mail = orig_send
 

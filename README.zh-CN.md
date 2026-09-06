@@ -38,7 +38,6 @@
 | **POP3S** | `995` | SSL/TLS |
 | **IMAP** | `143` | 明文 / STARTTLS |
 | **IMAPS** | `993` | SSL/TLS |
-| **LDAPS 通讯录代理 (GAL)** | `3269` | SSL/TLS |
 | **ManageSieve** | `4190` | TLS |
 | **Rspamd Web UI** | `11334` | HTTP (建议配合反向代理使用) |
 
@@ -87,7 +86,6 @@ services:
       - mailserver_dovecot:/etc/dovecot
       - mailserver_rspamd_conf:/etc/rspamd
       - mailserver_rspamd_var:/var/lib/rspamd
-      - mailserver_ldaps_proxy:/etc/ldaps-proxy
       - mailserver_log:/var/log
 
 volumes:
@@ -97,7 +95,6 @@ volumes:
   mailserver_dovecot:
   mailserver_rspamd_conf:
   mailserver_rspamd_var:
-  mailserver_ldaps_proxy:
   mailserver_log:
 ```
 
@@ -137,22 +134,13 @@ docker volume create mailserver_log
 docker volume create mailserver_opendkim
 docker volume create mailserver_rspamd_conf
 docker volume create mailserver_rspamd_var
-docker volume create mailserver_ldaps_proxy
 ```
 
 2. 启动容器：
 ```bash
-docker run --name mailserver \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v mailserver_vmail:/home/vmail \
-  -v mailserver_opendkim:/etc/opendkim \
-  -v mailserver_postfix:/etc/postfix \
-  -v mailserver_dovecot:/etc/dovecot \
-  -v mailserver_rspamd_conf:/etc/rspamd \
-  -v mailserver_rspamd_var:/var/lib/rspamd \
-  -v mailserver_ldaps_proxy:/etc/ldaps-proxy \
-  -v mailserver_log:/var/log \
-  -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 3269:3269 -p 4190:4190 -p 11334:11334 \
+docker run -d \
+  --name mailserver \
+  -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
   -e DOMAIN_NAME="test.com" \
   -e HOST_NAME="mail.test.com" \
   -e HOST_IP="192.168.1.1" \

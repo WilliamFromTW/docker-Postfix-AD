@@ -307,46 +307,7 @@ def detect_certificate_type(cert_path=None, host_name=None):
     return "self_signed"
 
 
-def generate_powershell_trust_cmd(mail_server, user_lang="zh-TW"):
-    """
-    生成具備完整 try...catch 錯誤攔截、多行排版、語系在地化且無折行風險的 PowerShell 指令
-    """
-    if user_lang == "zh-CN":
-        ok_msg = "[OK] $mailServer 通讯录安全证书已成功导入受信任列表！"
-        err_msg = "[ERROR] 证书导入失败"
-    elif user_lang == "vi":
-        ok_msg = "[OK] Da them chung chi bao mat $mailServer thanh cong!"
-        err_msg = "[ERROR] Khong the them chung chi"
-    elif user_lang == "en":
-        ok_msg = "[OK] $mailServer Certificate Added Successfully!"
-        err_msg = "[ERROR] Failed to import certificate"
-    else:  # zh-TW
-        ok_msg = "[OK] $mailServer 通訊錄安全憑證已成功匯入受信任清單！"
-        err_msg = "[ERROR] 憑證匯入失敗"
 
-    return f"""try {{
-    $mailServer = '{mail_server}'
-    $tcp = New-Object System.Net.Sockets.TcpClient($mailServer, 3269)
-    $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, ({{$true}} -as [System.Net.Security.RemoteCertificateValidationCallback]))
-    $ssl.AuthenticateAsClient($mailServer)
-    if (-not $ssl.RemoteCertificate) {{ throw "No certificate received from $mailServer:3269" }}
-    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($ssl.RemoteCertificate)
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'LocalMachine')
-    $store.Open('ReadWrite')
-    $store.Add($cert)
-    $store.Close()
-    $tcp.Close()
-    Write-Host "{ok_msg}" -ForegroundColor Green
-}} catch {{
-    Write-Host "{err_msg}: $($_.Exception.Message)" -ForegroundColor Red
-}}"""
-
-
-def generate_cert_block(cert_mode, powershell_cmd="", user_lang="zh-TW"):
-    """
-    開戶信安全指引區塊 (已精簡移除終端 PowerShell 匯入指示)
-    """
-    return ""
 
 
 def find_templates_for_lang(templates_dir, user_lang):
@@ -474,26 +435,15 @@ def send_mail(raw_email_content, recipient, envelope_from="postmaster"):
 
 
 def notify_admin_onboarding_done(user_name, user_email, domain, event_type, cert_mode, sent_templates,
-                                 mail_server="", powershell_cmd="", user_lang="zh-TW"):
+                                 mail_server="", user_lang="zh-TW"):
     """
-    開戶完成後向 postmaster (自動遞送至 SPAM_EMAIL) 發送詳細系統通報信 (含伺服器連線參數與網管專用指令)
+    開戶完成後向 postmaster (自動遞送至 SPAM_EMAIL) 發送詳細系統通報信 (含伺服器連線參數)
     """
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     subject = f"[系統通報] 新帳號開戶完成: {user_name} ({user_lang})"
     admin_recipient = f"postmaster@{domain}"
 
     templates_html = "".join([f"<li><code>{os.path.basename(t)}</code></li>" for t in sent_templates])
-
-    admin_cert_block = ""
-    if cert_mode == "self_signed" and powershell_cmd:
-        admin_cert_block = f"""
-    <div style="background: #edf2f7; border-left: 4px solid #4a5568; padding: 12px; margin-top: 15px; border-radius: 4px;">
-      <h4 style="margin-top:0; color: #2d3748;">🛠️ 【網管專區】Windows 用戶端憑證信任指令</h4>
-      <p style="font-size:0.9em; margin-bottom: 8px;">網管人員可於受測端電腦開啟 Administrator PowerShell 貼上執行以快速驗證，或透過 AD GPO 集中發布至全域電腦：</p>
-      <pre style="background: #1a202c; color: #ecc94b; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre; word-wrap: normal; font-family: Consolas, 'Courier New', monospace; font-size: 0.85em;"><code>{powershell_cmd}</code></pre>
-      <p style="font-size:0.85em; color: #718096; margin-bottom:0;">📌 GPO 派送建議：電腦設定 (Computer Configuration) ➔ 原則 ➔ Windows 設定 ➔ 安全性設定 ➔ 公開金鑰原則 ➔ 受信任的根憑證授權單位。</p>
-    </div>
-"""
 
     body = f"""From: postmaster@{domain}
 To: {admin_recipient}
@@ -514,8 +464,7 @@ Content-Type: text/html; charset=UTF-8
     <li><strong>郵件伺服器 (Host)：</strong> <code>{mail_server}</code></li>
     <li><strong>連線資訊：</strong>
       IMAP: <code>{mail_server}:993 (SSL)</code> |
-      SMTP: <code>{mail_server}:465/587 (SSL)</code> |
-      LDAPS GAL: <code>{mail_server}:3269 (SSL)</code>
+      SMTP: <code>{mail_server}:465/587 (SSL)</code>
     </li>
     <li><strong>憑證模式：</strong> <code>{cert_mode}</code></li>
     <li><strong>完成時間：</strong> {now_str}</li>
@@ -523,7 +472,6 @@ Content-Type: text/html; charset=UTF-8
       <ul>{templates_html}</ul>
     </li>
   </ul>
-  {admin_cert_block}
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin-top: 20px;">
   <p style="font-size: 0.85em; color: #718096;">此信件由系統開戶排程自動寄發至 postmaster (已綁定至 SPAM_EMAIL)。</p>
 </body>
@@ -594,11 +542,7 @@ def process_onboarding(args):
 
     # 5. 主機與憑證類型動態偵測
     mail_server = get_host_name(domain)
-    search_base = os.getenv("SEARCH_BASE", f"DC={domain.replace('.', ',DC=')}")
     cert_mode = detect_certificate_type(args.cert_path, mail_server)
-
-    powershell_cmd = generate_powershell_trust_cmd(mail_server, user_lang)
-    cert_block = generate_cert_block(cert_mode, powershell_cmd, user_lang)
 
     # 6. 載入並依序派送範本
     templates_dir = args.templates_dir
@@ -629,9 +573,6 @@ def process_onboarding(args):
                     "${USER_EMAIL}": user_email,
                     "${DOMAIN}": domain,
                     "${MAIL_SERVER}": mail_server,
-                    "${SEARCH_BASE}": search_base,
-                    "${POWERSHELL_CMD}": powershell_cmd,
-                    "${CERT_INSTRUCTION_BLOCK}": cert_block,
                 }
                 for placeholder, val in replacements.items():
                     content = content.replace(placeholder, val)
@@ -650,7 +591,6 @@ def process_onboarding(args):
         cert_mode=cert_mode,
         sent_templates=sent_templates,
         mail_server=mail_server,
-        powershell_cmd=powershell_cmd,
         user_lang=user_lang
     )
     return True

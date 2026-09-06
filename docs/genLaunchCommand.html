@@ -126,8 +126,8 @@
             </div>
 
             <div class="col-md-6">
-              <label for="inputSpamEmail" class="form-label font-weight-bold" data-i18n="spamEmail">SPAM_EMAIL (Required)</label>
-              <input type="email" class="form-control" id="inputSpamEmail" data-i18n-placeholder="placeholderSpam" placeholder="spam@test.com" required>
+              <label for="inputSpamEmail" class="form-label" data-i18n="spamEmail">SPAM_EMAIL (optional)</label>
+              <input type="email" class="form-control" id="inputSpamEmail" data-i18n-placeholder="placeholderSpam" placeholder="spam@test.com">
             </div>
 
             <div class="col-md-6">
@@ -230,7 +230,7 @@
           aliases: "AD Aliases (optional)",
           domain: "Email Domain",
           mailServerName: "Email Server Name (FQDN)",
-          spamEmail: "SPAM_EMAIL (Required, Admin & Quarantine Mailbox)",
+          spamEmail: "SPAM_EMAIL (optional)",
           permitNetwork: "Permit Trusted Networks (optional)",
           timeZone: "Time Zone",
           tzLink: "List of Time Zones",
@@ -278,7 +278,7 @@
           aliases: "AD 別名群組 (Aliases，選填)",
           domain: "電子郵件網域 (Email Domain)",
           mailServerName: "郵件主機完整名稱 (Server FQDN)",
-          spamEmail: "管理員與隔離信箱 (SPAM_EMAIL，必填)",
+          spamEmail: "垃圾郵件信箱 (SPAM_EMAIL，選填)",
           permitNetwork: "信任網段 (Permit Networks，選填)",
           timeZone: "時區 (Time Zone)",
           tzLink: "查看時區列表 (List of Time Zones)",
@@ -326,7 +326,7 @@
           aliases: "AD 别名组 (Aliases，选填)",
           domain: "电子邮件域名 (Email Domain)",
           mailServerName: "邮件主机完整名称 (Server FQDN)",
-          spamEmail: "管理员与隔离邮箱 (SPAM_EMAIL，必填)",
+          spamEmail: "垃圾邮件邮箱 (SPAM_EMAIL，选填)",
           permitNetwork: "信任网络网段 (Permit Networks，选填)",
           timeZone: "时区 (Time Zone)",
           tzLink: "查看时区列表 (List of Time Zones)",
@@ -374,7 +374,7 @@
           aliases: "Bí danh nhóm AD (Aliases, tùy chọn)",
           domain: "Tên miền Email (Email Domain)",
           mailServerName: "Tên đầy đủ của máy chủ Mail (Server FQDN)",
-          spamEmail: "Hòm thư quản trị & thư rác (SPAM_EMAIL, bắt buộc)",
+          spamEmail: "Hòm thư thư rác (SPAM_EMAIL, tùy chọn)",
           permitNetwork: "Dải mạng tin cậy (Permit Networks, tùy chọn)",
           timeZone: "Múi giờ (Time Zone)",
           tzLink: "Xem danh sách múi giờ (List of Time Zones)",
@@ -505,8 +505,7 @@
           "docker volume create " + containerName + "_log\n" +
           "docker volume create " + containerName + "_opendkim\n" +
           "docker volume create " + containerName + "_rspamd_conf\n" +
-          "docker volume create " + containerName + "_rspamd_var\n" +
-          "docker volume create " + containerName + "_ldaps_proxy\n\n" +
+          "docker volume create " + containerName + "_rspamd_var\n\n" +
           dict.commentRun + "\n" +
           "docker run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -516,9 +515,8 @@
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
-          " -v " + containerName + "_ldaps_proxy:/etc/ldaps-proxy \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
-          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 3269:3269 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
           " -e DOMAIN_NAME='" + domain + "' \\\n" +
           " -e HOST_NAME='" + mailServerName + "' \\\n" +
           " -e HOST_IP='" + adIp + "' \\\n" +
@@ -539,8 +537,7 @@
           "podman volume create " + containerName + "_log\n" +
           "podman volume create " + containerName + "_opendkim\n" +
           "podman volume create " + containerName + "_rspamd_conf\n" +
-          "podman volume create " + containerName + "_rspamd_var\n" +
-          "podman volume create " + containerName + "_ldaps_proxy\n\n" +
+          "podman volume create " + containerName + "_rspamd_var\n\n" +
           dict.commentRun + "\n" +
           "podman run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -550,9 +547,8 @@
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
-          " -v " + containerName + "_ldaps_proxy:/etc/ldaps-proxy \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
-          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 3269:3269 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
           " -e DOMAIN_NAME='" + domain + "' \\\n" +
           " -e HOST_NAME='" + mailServerName + "' \\\n" +
           " -e HOST_IP='" + adIp + "' \\\n" +
@@ -612,7 +608,6 @@
           "      - " + containerName + "_dovecot:/etc/dovecot\n" +
           "      - " + containerName + "_rspamd_conf:/etc/rspamd\n" +
           "      - " + containerName + "_rspamd_var:/var/lib/rspamd\n" +
-          "      - " + containerName + "_ldaps_proxy:/etc/ldaps-proxy\n" +
           "      - " + containerName + "_log:/var/log\n\n" +
           "volumes:\n" +
           "  " + containerName + "_vmail:\n" +
@@ -621,7 +616,6 @@
           "  " + containerName + "_dovecot:\n" +
           "  " + containerName + "_rspamd_conf:\n" +
           "  " + containerName + "_rspamd_var:\n" +
-          "  " + containerName + "_ldaps_proxy:\n" +
           "  " + containerName + "_log:\n";
 
         cachedResults = {

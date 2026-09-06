@@ -102,18 +102,6 @@ fi
 if [ -n "${SPAM_EMAIL}" ]; then
  sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
  sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
-
- # 自動將 postmaster, abuse, root, mailer-daemon 綁定轉寄至 SPAM_EMAIL (滿足 RFC 5321 與系統告警承接)
- if [ -f "/etc/postfix/aliases" ] && [ -n "${DOMAIN_NAME}" ]; then
-   for d in "${DOMAIN_NAME}" ${LOCAL_ONLY_DOMAINS} ${LOCAL_ONLY2_DOMAINS}; do
-     [ -z "$d" ] && continue
-     grep -q "^postmaster@${d}" /etc/postfix/aliases || echo "postmaster@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
-     grep -q "^abuse@${d}" /etc/postfix/aliases || echo "abuse@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
-     grep -q "^root@${d}" /etc/postfix/aliases || echo "root@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
-     grep -q "^mailer-daemon@${d}" /etc/postfix/aliases || echo "mailer-daemon@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
-   done
-   /usr/sbin/postmap /etc/postfix/aliases 2>/dev/null || true
- fi
 else
  sed -i "s/SPAM_EMAIL/postmaster/g" /etc/postfix/milter_header_checks
  sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
@@ -135,19 +123,6 @@ if [ -n "${TZ}" ] ; then
 else
  TZ="Asia/Taipei"; export TZ ;
 fi 
-
-# 匯出郵件核心環境變數至 /etc/mail_env 並讓 Dovecot 子行程 (postlogin / sieve) 繼承
-cat <<EOF > /etc/mail_env
-export HOST_NAME="${HOST_NAME}"
-export DOMAIN_NAME="${DOMAIN_NAME}"
-export DEFAULT_LANG="${DEFAULT_LANG:-zh-TW}"
-export SEARCH_BASE="${SEARCH_BASE}"
-export HOST_IP="${HOST_IP}"
-export TZ="${TZ}"
-EOF
-chmod 644 /etc/mail_env
-
-sed -i "s/#import_environment = TZ/import_environment = TZ HOST_NAME DOMAIN_NAME DEFAULT_LANG SEARCH_BASE HOST_IP/g" /etc/dovecot/dovecot.conf 2>/dev/null || true
 
 if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
@@ -191,32 +166,6 @@ if [ -d "/etc/dovecot/sieve/global" ]; then
   done
   chown -R vmail:vmail /etc/dovecot/sieve
 fi
-
-mkdir -p /etc/dovecot/welcome_templates
-chown -R vmail:vmail /etc/dovecot/welcome_templates
-chmod -R 755 /etc/dovecot/welcome_templates
-
-# 初始化 LDAPS 通訊錄代理設定目錄與審計日誌
-mkdir -p /etc/ldaps-proxy
-chmod 755 /etc/ldaps-proxy
-if [ ! -f "/etc/ldaps-proxy/config.yaml" ]; then
-  cat << 'EOF' > /etc/ldaps-proxy/config.yaml
-# LDAPS GAL Proxy 設定檔 (留空則自動繼承容器既有之 HOST_IP、SEARCH_BASE、DOMAIN_NAME)
-listen_addr: ":3269"
-plain_listen_addr: ":3268"
-log_file: "/var/log/ldaps-gal-proxy.log"
-max_failures: 3
-cooldown_min: 10
-window_min: 5
-# default_gc:
-#   - host: "192.168.1.1"
-#     port: 3268
-EOF
-  chmod 644 /etc/ldaps-proxy/config.yaml
-fi
-
-touch /var/log/ldaps-gal-proxy.log
-chmod 666 /var/log/ldaps-gal-proxy.log
 
 # 導出 Ollama 與時區設定供 Sieve 外部腳本讀取（Dovecot sieve_extprograms 預設隔離環境變數）
 cat << EOF > /etc/dovecot/ollama.env
@@ -278,10 +227,5 @@ chown clamupdate:clamupdate /var/lib/clamav
 chmod 755 /var/lib/clamav
 sudo mkdir -p /run/clamd.scan
 sudo chown clamscan:clamscan /run/clamd.scan
-# 確保 Postfix 關閉 SMTPUTF8 以免 Dovecot LMTP 退信
-if [ -f "/etc/postfix/main.cf" ]; then
-  grep -q "^smtputf8_enable" /etc/postfix/main.cf || echo "smtputf8_enable = no" >> /etc/postfix/main.cf
-fi
-
 freshclam
 /usr/bin/supervisord -c /etc/supervisord.conf
