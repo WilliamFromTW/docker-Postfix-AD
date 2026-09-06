@@ -1,5 +1,5 @@
 # Stage 1: Build Go LDAPS GAL Proxy (Port 3269 -> 3268)
-FROM golang:1.24-alpine AS builder
+FROM golang:alpine AS builder
 WORKDIR /app
 COPY ldaps-proxy/go.mod ldaps-proxy/go.sum* ./
 RUN go mod download || true
