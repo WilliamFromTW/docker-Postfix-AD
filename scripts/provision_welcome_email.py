@@ -128,7 +128,13 @@ def main():
         else:
             email_addr = user
 
-        account = email_addr.split("@")[0] if "@" in email_addr else user
+        # Determine login account name: prioritize pure login account from user environment (sAMAccountName)
+        if user and "@" not in user:
+            account = user
+        elif "@" in email_addr:
+            account = email_addr.split("@")[0]
+        else:
+            account = user
 
         if not domain and "@" in email_addr:
             domain = email_addr.split("@")[1]
