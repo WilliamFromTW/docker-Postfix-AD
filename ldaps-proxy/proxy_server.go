@@ -118,13 +118,48 @@ func (s *ProxyServer) isAllowedAttr(name string) bool {
 	return false
 }
 
-// getBackendGC 嘗試連線至可用的後端 Global Catalog (Port 3268) 主機
+// getBackendGC 嘗試連線至可用的後端 Global Catalog (Port 3268) 主機 (支援 StartTLS 與 LDAPS)
 func (s *ProxyServer) getBackendGC() (*ldap.Conn, error) {
 	var lastErr error
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+
 	for _, backend := range s.cfg.DefaultGC {
 		addr := fmt.Sprintf("%s:%d", backend.Host, backend.Port)
-		conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s", addr), ldap.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}))
+
+		// 1. 若配置直接為 LDAPS 連接埠 (3269 或 636)，以 TLS 直連
+		if backend.Port == 3269 || backend.Port == 636 {
+			conn, err := ldap.DialURL(fmt.Sprintf("ldaps://%s", addr),
+				ldap.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}),
+				ldap.DialWithTLSConfig(tlsConfig),
+			)
+			if err == nil {
+				return conn, nil
+			}
+			lastErr = err
+			continue
+		}
+
+		// 2. 對於 Port 3268 / 389：先建立 TCP 連線，並自動升級 StartTLS 傳輸加密 (滿足 AD "Transport encryption required" 要求)
+		conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s", addr),
+			ldap.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}),
+		)
 		if err == nil {
+			if tlsErr := conn.StartTLS(tlsConfig); tlsErr == nil {
+				return conn, nil
+			}
+
+			// 若 StartTLS 協商失敗，嘗試備援探測 AD 是否開啟 3269 (LDAPS GC)
+			ldapsAddr := fmt.Sprintf("%s:3269", backend.Host)
+			ldapsConn, ldapsErr := ldap.DialURL(fmt.Sprintf("ldaps://%s", ldapsAddr),
+				ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}),
+				ldap.DialWithTLSConfig(tlsConfig),
+			)
+			if ldapsErr == nil {
+				conn.Close()
+				return ldapsConn, nil
+			}
+
+			// 若無法升級 TLS，返回原明文連線以相容未開啟 TLS 的純內網測試環境
 			return conn, nil
 		}
 		lastErr = err
@@ -226,11 +261,17 @@ func (s *ProxyServer) HandleBind(w ldapserver.ResponseWriter, m *ldapserver.Mess
 		dn, upn, err := s.resolveUserIdentity(rawUser)
 		if err != nil {
 			s.logAudit("[AUTH_FAIL_LOOKUP] client=%s user=%q err=%v", clientAddr, rawUser, err)
-			blocked := s.cb.RecordFailure(clientAddr, rawUser)
-			if blocked {
-				s.logAudit("[CIRCUIT_TRIGGERED] client=%s user=%q triggered cooldown for %d minutes", clientAddr, rawUser, s.cfg.CooldownMin)
+			// 僅在明確「使用者不存在於 GC」時計入失敗熔斷次數；
+			// 若為後端服務連線失敗或 AD 傳輸加密問題，屬於後端系統異常，回傳 OperationsError，不鎖定使用者帳號
+			if strings.Contains(err.Error(), "not found in GC") {
+				blocked := s.cb.RecordFailure(clientAddr, rawUser)
+				if blocked {
+					s.logAudit("[CIRCUIT_TRIGGERED] client=%s user=%q triggered cooldown for %d minutes", clientAddr, rawUser, s.cfg.CooldownMin)
+				}
+				w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultInvalidCredentials))
+			} else {
+				w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultOperationsError))
 			}
-			w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultInvalidCredentials))
 			return
 		}
 		resolvedDN = dn
