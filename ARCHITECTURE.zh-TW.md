@@ -46,6 +46,18 @@ graph TD
 4. **限制僅限本地網域寄收（`local_only`）**：
    - 在 AD 使用者或群組的 `description` 屬性填入 `local_only`。
    - Postfix 會阻擋此帳號對外部公網寄信或收信，僅允許在內部網域互寄。
+5. **使用者母語設定（`preferredLanguage` 屬性，首次登入歡迎信語系）**：
+   - 當新進同仁首次以 IMAP 或 POP3 登入時，系統會自動讀取其 AD 帳號的 `preferredLanguage` 屬性，並將對應語言的企業郵件設定指南（含 Outlook、Thunderbird、iOS、Android 連線教學）投遞至收件匣。
+   - **Active Directory `preferredLanguage` 屬性設定對照表**：
+     | 目標語系 | 建議標準填法 | 系統容錯支援值 (大小寫不拘) | 投遞範本檔案 |
+     | :--- | :--- | :--- | :--- |
+     | **繁體中文** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
+     | **簡體中文** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
+     | **越南文** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
+     | **英文** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
+     | **未設定 / 留空 / 其他語言** | *(空白)* 或如 `ja`, `ko` | 任何不在上述清單中的代碼 | **自動保底英文 (`welcome.en.eml`)** |
+   - **AD 管理員設定步驟**：開啟 Windows Server「Active Directory 使用者和電腦」(dsa.msc) ➔ 上方功能表「檢視 (View)」勾選「進階功能 (Advanced Features)」 ➔ 雙擊使用者 ➔ 切換至「屬性編輯器 (Attribute Editor)」分頁 ➔ 找到 `preferredLanguage` 欄位填入對應代碼（如 `zh-TW` 或 `vi`）並儲存。
+
 
 ---
 

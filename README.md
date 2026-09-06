@@ -24,6 +24,7 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 - **Rspamd**: High-performance spam filter with Web UI.
 - **ClamAV**: Antivirus scanner integration.
 - **Mailbox Quota**: Dovecot quota management (default 20GB, configurable).
+- **First-Login Localized Welcome Email**: When a new user logs in via IMAP/POP3 for the first time (Outlook, Thunderbird, iOS, Android), the server automatically detects their native language from AD's `preferredLanguage` attribute and deposits a personalized setup guide into their INBOX (supports zh-TW, zh-CN, vi, with en fallback).
 
 ---
 
@@ -84,6 +85,7 @@ services:
       - mailserver_opendkim:/etc/opendkim
       - mailserver_postfix:/etc/postfix
       - mailserver_dovecot:/etc/dovecot
+      - mailserver_welcome:/etc/dovecot/welcome_templates
       - mailserver_rspamd_conf:/etc/rspamd
       - mailserver_rspamd_var:/var/lib/rspamd
       - mailserver_log:/var/log
@@ -93,6 +95,7 @@ volumes:
   mailserver_opendkim:
   mailserver_postfix:
   mailserver_dovecot:
+  mailserver_welcome:
   mailserver_rspamd_conf:
   mailserver_rspamd_var:
   mailserver_log:
@@ -123,6 +126,27 @@ After saving, run `docker compose up -d` to immediately apply changes.
 
 ---
 
+#### 📬 First-Login Welcome Email & AD Language Configuration (preferredLanguage)
+When a user logs in via IMAP/POP3 for the first time, the system reads their Active Directory `preferredLanguage` attribute and automatically delivers a tailored welcome email (with server connection parameters and Outlook, Thunderbird, iOS, and Android setup guides).
+
+**Active Directory `preferredLanguage` Attribute Mapping Table**:
+
+| Target Language | Recommended Standard Value | Tolerant Supported Values (Case-Insensitive) | Template File |
+| :--- | :--- | :--- | :--- |
+| **Traditional Chinese** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
+| **Simplified Chinese** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
+| **Vietnamese** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
+| **English** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
+| **Unset / Empty / Other** | *(Blank)* or e.g. `ja`, `ko` | Any unsupported language code | **Default English Fallback (`welcome.en.eml`)** |
+
+> **💡 AD Administrator Setup Steps**:
+> 1. Open Windows Server **Active Directory Users and Computers** (`dsa.msc`).
+> 2. In the top menu, select **View** ➔ check **Advanced Features**.
+> 3. Double-click the user ➔ switch to the **Attribute Editor** tab.
+> 4. Locate the `preferredLanguage` attribute, click Edit, enter the desired code (e.g. `zh-TW` or `vi`), and save.
+
+---
+
 ### Option 3: Docker CLI Command
 
 1. Create named volumes:
@@ -130,6 +154,7 @@ After saving, run `docker compose up -d` to immediately apply changes.
 docker volume create mailserver_vmail
 docker volume create mailserver_postfix
 docker volume create mailserver_dovecot
+docker volume create mailserver_welcome
 docker volume create mailserver_log
 docker volume create mailserver_opendkim
 docker volume create mailserver_rspamd_conf
@@ -144,6 +169,7 @@ docker run --name mailserver \
   -v mailserver_opendkim:/etc/opendkim \
   -v mailserver_postfix:/etc/postfix \
   -v mailserver_dovecot:/etc/dovecot \
+  -v mailserver_welcome:/etc/dovecot/welcome_templates \
   -v mailserver_rspamd_conf:/etc/rspamd \
   -v mailserver_rspamd_var:/var/lib/rspamd \
   -v mailserver_log:/var/log \

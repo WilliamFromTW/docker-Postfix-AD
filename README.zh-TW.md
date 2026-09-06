@@ -24,6 +24,7 @@
 - **Rspamd**：高效能垃圾郵件過濾引擎與 Web 控制台。
 - **ClamAV**：內建防毒掃描。
 - **信箱配額限制 (Quota)**：預設 20GB（可彈性調整）。
+- **新帳號首次登入歡迎信 (First-Login Localized Welcome Email)**：新進同仁首次以收信軟體（Outlook、Thunderbird、iOS、Android）連線時，系統自動依據 Active Directory 的 `preferredLanguage` 屬性（支援繁中、簡中、越文、英文保底）將包含伺服器參數與設定教學的專屬歡迎信投遞至收件匣。
 
 ---
 
@@ -84,6 +85,7 @@ services:
       - mailserver_opendkim:/etc/opendkim
       - mailserver_postfix:/etc/postfix
       - mailserver_dovecot:/etc/dovecot
+      - mailserver_welcome:/etc/dovecot/welcome_templates
       - mailserver_rspamd_conf:/etc/rspamd
       - mailserver_rspamd_var:/var/lib/rspamd
       - mailserver_log:/var/log
@@ -93,6 +95,7 @@ volumes:
   mailserver_opendkim:
   mailserver_postfix:
   mailserver_dovecot:
+  mailserver_welcome:
   mailserver_rspamd_conf:
   mailserver_rspamd_var:
   mailserver_log:
@@ -123,6 +126,27 @@ docker compose up -d
 
 ---
 
+#### 📬 新帳號首次登入歡迎信與 AD 語系設定 (Active Directory preferredLanguage)
+系統在使用者首次成功通過 IMAP/POP3 登入時，會讀取 AD 帳號的 `preferredLanguage` 屬性，自動將符合其母語的歡迎信（含連線參數與 Outlook、Thunderbird、iOS、Android 四大客戶端圖文教學）投遞至收件匣。
+
+**Active Directory `preferredLanguage` 屬性設定對照表**：
+
+| 目標語系 | 建議標準填法 | 系統容錯支援值 (大小寫不拘) | 投遞範本檔案 |
+| :--- | :--- | :--- | :--- |
+| **繁體中文** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
+| **簡體中文** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
+| **越南文** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
+| **英文** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
+| **未設定 / 留空 / 其他語言** | *(空白)* 或如 `ja`, `ko` | 任何不在上述清單中的代碼 | **自動保底英文 (`welcome.en.eml`)** |
+
+> **💡 AD 管理員設定步驟**：
+> 1. 開啟 Windows Server「Active Directory 使用者和電腦」(dsa.msc)。
+> 2. 上方功能表點選「檢視 (View)」➔ 勾選 **「進階功能 (Advanced Features)」**。
+> 3. 雙擊該名使用者 ➔ 切換至 **「屬性編輯器 (Attribute Editor)」** 分頁。
+> 4. 找到 `preferredLanguage` 屬性，點擊編輯填入代碼（例如 `zh-TW` 或 `vi`）並儲存即可。
+
+---
+
 ### 方式三：使用 Docker CLI 指令
 
 1. 建立持久化 Volumes：
@@ -130,6 +154,7 @@ docker compose up -d
 docker volume create mailserver_vmail
 docker volume create mailserver_postfix
 docker volume create mailserver_dovecot
+docker volume create mailserver_welcome
 docker volume create mailserver_log
 docker volume create mailserver_opendkim
 docker volume create mailserver_rspamd_conf
@@ -144,6 +169,7 @@ docker run --name mailserver \
   -v mailserver_opendkim:/etc/opendkim \
   -v mailserver_postfix:/etc/postfix \
   -v mailserver_dovecot:/etc/dovecot \
+  -v mailserver_welcome:/etc/dovecot/welcome_templates \
   -v mailserver_rspamd_conf:/etc/rspamd \
   -v mailserver_rspamd_var:/var/lib/rspamd \
   -v mailserver_log:/var/log \

@@ -24,6 +24,7 @@
 - **Rspamd**: Bộ lọc thư rác hiệu suất cao với giao diện Web UI.
 - **ClamAV**: Tích hợp quét mã độc/virus.
 - **Hạn ngạch hòm thư (Quota)**: Mặc định 20GB (có thể tùy chỉnh).
+- **Email chào mừng bản địa hóa khi đăng nhập lần đầu (First-Login Localized Welcome Email)**: Khi nhân viên mới đăng nhập lần đầu qua ứng dụng email (Outlook, Thunderbird, iOS, Android), hệ thống tự động đọc thuộc tính `preferredLanguage` trong Active Directory (hỗ trợ Tiếng Việt, Tiếng Anh, Tiếng Trung phồn thể/giản thể) để gửi hướng dẫn cấu hình chi tiết vào Hộp thư đến (INBOX).
 
 ---
 
@@ -84,6 +85,7 @@ services:
       - mailserver_opendkim:/etc/opendkim
       - mailserver_postfix:/etc/postfix
       - mailserver_dovecot:/etc/dovecot
+      - mailserver_welcome:/etc/dovecot/welcome_templates
       - mailserver_rspamd_conf:/etc/rspamd
       - mailserver_rspamd_var:/var/lib/rspamd
       - mailserver_log:/var/log
@@ -93,6 +95,7 @@ volumes:
   mailserver_opendkim:
   mailserver_postfix:
   mailserver_dovecot:
+  mailserver_welcome:
   mailserver_rspamd_conf:
   mailserver_rspamd_var:
   mailserver_log:
@@ -123,6 +126,27 @@ Sau khi lưu, chạy `docker compose up -d` để áp dụng ngay lập tức!
 
 ---
 
+#### 📬 Email Chào Mừng Lần Đầu & Cấu Hình Ngôn Ngữ AD (Active Directory preferredLanguage)
+Khi người dùng đăng nhập lần đầu tiên qua IMAP/POP3, hệ thống sẽ đọc thuộc tính `preferredLanguage` của tài khoản AD và tự động gửi email chào mừng bằng ngôn ngữ tương ứng (kèm thông số kết nối và hướng dẫn cài đặt Outlook, Thunderbird, iOS, Android) vào Hộp thư đến (INBOX).
+
+**Bảng tra cứu cấu hình thuộc tính Active Directory `preferredLanguage`**:
+
+| Ngôn ngữ mục tiêu | Giá trị chuẩn khuyến nghị | Giá trị tương thích (Không phân biệt hoa thường) | Tệp mẫu gửi đi |
+| :--- | :--- | :--- | :--- |
+| **Tiếng Việt** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
+| **Tiếng Trung phồn thể** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
+| **Tiếng Trung giản thể** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
+| **Tiếng Anh** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
+| **Chưa thiết lập / Để trống / Khác** | *(Để trống)* hoặc ví dụ `ja`, `ko` | Bất kỳ mã ngôn ngữ nào chưa được hỗ trợ | **Tự động dùng Tiếng Anh dự phòng (`welcome.en.eml`)** |
+
+> **💡 Các bước thiết lập cho Quản trị viên AD**:
+> 1. Mở Windows Server **Active Directory Users and Computers** (`dsa.msc`).
+> 2. Trên thanh menu trên cùng, chọn **View** ➔ tích chọn **Advanced Features**.
+> 3. Nhấp đúp vào tài khoản người dùng ➔ chuyển sang tab **Attribute Editor**.
+> 4. Tìm thuộc tính `preferredLanguage`, nhấp Edit, nhập mã ngôn ngữ mong muốn (ví dụ: `vi` hoặc `zh-TW`) và nhấn lưu.
+
+---
+
 ### Cách 3: Sử dụng lệnh Docker CLI
 
 1. Tạo các Volume lưu trữ:
@@ -131,6 +155,7 @@ docker volume create mailserver_vmail
 docker volume create mailserver_opendkim
 docker volume create mailserver_postfix
 docker volume create mailserver_dovecot
+docker volume create mailserver_welcome
 docker volume create mailserver_rspamd_conf
 docker volume create mailserver_rspamd_var
 docker volume create mailserver_log
@@ -138,8 +163,16 @@ docker volume create mailserver_log
 
 2. Khởi chạy container:
 ```bash
-docker run -d \
-  --name mailserver \
+docker run --name mailserver \
+  -v /etc/letsencrypt:/etc/letsencrypt \
+  -v mailserver_vmail:/home/vmail \
+  -v mailserver_opendkim:/etc/opendkim \
+  -v mailserver_postfix:/etc/postfix \
+  -v mailserver_dovecot:/etc/dovecot \
+  -v mailserver_welcome:/etc/dovecot/welcome_templates \
+  -v mailserver_rspamd_conf:/etc/rspamd \
+  -v mailserver_rspamd_var:/var/lib/rspamd \
+  -v mailserver_log:/var/log \
   -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \
   -e DOMAIN_NAME="test.com" \
   -e HOST_NAME="mail.test.com" \
