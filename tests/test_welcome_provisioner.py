@@ -214,6 +214,16 @@ class TestWelcomeProvisioner(unittest.TestCase):
         self.assertIn("<div>CERT OK</div>", result)
         self.assertNotIn("${USER_NAME}", result)
 
+    def test_encode_header_rfc2047(self):
+        """測試標頭 RFC 2047 MIME 編碼以防範 Postfix SMTPUTF8 限制"""
+        ascii_header = "Hello World"
+        self.assertEqual(welcome_provisioner.encode_header_rfc2047(ascii_header), "Hello World")
+
+        chinese_header = "歡迎加入！企業電子郵件使用與用戶端設定指引"
+        encoded = welcome_provisioner.encode_header_rfc2047(chinese_header)
+        self.assertTrue(encoded.startswith("=?utf-8?"), f"Expected RFC 2047 encoded header, got: {encoded}")
+        self.assertIn("?=", encoded)
+
 
 if __name__ == "__main__":
     unittest.main()

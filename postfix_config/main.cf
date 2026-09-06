@@ -840,3 +840,6 @@ smtpd_submission_data_restrictions = check_sender_access pcre:/etc/postfix/submi
 default_database_type = lmdb
 alias_maps = lmdb:/etc/aliases
 alias_database = lmdb:/etc/aliases
+
+# 關閉 SMTPUTF8 以確保相容於不支援 SMTPUTF8 的 Dovecot LMTP 投遞
+smtputf8_enable = no

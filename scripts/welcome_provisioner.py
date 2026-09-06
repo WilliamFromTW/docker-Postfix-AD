@@ -9,7 +9,7 @@ import os
 import sys
 import argparse
 import email
-from email.header import decode_header
+from email.header import decode_header, Header
 from datetime import datetime
 import subprocess
 import glob
@@ -49,6 +49,20 @@ def decode_str(header_val):
         else:
             parts.append(str(content))
     return "".join(parts).strip()
+
+
+def encode_header_rfc2047(val):
+    """
+    若標頭字串包含非 ASCII 字元，轉為 RFC 2047 MIME 編碼以確保符合 7-bit ASCII 標準，
+    徹底防止觸發 Postfix SMTPUTF8 與下游 Dovecot LMTP 投遞拒收問題
+    """
+    if not val:
+        return ""
+    try:
+        val.encode('ascii')
+        return val
+    except UnicodeEncodeError:
+        return Header(val, 'utf-8').encode()
 
 
 def extract_recipient_from_stdin():
@@ -441,13 +455,14 @@ def notify_admin_onboarding_done(user_name, user_email, domain, event_type, cert
     """
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     subject = f"[系統通報] 新帳號開戶完成: {user_name} ({user_lang})"
+    subject_enc = encode_header_rfc2047(subject)
     admin_recipient = f"postmaster@{domain}"
 
     templates_html = "".join([f"<li><code>{os.path.basename(t)}</code></li>" for t in sent_templates])
 
     body = f"""From: postmaster@{domain}
 To: {admin_recipient}
-Subject: {subject}
+Subject: {subject_enc}
 MIME-Version: 1.0
 Content-Type: text/html; charset=UTF-8
 
@@ -577,10 +592,37 @@ def process_onboarding(args):
                 for placeholder, val in replacements.items():
                     content = content.replace(placeholder, val)
 
-                send_mail(content, user_email, envelope_from="postmaster")
-                sent_templates.append(t_file)
+                # 處理 Subject 標頭的 RFC 2047 MIME 編碼 (徹底防杜 Postfix SMTPUTF8 限制)
+                lines = content.splitlines(True)
+                new_lines = []
+                in_header = True
+                for line in lines:
+                    if in_header and line.lower().startswith("subject:"):
+                        prefix, subj_val = line.split(":", 1)
+                        new_lines.append(f"{prefix}: {encode_header_rfc2047(subj_val.strip())}\n")
+                    else:
+                        if in_header and line.strip() == "":
+                            in_header = False
+                        new_lines.append(line)
+                content = "".join(new_lines)
+
+                sent_ok = send_mail(content, user_email, envelope_from="postmaster")
+                if sent_ok:
+                    sent_templates.append(t_file)
+                else:
+                    sys.stderr.write(f"[welcome_provisioner] Failed to send template {t_file} to {user_email}\n")
+                    if os.path.exists(lock_path):
+                        try:
+                            os.remove(lock_path)
+                        except Exception:
+                            pass
             except Exception as e:
                 sys.stderr.write(f"[welcome_provisioner] Error sending template {t_file}: {e}\n")
+                if os.path.exists(lock_path):
+                    try:
+                        os.remove(lock_path)
+                    except Exception:
+                        pass
 
     # 7. 發送管理員開戶完成詳細通報信
     notify_admin_onboarding_done(
