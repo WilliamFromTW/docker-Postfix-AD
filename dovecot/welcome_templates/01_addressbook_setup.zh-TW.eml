@@ -1,0 +1,65 @@
+From: postmaster@${DOMAIN}
+To: ${USER_EMAIL}
+Subject: 歡迎加入！公司企業電子郵件與全域通訊錄 (GAL) 設定指引
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; }
+  .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; max-width: 680px; margin: 20px auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  .header { border-bottom: 2px solid #3182ce; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h2 { color: #2b6cb0; margin: 0; }
+  .step-box { background: #f7fafc; border-left: 4px solid #3182ce; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; }
+  code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; color: #c53030; }
+  pre { background: #1a202c; color: #e2e8f0; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; }
+  .footer { margin-top: 24px; font-size: 0.85em; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h2>🎉 歡迎新同仁加入！企業郵件與通訊錄設定指引</h2>
+  </div>
+  <p>親愛的 <strong>${USER_NAME}</strong> 同仁您好：</p>
+  <p>您的企業電子郵箱 <code>${USER_EMAIL}</code> 已正式開通！請依據下列指引配置您的 Outlook 或行動裝置，以啟用內部全域通訊錄 (Global Address List, GAL) 聯絡人智慧搜尋功能。</p>
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748;">📌 伺服器連線資訊</h3>
+    <ul>
+      <li><strong>收信伺服器 (IMAP)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>993</code> / SSL 加密)</li>
+      <li><strong>發信伺服器 (SMTP)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>465</code> 或 <code>587</code> / SSL 加密)</li>
+      <li><strong>通訊錄目錄 (LDAPS)：</strong> <code>${MAIL_SERVER}</code> (連接埠 <code>3269</code> / SSL 加密)</li>
+      <li><strong>登入帳號：</strong> <code>${USER_NAME}</code> (僅需輸入帳號名稱，不需輸入 @${DOMAIN})</li>
+      <li><strong>登入密碼：</strong> 您的 Windows AD 網域密碼</li>
+    </ul>
+  </div>
+
+  ${CERT_INSTRUCTION_BLOCK}
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748;">📖 Outlook 快速新增通訊錄步驟</h3>
+    <ol>
+      <li>開啟 Outlook ➔ 點選 <strong>「檔案」</strong> ➔ <strong>「帳戶設定」</strong> ➔ <strong>「通訊錄」</strong> 分頁。</li>
+      <li>點擊 <strong>「新增」</strong> ➔ 選擇 <strong>「網際網路目錄服務 (LDAP)」</strong>。</li>
+      <li>伺服器名稱輸入 <code>${MAIL_SERVER}</code>。</li>
+      <li>勾選 <strong>「此伺服器需要我登入」</strong>，使用者名稱填寫 <code>${USER_NAME}</code> 與您的網域密碼。</li>
+      <li>點擊右側 <strong>「其他設定」</strong>：
+        <ul>
+          <li>在「連線」分頁中，將通訊埠改為 <strong><code>3269</code></strong>，並勾選 <strong>「使用安全通訊端層 (SSL)」</strong>。</li>
+          <li>在「搜尋」分頁中，搜尋基準選擇 <strong>「自訂」</strong> 並輸入 <code>${SEARCH_BASE}</code>。</li>
+        </ul>
+      </li>
+      <li>點擊確定並重新啟動 Outlook 即完成！寫信時輸入同事姓名即可自動補完聯絡人資料。</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <p>本郵件由系統開戶自動發送，如有任何設定疑問，請洽資訊管理部 (IT Service Desk)。</p>
+  </div>
+</div>
+</body>
+</html>

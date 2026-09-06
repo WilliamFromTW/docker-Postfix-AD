@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import shutil
+import email
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
@@ -54,9 +55,121 @@ class TestWelcomeProvisioner(unittest.TestCase):
 
         ps_cmd = welcome_provisioner.generate_powershell_trust_cmd("mail.example.com")
         self.assertIn("3269", ps_cmd)
-        self.assertIn("mail.example.com", ps_cmd)
+        self.assertIn("$mailServer = 'mail.example.com'", ps_cmd)
         self.assertIn("TcpClient", ps_cmd)
         self.assertIn("LocalMachine", ps_cmd)
+        self.assertIn("Administrator", ps_cmd)
+        self.assertNotIn('\\""', ps_cmd)
+
+    def test_hostname_dynamic_resolution(self):
+        """測試主機名稱多層動態解析"""
+        # 1. 優先從環境變數
+        orig_host = os.environ.get("HOST_NAME")
+        try:
+            os.environ["HOST_NAME"] = "pmg.kafeiou.pw"
+            self.assertEqual(welcome_provisioner.get_host_name("kafeiou.pw"), "pmg.kafeiou.pw")
+        finally:
+            if orig_host is not None:
+                os.environ["HOST_NAME"] = orig_host
+            else:
+                os.environ.pop("HOST_NAME", None)
+
+        # 2. Fallback mail.{domain}
+        old_val = os.environ.pop("HOST_NAME", None)
+        try:
+            resolved = welcome_provisioner.get_host_name("company.com")
+            # 若無 /etc/postfix/main.cf 則應為 mail.company.com
+            self.assertIn("company.com", resolved)
+        finally:
+            if old_val is not None:
+                os.environ["HOST_NAME"] = old_val
+
+    def test_language_detection(self):
+        """測試四語系智慧判定鏈"""
+        # 1. 明確指定
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@test.com", explicit_lang="vi"), "vi")
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@test.com", explicit_lang="zh-CN"), "zh-CN")
+
+        # 2. 網域後綴判定
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@corp.tw", domain="corp.tw"), "zh-TW")
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@corp.cn", domain="corp.cn"), "zh-CN")
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@corp.vn", domain="corp.vn"), "vi")
+
+        # 3. 郵件標頭判定
+        raw_msg = email.message_from_string("Content-Language: en-US\n\nBody")
+        self.assertEqual(welcome_provisioner.detect_user_language("user", "user@corp.com", domain="corp.com", msg=raw_msg), "en")
+
+        # 4. DEFAULT_LANG 環境變數 fallback
+        orig_lang = os.environ.get("DEFAULT_LANG")
+        try:
+            os.environ["DEFAULT_LANG"] = "vi"
+            self.assertEqual(welcome_provisioner.detect_user_language("user", "user@other.org", domain="other.org"), "vi")
+        finally:
+            if orig_lang is not None:
+                os.environ["DEFAULT_LANG"] = orig_lang
+            else:
+                os.environ.pop("DEFAULT_LANG", None)
+
+    def test_multilingual_template_selection(self):
+        """測試多語系範本分流與回退"""
+        tpl_dir = os.path.join(self.test_dir, "templates")
+        os.makedirs(tpl_dir, exist_ok=True)
+
+        open(os.path.join(tpl_dir, "01_welcome.zh-TW.eml"), "w").close()
+        open(os.path.join(tpl_dir, "01_welcome.en.eml"), "w").close()
+        open(os.path.join(tpl_dir, "01_welcome.vi.eml"), "w").close()
+        open(os.path.join(tpl_dir, "01_welcome.eml"), "w").close()
+        open(os.path.join(tpl_dir, "02_policy.eml"), "w").close()
+
+        # 繁中應匹配 zh-TW
+        tw_tpls = welcome_provisioner.find_templates_for_lang(tpl_dir, "zh-TW")
+        tw_names = [os.path.basename(p) for p in tw_tpls]
+        self.assertIn("01_welcome.zh-TW.eml", tw_names)
+        self.assertIn("02_policy.eml", tw_names)
+
+        # 英文應匹配 en
+        en_tpls = welcome_provisioner.find_templates_for_lang(tpl_dir, "en")
+        en_names = [os.path.basename(p) for p in en_tpls]
+        self.assertIn("01_welcome.en.eml", en_names)
+
+        # 若未定義簡中，應回退至 01_welcome.eml
+        cn_tpls = welcome_provisioner.find_templates_for_lang(tpl_dir, "zh-CN")
+        cn_names = [os.path.basename(p) for p in cn_tpls]
+        self.assertIn("01_welcome.eml", cn_names)
+
+    def test_admin_notification_formatting(self):
+        """測試網管通知信包含主機、連接埠與專用 PowerShell 信任指令"""
+        sent_boxes = []
+
+        def mock_send_mail(content, recipient, envelope_from="postmaster"):
+            sent_boxes.append({"content": content, "recipient": recipient, "from": envelope_from})
+            return True
+
+        orig_send = welcome_provisioner.send_mail
+        try:
+            welcome_provisioner.send_mail = mock_send_mail
+            welcome_provisioner.notify_admin_onboarding_done(
+                user_name="testuser",
+                user_email="testuser@kafeiou.pw",
+                domain="kafeiou.pw",
+                event_type="imap_login",
+                cert_mode="self_signed",
+                sent_templates=["01_addressbook_setup.zh-TW.eml"],
+                mail_server="mail.kafeiou.pw",
+                powershell_cmd="& { $mailServer = 'mail.kafeiou.pw' ... }",
+                user_lang="zh-TW"
+            )
+
+            self.assertEqual(len(sent_boxes), 1)
+            admin_mail = sent_boxes[0]["content"]
+            self.assertIn("postmaster@kafeiou.pw", sent_boxes[0]["recipient"])
+            self.assertIn("【系統管理通報】", admin_mail)
+            self.assertIn("mail.kafeiou.pw", admin_mail)
+            self.assertIn("3269", admin_mail)
+            self.assertIn("【網管專區】", admin_mail)
+            self.assertIn("GPO", admin_mail)
+        finally:
+            welcome_provisioner.send_mail = orig_send
 
     def test_template_substitution(self):
         """測試歡迎郵件範本變數智慧替換"""

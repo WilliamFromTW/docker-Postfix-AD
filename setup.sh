@@ -136,6 +136,19 @@ else
  TZ="Asia/Taipei"; export TZ ;
 fi 
 
+# 匯出郵件核心環境變數至 /etc/mail_env 並讓 Dovecot 子行程 (postlogin / sieve) 繼承
+cat <<EOF > /etc/mail_env
+export HOST_NAME="${HOST_NAME}"
+export DOMAIN_NAME="${DOMAIN_NAME}"
+export DEFAULT_LANG="${DEFAULT_LANG:-zh-TW}"
+export SEARCH_BASE="${SEARCH_BASE}"
+export HOST_IP="${HOST_IP}"
+export TZ="${TZ}"
+EOF
+chmod 644 /etc/mail_env
+
+sed -i "s/#import_environment = TZ/import_environment = TZ HOST_NAME DOMAIN_NAME DEFAULT_LANG SEARCH_BASE HOST_IP/g" /etc/dovecot/dovecot.conf 2>/dev/null || true
+
 if [ ! -f "/etc/opendkim/keys/default.private" ];  then
   /usr/sbin/opendkim-genkey -d "${DOMAIN_NAME}" ;
   /usr/bin/cp default.* /etc/opendkim/keys
