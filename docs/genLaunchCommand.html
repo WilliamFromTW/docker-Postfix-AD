@@ -505,7 +505,8 @@
           "docker volume create " + containerName + "_log\n" +
           "docker volume create " + containerName + "_opendkim\n" +
           "docker volume create " + containerName + "_rspamd_conf\n" +
-          "docker volume create " + containerName + "_rspamd_var\n\n" +
+          "docker volume create " + containerName + "_rspamd_var\n" +
+          "docker volume create " + containerName + "_ldaps_proxy\n\n" +
           dict.commentRun + "\n" +
           "docker run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -515,8 +516,9 @@
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
+          " -v " + containerName + "_ldaps_proxy:/etc/ldaps-proxy \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
-          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 3269:3269 -p 4190:4190 -p 11334:11334 \\\n" +
           " -e DOMAIN_NAME='" + domain + "' \\\n" +
           " -e HOST_NAME='" + mailServerName + "' \\\n" +
           " -e HOST_IP='" + adIp + "' \\\n" +
@@ -537,7 +539,8 @@
           "podman volume create " + containerName + "_log\n" +
           "podman volume create " + containerName + "_opendkim\n" +
           "podman volume create " + containerName + "_rspamd_conf\n" +
-          "podman volume create " + containerName + "_rspamd_var\n\n" +
+          "podman volume create " + containerName + "_rspamd_var\n" +
+          "podman volume create " + containerName + "_ldaps_proxy\n\n" +
           dict.commentRun + "\n" +
           "podman run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -547,8 +550,9 @@
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
+          " -v " + containerName + "_ldaps_proxy:/etc/ldaps-proxy \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
-          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 4190:4190 -p 11334:11334 \\\n" +
+          " -p 25:25 -p 110:110 -p 143:143 -p 465:465 -p 587:587 -p 993:993 -p 995:995 -p 3269:3269 -p 4190:4190 -p 11334:11334 \\\n" +
           " -e DOMAIN_NAME='" + domain + "' \\\n" +
           " -e HOST_NAME='" + mailServerName + "' \\\n" +
           " -e HOST_IP='" + adIp + "' \\\n" +
@@ -608,6 +612,7 @@
           "      - " + containerName + "_dovecot:/etc/dovecot\n" +
           "      - " + containerName + "_rspamd_conf:/etc/rspamd\n" +
           "      - " + containerName + "_rspamd_var:/var/lib/rspamd\n" +
+          "      - " + containerName + "_ldaps_proxy:/etc/ldaps-proxy\n" +
           "      - " + containerName + "_log:/var/log\n\n" +
           "volumes:\n" +
           "  " + containerName + "_vmail:\n" +
@@ -616,6 +621,7 @@
           "  " + containerName + "_dovecot:\n" +
           "  " + containerName + "_rspamd_conf:\n" +
           "  " + containerName + "_rspamd_var:\n" +
+          "  " + containerName + "_ldaps_proxy:\n" +
           "  " + containerName + "_log:\n";
 
         cachedResults = {

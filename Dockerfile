@@ -18,7 +18,8 @@ RUN rpm --import https://rspamd.com/rpm-stable/gpg.key
 RUN dnf update -y
 RUN dnf -y install git man sudo chrony crontabs postfix-* htop procps-ng ca-certificates unbound valkey rspamd libffi-devel dovecot-pigeonhole python3 opendkim-tools opendkim bind-utils net-tools postfix cyrus-sasl cyrus-sasl-plain cyrus-sasl-md5 clamav clamd clamav-update clamav-devel clamav-scanner-systemd clamav-data clamav-server clamav-server-systemd dovecot supervisor httpd mod_ssl telnet rsyslog vi vim wget rsync glibc-gconv-extra 
 EXPOSE 25 143 465 587 993 995 4190 3269
-VOLUME ["/etc/postfix","/etc/dovecot/","/etc/letsencrypt","/home/vmail","/var/log","/etc/rspamd","/etc/opendkim","/var/lib/rspamd"]
+VOLUME ["/etc/postfix","/etc/dovecot/","/etc/letsencrypt","/home/vmail","/var/log","/etc/rspamd","/etc/opendkim","/var/lib/rspamd","/etc/ldaps-proxy"]
+RUN mkdir -p /etc/ldaps-proxy
 RUN rm -rf /etc/logrotate.d/*
 COPY rsyslog.conf /etc/rsyslog.conf
 COPY listen.conf /etc/rsyslog.d/listen.conf

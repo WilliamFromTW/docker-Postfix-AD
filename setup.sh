@@ -183,7 +183,24 @@ mkdir -p /etc/dovecot/welcome_templates
 chown -R vmail:vmail /etc/dovecot/welcome_templates
 chmod -R 755 /etc/dovecot/welcome_templates
 
-# 初始化 LDAPS 通訊錄代理審計日誌
+# 初始化 LDAPS 通訊錄代理設定目錄與審計日誌
+mkdir -p /etc/ldaps-proxy
+chmod 755 /etc/ldaps-proxy
+if [ ! -f "/etc/ldaps-proxy/config.yaml" ]; then
+  cat << 'EOF' > /etc/ldaps-proxy/config.yaml
+# LDAPS GAL Proxy 設定檔 (留空則自動繼承容器既有之 HOST_IP、SEARCH_BASE、DOMAIN_NAME)
+listen_addr: ":3269"
+log_file: "/var/log/ldaps-gal-proxy.log"
+max_failures: 3
+cooldown_min: 10
+window_min: 5
+# default_gc:
+#   - host: "192.168.1.1"
+#     port: 3268
+EOF
+  chmod 644 /etc/ldaps-proxy/config.yaml
+fi
+
 touch /var/log/ldaps-gal-proxy.log
 chmod 666 /var/log/ldaps-gal-proxy.log
 

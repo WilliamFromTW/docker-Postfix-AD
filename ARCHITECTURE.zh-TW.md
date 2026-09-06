@@ -415,3 +415,74 @@ RECALL_MAX_HOURS=2         # 第二層同網域強制抹除有效時限 (小時)
   - 第一層 10 秒暫存期間，信件尚未進信箱，POP3 絕對收不到（100% 成功攔截）。
   - 若已超過暫存期且對方已使用 POP3 將信件收取下載至本地端電腦硬碟（.pst 檔案），伺服器端會抹除備份，但無法遠端刪除其電腦本機檔案（此時系統會在收回報告中向寄件者備註說明）。
 
+---
+
+## 📇 7. Go 語言通訊錄 LDAPS 中繼代理 (Global Address List Proxy, Port 3269)
+
+專為 Active Directory 企業環境打造的高效能輕量級 Go 通訊錄中繼服務 (`ldaps-gal-proxy`)，對外安全開放微軟標準 Port **3269** (TLS/SSL)，後端安全連向內網 DC 的 Global Catalog (Port **3268**，純 TCP)。
+
+```mermaid
+graph TD
+    Client["客戶端 (Outlook / Thunderbird)"] -->|TLS 連線 Port 3269 / 帳號密碼| Proxy["Go ldaps-gal-proxy"]
+    
+    subgraph Proxy_Security ["Proxy 安全過濾與防護"]
+        CheckBreaker{"檢查熔斷器<br>(同 IP 失敗 >= 3 次？)"}
+        Proxy --> CheckBreaker
+        CheckBreaker -->|是| Reject["本機直接駁回 (49/53)<br>【不送往 DC】保護 AD 帳號防鎖死"]
+        
+        CheckBreaker -->|否| SearchGC["階段一: 搜尋 GC 3268<br>(sAMAccountName=username)"]
+        SearchGC --> FoundUser{"找到使用者？"}
+        FoundUser -->|否| AuthFail["回傳驗證失敗 / 累加計數器"]
+        
+        FoundUser -->|是| GetUPN["解析真實 UPN/DN 與網域"]
+        GetUPN --> BindDC["階段二: 向 DC 進行密碼 Bind 驗證"]
+        BindDC --> BindResult{"密碼正確？"}
+        BindResult -->|否| AuthFail
+        
+        BindResult -->|是| AuthSuccess["驗證成功 / 清除失敗計數"]
+    end
+    
+    AuthSuccess --> SearchQuery["接收通訊錄 SearchRequest"]
+    SearchQuery --> QueryFilter["屬性白名單過濾與審計日誌 (/var/log/ldaps-gal-proxy.log)"]
+    QueryFilter --> ReturnResult["回傳通訊錄聯絡人卡片給客戶端"]
+```
+
+### 🌟 核心特色
+1. **免去 AD DC 憑證負擔**：外部連線由郵件伺服器端統一終結 TLS，後端對內網 DC 走純 TCP 3268，網管無需在每台 DC 申請安裝第三方憑證。
+2. **純帳號智慧二階段檢索**：同仁在 Outlook 僅需輸入純帳號（如 `william`），Proxy 自動在後端 GC 3268 跨網域檢索出真實 UPN（如 `william@kafeiou.pw`）並完成身分驗證。
+3. **本機防爆破熔斷 (Anti-Lockout)**：同 IP 針對同一帳號在 5 分鐘內連續密碼錯誤達 3 次，Proxy 本機直接啟動 10 分鐘冷卻阻斷，絕不將後續錯誤請求轉發給後端 DC，保護 Windows AD 帳號不被鎖死。
+4. **敏感屬性白名單過濾**：自動過濾 `unicodePwd`、`objectSid`、`userAccountControl` 等敏感欄位，僅允許名片資訊外傳。
+5. **持久化設定目錄 (`/etc/ldaps-proxy/config.yaml`)**：支援透過掛載自訂後端多 DC 容錯移轉清單，留空時自動繼承容器既有環境變數 (`HOST_IP`, `SEARCH_BASE`, `DOMAIN_NAME`)。
+
+---
+
+## 💌 8. 新人首通開戶迎新包自動派送 (Mailbox Onboarding Welcome Pack)
+
+新進同仁信箱開通時自動派發入職指引包，支援雙重觸發機制、自簽憑證自動偵測與 PowerShell 一鍵信任指引、以及網管開戶通報。
+
+```mermaid
+graph TD
+    TriggerEvent["新信箱事件 (收到第一封來信 或 首次 IMAP 登入)"] --> CheckLock{"檢查 /home/vmail/user/<br>.welcomed 標記？"}
+    CheckLock -->|已存在| Skip["略過，不重複發送信件"]
+    
+    CheckLock -->|不存在| CreateLock["以 O_CREAT|O_EXCL 原子建立 .welcomed 鎖"]
+    CreateLock --> DetectCert{"檢查當前 SSL 憑證類型<br>(自簽測試 vs Let's Encrypt？)"}
+    
+    DetectCert -->|自簽測試憑證| GenCertStep["注入 Port 3269 SSL 指引<br>+ 一鍵 PowerShell 憑證信任指令"]
+    DetectCert -->|Let's Encrypt| GenNormalStep["注入簡潔 Port 3269 SSL 指引<br>(自動隱藏憑證安裝步驟)"]
+    
+    GenCertStep --> LoadTemplates["掃描 /etc/dovecot/welcome_templates/ 範本清單"]
+    GenNormalStep --> LoadTemplates
+    
+    LoadTemplates --> ReplaceVars["智慧變數置換 (${USER_NAME}, ${MAIL_SERVER}, etc.)"]
+    ReplaceVars --> Sendmail["透過本機 sendmail -f postmaster 依序派發 (帶 DKIM 簽名)"]
+    Sendmail --> Maildir["寫入新同仁收件匣"]
+    Sendmail --> NotifyAdmin["發送開戶完成通報至 postmaster (轉發 SPAM_EMAIL)"]
+```
+
+### 🌟 核心特色
+1. **雙重開戶偵測**：支援新帳號收到第一封來信（Sieve 全域過濾器）或首次登入 IMAP/Webmail（Post-login Hook）即時觸發。
+2. **POSIX 原子防重複鎖**：透過 `/home/vmail/<user>/.welcomed` 標記，保證同一信箱終身僅派送一次，絕不洗版。
+3. **自簽憑證自動偵測與一鍵 PowerShell 指令**：自簽憑證環境自動生成一行以管理員執行的 PowerShell 指令，透過 3269 埠直接匯入受信任憑證；Let's Encrypt 環境則自動簡化步驟。
+4. **開戶完成通報網管**：歡迎信派送完畢後，系統自動寄出彙整通報信至 `postmaster`，由 `SPAM_EMAIL` 即時接收。
+

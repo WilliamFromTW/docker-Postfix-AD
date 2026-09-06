@@ -77,6 +77,18 @@ class TestSpamEmailConfig(unittest.TestCase):
 
         self.assertEqual(len(aliases), 12, "Aliases should remain 12 without duplicates on rerun")
 
+    def test_gen_launch_command_port_3269_and_ldaps_proxy_volume(self):
+        """驗證 docs/genLaunchCommand.html 中包含 LDAPS GAL Proxy (3269) 連接埠與 /etc/ldaps-proxy 掛載目錄"""
+        html_path = os.path.join(REPO_ROOT, "docs", "genLaunchCommand.html")
+        with open(html_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # 驗證 Docker / Podman 端口對應
+        self.assertIn("-p 3269:3269", content)
+        # 驗證 volume 建立與掛載
+        self.assertIn("_ldaps_proxy:/etc/ldaps-proxy", content)
+        self.assertIn("volume create \" + containerName + \"_ldaps_proxy", content)
+
 
 if __name__ == "__main__":
     unittest.main()

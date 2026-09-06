@@ -421,3 +421,74 @@ RECALL_MAX_HOURS=2         # Layer 2 same-domain expunge time limit in hours
   - During the initial 10-second delay buffer, the email is not yet in the mailbox, so POP3 clients cannot fetch it (100% intercepted).
   - If already downloaded to a local `.pst` file beyond the buffer window, the server copy is expunged, but the local file cannot be deleted remotely (noted in the status report).
 
+---
+
+## 📇 7. Go LDAPS Global Address List (GAL) Proxy (Port 3269 -> 3268)
+
+A high-performance lightweight Go proxy (`ldaps-gal-proxy`) designed for Active Directory enterprise environments. It securely exposes standard Port **3269** (TLS/SSL) to external clients and forwards address book requests to internal AD Global Catalog on Port **3268** (plain TCP).
+
+```mermaid
+graph TD
+    Client["Client (Outlook / Thunderbird)"] -->|TLS Port 3269 / Credentials| Proxy["Go ldaps-gal-proxy"]
+    
+    subgraph Proxy_Security ["Proxy Security & Filtering"]
+        CheckBreaker{"Circuit Breaker<br>(Failures >= 3?)"}
+        Proxy --> CheckBreaker
+        CheckBreaker -->|Yes| Reject["Direct Reject (49/53)<br>【Shield AD from lockout】"]
+        
+        CheckBreaker -->|No| SearchGC["Stage 1: Query GC 3268<br>(sAMAccountName=username)"]
+        SearchGC --> FoundUser{"User Found?"}
+        FoundUser -->|No| AuthFail["Return Failure / Increment Counter"]
+        
+        FoundUser -->|Yes| GetUPN["Resolve Real UPN / DN"]
+        GetUPN --> BindDC["Stage 2: Password Bind to DC"]
+        BindDC --> BindResult{"Password Correct?"}
+        BindResult -->|No| AuthFail
+        
+        BindResult -->|Yes| AuthSuccess["Auth Success / Reset Counter"]
+    end
+    
+    AuthSuccess --> SearchQuery["Receive SearchRequest"]
+    SearchQuery --> QueryFilter["Attribute Whitelist & Audit Logging (/var/log/ldaps-gal-proxy.log)"]
+    QueryFilter --> ReturnResult["Return Address Book Entries to Client"]
+```
+
+### 🌟 Key Highlights
+1. **Zero DC Certificate Burden**: TLS is terminated at the mail server container; connections to internal DCs use plain TCP on Port 3268 over trusted LAN.
+2. **Two-Stage Pure Account Resolution**: Users only need to enter their logon name (e.g. `william`) without `@domain`. The proxy resolves the real UPN/DN via GC 3268 before password binding.
+3. **Anti-Lockout Circuit Breaker**: If an IP fails 3 consecutive password attempts for a user within 5 minutes, the proxy blocks requests locally for 10 minutes, preventing Active Directory account lockouts.
+4. **Attribute Sanitization**: Filters out sensitive attributes (`unicodePwd`, `objectSid`, `userAccountControl`, etc.) and only returns business card fields.
+5. **Persistent Configuration (`/etc/ldaps-proxy/config.yaml`)**: Supports mounting custom multi-DC routing lists; defaults automatically to container environment variables (`HOST_IP`, `SEARCH_BASE`, `DOMAIN_NAME`).
+
+---
+
+## 💌 8. Mailbox Onboarding Welcome Pack Auto-Provisioning
+
+Automatically delivers onboarding email packs when new mailboxes receive their first email or complete their first IMAP login.
+
+```mermaid
+graph TD
+    TriggerEvent["Mailbox Event (First Delivery OR First IMAP Login)"] --> CheckLock{"Check /home/vmail/user/<br>.welcomed marker?"}
+    CheckLock -->|Exists| Skip["Skip (Never re-deliver)"]
+    
+    CheckLock -->|Not Found| CreateLock["Atomic Lock via O_CREAT|O_EXCL"]
+    CreateLock --> DetectCert{"Check Certificate Type<br>(Self-signed vs Let's Encrypt?)"}
+    
+    DetectCert -->|Self-Signed| GenCertStep["Inject Port 3269 SSL Guide<br>+ 1-Line PowerShell Trust Command"]
+    DetectCert -->|Let's Encrypt| GenNormalStep["Inject Standard Port 3269 Guide<br>(Hide cert installation)"]
+    
+    GenCertStep --> LoadTemplates["Scan /etc/dovecot/welcome_templates/"]
+    GenNormalStep --> LoadTemplates
+    
+    LoadTemplates --> ReplaceVars["Template Variable Substitution"]
+    ReplaceVars --> Sendmail["Sendmail via local MTA (DKIM signed)"]
+    Sendmail --> Maildir["Deliver to user mailbox"]
+    Sendmail --> NotifyAdmin["Send completion notice to postmaster (SPAM_EMAIL)"]
+```
+
+### 🌟 Key Highlights
+1. **Dual-Trigger Detection**: Supports Sieve delivery hook and IMAP Post-login hook.
+2. **POSIX Atomic Lock**: Employs `/home/vmail/<user>/.welcomed` atomic file creation to guarantee single delivery.
+3. **Dynamic Certificate Detection**: Auto-generates an administrator PowerShell one-liner for self-signed certificates; simplifies instructions for Let's Encrypt.
+4. **Admin Notifications**: Automatically alerts `postmaster` (forwarded to `SPAM_EMAIL`) upon successful welcome pack dispatch.
+

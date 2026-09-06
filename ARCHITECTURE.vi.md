@@ -412,3 +412,74 @@ RECALL_MAX_HOURS=2         # Thời hạn xóa cưỡng chế Lớp 2 (giờ)
   - Trong 10 giây đệm ban đầu, thư chưa vào hộp thư nên POP3 không thể tải về (chặn thành công 100%).
   - Nếu đã tải về ổ đĩa cục bộ (.pst) sau thời gian đệm, máy chủ sẽ xóa bản sao lưu nhưng không thể can thiệp tệp trên máy tính người dùng (được ghi chú rõ trong báo cáo).
 
+---
+
+## 📇 7. Go LDAPS Proxy Danh Bạ Toàn Cục (Global Address List Proxy, Port 3269)
+
+Dịch vụ proxy danh bạ viết bằng Go (`ldaps-gal-proxy`) hiệu năng cao, mở an toàn cổng tiêu chuẩn Microsoft **3269** (TLS/SSL) ra ngoài và kết nối an toàn vào Global Catalog của AD nội bộ trên cổng **3268** (TCP thuần).
+
+```mermaid
+graph TD
+    Client["Client (Outlook / Thunderbird)"] -->|Kết nối TLS Port 3269 / Tài khoản mật khẩu| Proxy["Go ldaps-gal-proxy"]
+    
+    subgraph Proxy_Security ["Bảo Mật & Lọc Dữ Liệu"]
+        CheckBreaker{"Kiểm tra Circuit Breaker<br>(Cùng IP lỗi >= 3 lần?)"}
+        Proxy --> CheckBreaker
+        CheckBreaker -->|Có| Reject["Từ chối tại chỗ (49/53)<br>【Bảo vệ tài khoản AD không bị khóa】"]
+        
+        CheckBreaker -->|Không| SearchGC["Giai đoạn 1: Tìm GC 3268<br>(sAMAccountName=username)"]
+        SearchGC --> FoundUser{"Tìm thấy người dùng?"}
+        FoundUser -->|Không| AuthFail["Báo lỗi xác thực / Tăng bộ đếm"]
+        
+        FoundUser -->|Có| GetUPN["Phân giải UPN/DN thực tế"]
+        GetUPN --> BindDC["Giai đoạn 2: Bind mật khẩu tới DC"]
+        BindDC --> BindResult{"Mật khẩu đúng?"}
+        BindResult -->|Không| AuthFail
+        
+        BindResult -->|Có| AuthSuccess["Xác thực thành công / Reset bộ đếm"]
+    end
+    
+    AuthSuccess --> SearchQuery["Nhận SearchRequest"]
+    SearchQuery --> QueryFilter["Lọc thuộc tính & Ghi nhật ký (/var/log/ldaps-gal-proxy.log)"]
+    QueryFilter --> ReturnResult["Trả về thông tin liên lạc cho Client"]
+```
+
+### 🌟 Tính Năng Cốt Lõi
+1. **Không cần cài chứng chỉ trên DC**: Mã hóa TLS được kết thúc tại Mail Server container; kết nối tới DC nội bộ dùng cổng TCP 3268.
+2. **Tìm kiếm 2 giai đoạn với tên tài khoản thuần**: Người dùng chỉ cần nhập username (ví dụ: `william`) mà không cần `@domain`. Proxy tự phân giải UPN thực trước khi Bind mật khẩu.
+3. **Chống dò quét khóa tài khoản (Anti-Lockout)**: Nếu 1 IP nhập sai mật khẩu 3 lần trong 5 phút, Proxy sẽ chặn cục bộ 10 phút, không chuyển tiếp tới DC để tránh làm khóa tài khoản Windows AD.
+4. **Lọc danh sách trắng thuộc tính**: Tự động che giấu `unicodePwd`, `objectSid`, `userAccountControl` và chỉ cho phép thông tin danh bạ liên lạc ra ngoài.
+5. **Thư mục cấu hình lâu bền (`/etc/ldaps-proxy/config.yaml`)**: Hỗ trợ gắn danh sách DC dự phòng; mặc định tự kế thừa biến môi trường (`HOST_IP`, `SEARCH_BASE`, `DOMAIN_NAME`).
+
+---
+
+## 💌 8. Tự Động Gửi Gói Thư Chào Mừng Nhân Viên Mới (Mailbox Onboarding Welcome Pack)
+
+Tự động gửi hướng dẫn cấu hình khi hòm thư mới nhận email đầu tiên hoặc đăng nhập IMAP lần đầu.
+
+```mermaid
+graph TD
+    TriggerEvent["Sự kiện hòm thư (Nhận thư đầu tiên HOẶC Đăng nhập IMAP lần đầu)"] --> CheckLock{"Kiểm tra đánh dấu<br>/home/vmail/user/.welcomed?"}
+    CheckLock -->|Đã có| Skip["Bỏ qua (Không gửi trùng)"]
+    
+    CheckLock -->|Chưa có| CreateLock["Khóa nguyên tử O_CREAT|O_EXCL tạo .welcomed"]
+    CreateLock --> DetectCert{"Kiểm tra loại chứng chỉ SSL<br>(Tự ký vs Let's Encrypt?)"}
+    
+    DetectCert -->|Chứng chỉ tự ký| GenCertStep["Chèn hướng dẫn Port 3269<br>+ Lệnh PowerShell 1 dòng tin cậy"]
+    DetectCert -->|Let's Encrypt| GenNormalStep["Chèn hướng dẫn Port 3269 chuẩn<br>(Ẩn bước cài chứng chỉ)"]
+    
+    GenCertStep --> LoadTemplates["Quét thư mục /etc/dovecot/welcome_templates/"]
+    GenNormalStep --> LoadTemplates
+    
+    LoadTemplates --> ReplaceVars["Thay thế biến (${USER_NAME}, ${MAIL_SERVER}, v.v.)"]
+    ReplaceVars --> Sendmail["Gửi qua sendmail cục bộ (có chữ ký DKIM)"]
+    Sendmail --> Maildir["Chuyển vào hộp thư người dùng"]
+    Sendmail --> NotifyAdmin["Gửi thông báo hoàn tất tới postmaster (SPAM_EMAIL)"]
+```
+
+### 🌟 Tính Năng Cốt Lõi
+1. **Nhận diện kép**: Hỗ trợ kích hoạt qua Sieve delivery hook và IMAP Post-login hook.
+2. **Khóa nguyên tử POSIX**: Dùng cờ `/home/vmail/<user>/.welcomed` đảm bảo chỉ gửi một lần duy nhất.
+3. **Tự động nhận diện chứng chỉ**: Tự sinh lệnh PowerShell cho chứng chỉ tự ký; tự động đơn giản hóa khi dùng Let's Encrypt.
+4. **Thông báo quản trị viên**: Tự động báo cáo tới `postmaster` (chuyển tiếp về `SPAM_EMAIL`) khi hoàn tất gửi gói chào mừng.
+
