@@ -149,15 +149,8 @@ chown -R _rspamd:_rspamd /etc/rspamd/kafeiou.d
 chown -R _rspamd:_rspamd /var/lib/rspamd
 /usr/sbin/postmap /etc/postfix/aliases
 /usr/sbin/postalias lmdb:/etc/aliases
-# 確保 Postfix 關閉 smtputf8 以完美相容 Dovecot LMTP 投遞
-if [ -f "/etc/postfix/main.cf" ]; then
-  if ! grep -q "smtputf8_enable" /etc/postfix/main.cf; then
-    echo "smtputf8_enable = no" >> /etc/postfix/main.cf
-  fi
-fi
-
 # -------------------------------------------------------------
-# 智慧自動回覆 (Email-Driven Auto-Reply) 與開戶迎新 (Mailbox Onboarding) 初始化
+# 智慧自動回覆 (Email-Driven Auto-Reply / Sieve) 啟動防呆初始化
 # -------------------------------------------------------------
 mkdir -p /var/spool/postfix/private
 chown postfix:postfix /var/spool/postfix/private
@@ -166,28 +159,6 @@ chmod 700 /var/spool/postfix/private
 mkdir -p /usr/lib/dovecot/sieve-pipe
 chown -R vmail:vmail /usr/lib/dovecot/sieve-pipe
 chmod -R 755 /usr/lib/dovecot/sieve-pipe
-
-# 自動偵測並升級 Volume 內的 Dovecot 設定
-if [ -f "/etc/dovecot/conf.d/90-sieve.conf" ]; then
-  if ! grep -q "00-onboarding.sieve" /etc/dovecot/conf.d/90-sieve.conf; then
-    sed -i 's|sieve_before = /etc/dovecot/sieve/global/autoreply_handler.sieve|sieve_before = /etc/dovecot/sieve/global/00-onboarding.sieve\n  sieve_before2 = /etc/dovecot/sieve/global/autoreply_handler.sieve|g' /etc/dovecot/conf.d/90-sieve.conf
-  fi
-fi
-
-if [ -f "/etc/dovecot/conf.d/10-master.conf" ]; then
-  if ! grep -q "service postlogin" /etc/dovecot/conf.d/10-master.conf; then
-    sed -i 's/service imap {/service imap {\n  executable = imap postlogin/g' /etc/dovecot/conf.d/10-master.conf
-    cat << 'EOF' >> /etc/dovecot/conf.d/10-master.conf
-
-service postlogin {
-  executable = script-login /usr/lib/dovecot/sieve-pipe/postlogin.sh
-  user = vmail
-  unix_listener postlogin {
-  }
-}
-EOF
-  fi
-fi
 
 if [ -d "/etc/dovecot/sieve/global" ]; then
   for sf in /etc/dovecot/sieve/global/*.sieve; do
