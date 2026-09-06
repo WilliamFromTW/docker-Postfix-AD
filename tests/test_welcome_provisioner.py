@@ -35,6 +35,31 @@ class TestWelcomeProvisioner(unittest.TestCase):
         self.assertFalse(locked2, "Second lock attempt must return False to avoid duplicate dispatch")
         self.assertEqual(path1, path2)
 
+    def test_cross_identifier_atomic_lock(self):
+        """測試不同登入識別字串 (例如 william-kafeiou vs william@kafeiou.pw) 交叉鎖防重複"""
+        user_name = "william-kafeiou"
+        canonical_email = "william@kafeiou.pw"
+        home_dir = os.path.join(self.test_dir, canonical_email)
+        os.makedirs(home_dir, exist_ok=True)
+
+        # 模擬 IMAP 登入：傳入 william-kafeiou 與 william-kafeiou@kafeiou.pw
+        locked1, path1 = welcome_provisioner.acquire_atomic_welcomed_lock(
+            user_name="william-kafeiou",
+            user_email=canonical_email,
+            home_dir=home_dir,
+            extra_identifiers=["william-kafeiou", "william-kafeiou@kafeiou.pw"]
+        )
+        self.assertTrue(locked1, "First login onboarding must succeed")
+
+        # 模擬 Sieve 郵件投遞 (自己寄給自己)：傳入 william 與 william@kafeiou.pw
+        locked2, path2 = welcome_provisioner.acquire_atomic_welcomed_lock(
+            user_name="william",
+            user_email=canonical_email,
+            home_dir=home_dir,
+            extra_identifiers=["william", canonical_email]
+        )
+        self.assertFalse(locked2, "Second onboarding attempt (e.g. self-delivery) must be blocked!")
+
     def test_system_accounts_exclusion(self):
         """測試系統保留帳號自動排除不觸發開戶流程"""
         system_users = ["postmaster", "abuse", "root", "mailer-daemon", "spam", "vmail"]

@@ -128,9 +128,9 @@ def normalize_language(lang_code):
     return ""
 
 
-def query_ldap_user_language(user_name, user_email):
+def query_ldap_user_identity(user_name, user_email):
     """
-    若配置有 LDAP 且安裝有 ldapsearch，嘗試從 Active Directory 查詢 preferredLanguage, countryCode, c
+    向 Active Directory 查詢使用者權威身分 (sAMAccountName, mail, userPrincipalName) 與語系屬性
     """
     search_base = os.getenv("SEARCH_BASE", "")
     host_ip = os.getenv("HOST_IP", "127.0.0.1")
@@ -155,49 +155,67 @@ def query_ldap_user_language(user_name, user_email):
             pass
 
     if not search_base:
-        return ""
+        return {}
 
-    query = f"(|(sAMAccountName={user_name})(mail={user_email})(userPrincipalName={user_email}))"
-    cmd = ["ldapsearch", "-x", "-h", host_ip, "-b", search_base, query, "preferredLanguage", "countryCode", "c"]
+    clean_user = user_name.replace("(", "").replace(")", "").replace("*", "")
+    clean_email = user_email.replace("(", "").replace(")", "").replace("*", "")
+    query = f"(|(sAMAccountName={clean_user})(mail={clean_email})(userPrincipalName={clean_email}))"
+    cmd = ["ldapsearch", "-x", "-h", host_ip, "-b", search_base, query,
+           "sAMAccountName", "mail", "userPrincipalName", "preferredLanguage", "countryCode", "c"]
     if bind_dn and bind_pw:
         cmd.extend(["-D", bind_dn, "-w", bind_pw])
 
+    info = {}
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
         if res.returncode == 0:
             for line in res.stdout.splitlines():
                 line = line.strip()
-                if line.lower().startswith("preferredlanguage:"):
+                if line.lower().startswith("samaccountname:"):
+                    info["sAMAccountName"] = line.split(":", 1)[1].strip()
+                elif line.lower().startswith("mail:"):
+                    info["mail"] = line.split(":", 1)[1].strip()
+                elif line.lower().startswith("userprincipalname:"):
+                    info["userPrincipalName"] = line.split(":", 1)[1].strip()
+                elif line.lower().startswith("preferredlanguage:"):
                     v = line.split(":", 1)[1].strip()
                     norm = normalize_language(v)
                     if norm:
-                        return norm
+                        info["lang"] = norm
                 elif line.lower().startswith("countrycode:"):
                     cc = line.split(":", 1)[1].strip()
                     if cc == "886":
-                        return "zh-TW"
+                        info["lang"] = "zh-TW"
                     elif cc == "86":
-                        return "zh-CN"
+                        info["lang"] = "zh-CN"
                     elif cc == "84":
-                        return "vi"
+                        info["lang"] = "vi"
                     elif cc == "840":
-                        return "en"
-                elif line.lower().startswith("c:"):
+                        info["lang"] = "en"
+                elif line.lower().startswith("c:") and "lang" not in info:
                     c = line.split(":", 1)[1].strip().upper()
                     if c == "TW":
-                        return "zh-TW"
+                        info["lang"] = "zh-TW"
                     elif c == "CN":
-                        return "zh-CN"
+                        info["lang"] = "zh-CN"
                     elif c == "VN":
-                        return "vi"
+                        info["lang"] = "vi"
                     elif c in ("US", "GB", "EN"):
-                        return "en"
+                        info["lang"] = "en"
     except Exception:
         pass
-    return ""
+    return info
 
 
-def detect_user_language(user_name, user_email, domain="", msg=None, explicit_lang=""):
+def query_ldap_user_language(user_name, user_email):
+    """
+    若配置有 LDAP 且安裝有 ldapsearch，嘗試從 Active Directory 查詢 preferredLanguage, countryCode, c
+    """
+    info = query_ldap_user_identity(user_name, user_email)
+    return info.get("lang", "")
+
+
+def detect_user_language(user_name, user_email, domain="", msg=None, explicit_lang="", cached_ldap_lang=""):
     """
     智慧判定使用者語系 (4 級判定鏈):
     1. 明確參數 (--lang)
@@ -211,8 +229,8 @@ def detect_user_language(user_name, user_email, domain="", msg=None, explicit_la
         if norm in SUPPORTED_LANGUAGES:
             return norm
 
-    # 2. LDAP 查詢
-    ldap_lang = query_ldap_user_language(user_name, user_email)
+    # 2. LDAP 查詢 (優先使用快取)
+    ldap_lang = cached_ldap_lang or query_ldap_user_language(user_name, user_email)
     if ldap_lang:
         return ldap_lang
 
@@ -420,16 +438,32 @@ def find_templates_for_lang(templates_dir, user_lang):
     return chosen
 
 
-def acquire_atomic_welcomed_lock(user_name, user_email, home_dir=None):
+def acquire_atomic_welcomed_lock(user_name, user_email, home_dir=None, extra_identifiers=None):
     """
-    以原子建立 .welcomed 檔案的方式防止並行與重複派送
+    以原子建立 .welcomed 檔案的方式防止並行與重複派送 (支援 cross-identifier 全域防護)
     若成功建立回傳 (True, lock_path)，若已存在回傳 (False, existing_path)
     """
+    identifiers = set()
+    if user_name:
+        identifiers.add(user_name.lower())
+    if user_email:
+        identifiers.add(user_email.lower())
+        if "@" in user_email:
+            identifiers.add(user_email.split("@")[0].lower())
+    if extra_identifiers:
+        for ident in extra_identifiers:
+            if ident:
+                identifiers.add(ident.lower())
+                if "@" in ident:
+                    identifiers.add(ident.split("@")[0].lower())
+
     candidates = []
     if home_dir:
         candidates.append(os.path.join(home_dir, ".welcomed"))
-    candidates.append(f"/home/vmail/{user_email}/.welcomed")
-    candidates.append(f"/home/vmail/{user_name}/.welcomed")
+
+    for ident in sorted(identifiers):
+        candidates.append(f"/home/vmail/{ident}/.welcomed")
+        candidates.append(f"/home/vmail/.welcomed_{ident}")
 
     # 1. 檢查是否任何一處已存在
     for c in candidates:
@@ -439,22 +473,34 @@ def acquire_atomic_welcomed_lock(user_name, user_email, home_dir=None):
     # 2. 選定主目錄進行原子建立
     target_lock = candidates[0]
     target_dir = os.path.dirname(target_lock)
-    try:
-        os.makedirs(target_dir, exist_ok=True)
-    except Exception:
-        pass
+    if target_dir:
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except Exception:
+            pass
 
     try:
         fd = os.open(target_lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(f"welcomed_at={datetime.now().isoformat()}\nuser={user_name}\nemail={user_email}\n")
+
+        # 同步在 /home/vmail 建立共享鎖以防跨事件並發
+        shared_lock = f"/home/vmail/.welcomed_{user_name.lower()}"
+        if target_lock != shared_lock:
+            try:
+                sfd = os.open(shared_lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+                with os.fdopen(sfd, "w", encoding="utf-8") as sf:
+                    sf.write(f"welcomed_at={datetime.now().isoformat()}\nuser={user_name}\nemail={user_email}\n")
+            except Exception:
+                pass
+
         return True, target_lock
     except FileExistsError:
         return False, target_lock
     except Exception as e:
         sys.stderr.write(f"[welcome_provisioner] Lock creation warning: {e}\n")
         # 若無法寫入預設目錄，嘗試在 /tmp/ 標記防呆
-        fallback_lock = f"/tmp/.welcomed_{user_name}"
+        fallback_lock = f"/tmp/.welcomed_{user_name.lower()}"
         try:
             fd = os.open(fallback_lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
             with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -552,6 +598,7 @@ def process_onboarding(args):
         sys.stderr.write("[welcome_provisioner] No recipient found, skipping.\n")
         return False
 
+    raw_recipient = recipient
     default_domain = os.getenv("DOMAIN_NAME", "example.com")
     if "@" in recipient:
         user_name = recipient.split("@")[0]
@@ -566,11 +613,26 @@ def process_onboarding(args):
     if user_name.lower() in SYSTEM_ACCOUNTS:
         return False
 
-    # 3. 原子鎖定檢查
-    locked, lock_path = acquire_atomic_welcomed_lock(user_name, user_email, args.home_dir)
+    # 2.5 查詢 Active Directory LDAP 解析權威身分 (Canonical User Identity)
+    ad_info = query_ldap_user_identity(user_name, user_email)
+    canonical_user = ad_info.get("sAMAccountName") or user_name
+    canonical_email = ad_info.get("mail") or ad_info.get("userPrincipalName") or user_email
+    cached_ldap_lang = ad_info.get("lang", "")
+
+    # 3. 原子鎖定檢查 (跨身分與全域交叉防重複)
+    locked, lock_path = acquire_atomic_welcomed_lock(
+        user_name=canonical_user,
+        user_email=canonical_email,
+        home_dir=args.home_dir,
+        extra_identifiers=[user_name, user_email, raw_recipient]
+    )
     if not locked:
-        sys.stdout.write(f"[welcome_provisioner] User {user_name} already welcomed, skipping.\n")
+        sys.stdout.write(f"[welcome_provisioner] User {canonical_user} already welcomed, skipping.\n")
         return False
+
+    # 更新為權威身分，確保模板替換與寄件一致
+    user_name = canonical_user
+    user_email = canonical_email
 
     # 4. 智慧語系判定
     user_lang = detect_user_language(
@@ -578,7 +640,8 @@ def process_onboarding(args):
         user_email=user_email,
         domain=domain,
         msg=raw_msg,
-        explicit_lang=args.lang
+        explicit_lang=args.lang,
+        cached_ldap_lang=cached_ldap_lang
     )
 
     sys.stdout.write(f"[welcome_provisioner] Provisioning onboarding pack for {user_email} (event: {args.event}, lang: {user_lang})\n")
