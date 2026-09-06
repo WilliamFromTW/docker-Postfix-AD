@@ -22,6 +22,7 @@ type CircuitBreaker struct {
 	maxFailures int
 	window      time.Duration
 	cooldown    time.Duration
+	maxEntries  int
 }
 
 // NewCircuitBreaker 建立新的防爆破熔斷器實例
@@ -41,6 +42,7 @@ func NewCircuitBreaker(maxFailures int, window time.Duration, cooldown time.Dura
 		maxFailures: maxFailures,
 		window:      window,
 		cooldown:    cooldown,
+		maxEntries:  50000, // 預設上限追蹤 5 萬筆，鎖定記憶體 < 15MB 防止海量爆破 OOM
 	}
 
 	// 定期背景清理過期紀錄
@@ -84,6 +86,48 @@ func (cb *CircuitBreaker) IsBlocked(clientIP, username string) bool {
 	return false
 }
 
+// evictIfFullLocked 在容量達到上限時淘汰過期或舊紀錄 (呼叫方必須已持有 Lock)
+func (cb *CircuitBreaker) evictIfFullLocked() {
+	if cb.maxEntries <= 0 || len(cb.records) < cb.maxEntries {
+		return
+	}
+
+	now := time.Now()
+	// 1. 優先淘汰已過期或超出時間視窗的紀錄
+	for k, rec := range cb.records {
+		if !rec.BlockedUntil.IsZero() && now.After(rec.BlockedUntil) {
+			delete(cb.records, k)
+		} else if rec.BlockedUntil.IsZero() && now.Sub(rec.LastFailAt) > cb.window {
+			delete(cb.records, k)
+		}
+	}
+
+	// 2. 若依然達到上限，隨機淘汰最先遍歷到的 10% 項目騰出空間
+	if len(cb.records) >= cb.maxEntries {
+		targetEvict := cb.maxEntries / 10
+		if targetEvict < 1 {
+			targetEvict = 1
+		}
+		count := 0
+		for k := range cb.records {
+			delete(cb.records, k)
+			count++
+			if count >= targetEvict {
+				break
+			}
+		}
+	}
+}
+
+// SetMaxEntries 設定最大容量上限 (供測試或客製化)
+func (cb *CircuitBreaker) SetMaxEntries(limit int) {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+	if limit > 0 {
+		cb.maxEntries = limit
+	}
+}
+
 // CheckRateLimit 檢查短時間內同帳號是否發起過於頻繁的請求 (Debounce 防抖)
 // 若請求間隔小於 minInterval，回傳 true 代表過於頻繁 (應回傳 Busy)
 func (cb *CircuitBreaker) CheckRateLimit(clientIP, username string, minInterval time.Duration) bool {
@@ -95,6 +139,7 @@ func (cb *CircuitBreaker) CheckRateLimit(clientIP, username string, minInterval 
 
 	record, exists := cb.records[key]
 	if !exists {
+		cb.evictIfFullLocked()
 		cb.records[key] = &FailureRecord{
 			LastRequestAt: now,
 		}
@@ -119,6 +164,7 @@ func (cb *CircuitBreaker) RecordFailure(clientIP, username string) bool {
 
 	record, exists := cb.records[key]
 	if !exists {
+		cb.evictIfFullLocked()
 		cb.records[key] = &FailureRecord{
 			Failures:   1,
 			LastFailAt: now,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -89,6 +90,24 @@ func TestRateLimitDebounce(t *testing.T) {
 	time.Sleep(120 * time.Millisecond)
 	if limited := cb.CheckRateLimit(ip, user, 100*time.Millisecond); limited {
 		t.Fatal("Request after interval should be permitted")
+	}
+}
+
+func TestCircuitBreakerMaxEntriesGuardrail(t *testing.T) {
+	cb := NewCircuitBreaker(5, 5*time.Minute, 30*time.Second)
+	cb.SetMaxEntries(10) // 限制上限為 10 筆
+
+	// 插入 15 個不同的攻擊者帳號
+	for i := 1; i <= 15; i++ {
+		cb.RecordFailure("192.168.1.100", fmt.Sprintf("attacker_%d", i))
+	}
+
+	cb.mu.RLock()
+	count := len(cb.records)
+	cb.mu.RUnlock()
+
+	if count > 10 {
+		t.Fatalf("Records count %d exceeded maxEntries limit of 10", count)
 	}
 }
 
