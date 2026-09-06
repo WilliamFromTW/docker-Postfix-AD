@@ -35,7 +35,7 @@ COPY logrotate.d/ /etc/logrotate.d/
 COPY getOpenDKIM.sh /getOpenDKIM.sh
 COPY make_fake_cert.sh /make_fake_cert.sh
 COPY scripts/ /usr/lib/dovecot/sieve-pipe/
-RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*.py
+RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*
 RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem
 RUN unbound-control-setup
 RUN chown -R _rspamd:_rspamd /etc/rspamd/maps.d
@@ -49,6 +49,7 @@ RUN chmod +x /start_dovecot.sh;chmod +x /make_fake_cert.sh;chmod +x /setup.sh;
 RUN chmod +x /getOpenDKIM.sh
 RUN groupadd vmail -g 1001;useradd vmail -u 1001 -g 1001
 RUN mkdir -p /etc/dovecot/sieve/global
+RUN /usr/bin/sievec /etc/dovecot/sieve/global/00-onboarding.sieve 2>/dev/null || true
 RUN /usr/bin/sievec /etc/dovecot/sieve/global/autoreply_handler.sieve 2>/dev/null || true
 COPY supervisord.conf /etc
 CMD ["/setup.sh"]

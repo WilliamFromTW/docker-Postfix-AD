@@ -9,5 +9,10 @@ if not anyof (
     header :matches "Auto-Submitted" ["auto-generated", "auto-replied"],
     header :matches "From" ["*postmaster*", "*mailer-daemon*", "*vmail*"]
 ) {
-    pipe :copy "welcome_provisioner.py" ["--event", "delivery"];
+    if envelope :matches "to" "*" {
+        set "user_recipient" "${1}";
+        pipe :copy "welcome_provisioner.py" ["--event", "delivery", "--recipient", "${user_recipient}"];
+    } else {
+        pipe :copy "welcome_provisioner.py" ["--event", "delivery"];
+    }
 }
