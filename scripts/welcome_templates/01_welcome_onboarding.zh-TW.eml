@@ -1,0 +1,85 @@
+From: postmaster@${DOMAIN}
+To: ${USER_EMAIL}
+Subject: 歡迎加入！企業電子郵件使用與用戶端設定指引
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8fafc; }
+  .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 28px; max-width: 680px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+  .header { border-bottom: 2px solid #3182ce; padding-bottom: 16px; margin-bottom: 24px; }
+  .header h2 { color: #2b6cb0; margin: 0; font-size: 22px; }
+  .step-box { background: #f7fafc; border-left: 4px solid #3182ce; padding: 16px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+  code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; color: #c53030; font-size: 0.95em; }
+  .info-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .info-table td { padding: 8px 10px; border-bottom: 1px solid #edf2f7; font-size: 0.95em; }
+  .info-table td:first-child { width: 35%; font-weight: 600; color: #4a5568; }
+  ol { padding-left: 20px; margin: 10px 0; }
+  li { margin-bottom: 8px; }
+  .footer { margin-top: 28px; font-size: 0.85em; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h2>🎉 歡迎新同仁加入！企業電子郵件使用與設定指引</h2>
+  </div>
+  <p>親愛的 <strong>${USER_NAME}</strong> 同仁您好：</p>
+  <p>您的企業電子郵箱 <code>${USER_EMAIL}</code> 已正式開通啟用！請參閱下列伺服器連線參數與設定指引，以配置您的電腦或行動裝置郵件應用程式（如 Outlook、Thunderbird 或手機內建郵件 App）。</p>
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748; font-size:16px;">📌 伺服器連線資訊</h3>
+    <table class="info-table">
+      <tr>
+        <td>完整電子郵件信箱</td>
+        <td><code>${USER_EMAIL}</code></td>
+      </tr>
+      <tr>
+        <td>登入帳號名稱</td>
+        <td><code>${USER_NAME}</code> (或完整信箱)</td>
+      </tr>
+      <tr>
+        <td>登入密碼</td>
+        <td>您的 Windows AD 網域登入密碼</td>
+      </tr>
+      <tr>
+        <td>收信伺服器 (IMAP)</td>
+        <td><code>${MAIL_SERVER}</code> (連接埠 <code>993</code> / SSL/TLS 加密)</td>
+      </tr>
+      <tr>
+        <td>發信伺服器 (SMTP)</td>
+        <td><code>${MAIL_SERVER}</code> (連接埠 <code>465</code> 或 <code>587</code> / SSL/TLS 加密)</td>
+      </tr>
+      <tr>
+        <td>外寄伺服器身分驗證</td>
+        <td>需要驗證 (使用與收信相同之 AD 帳號密碼)</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="step-box">
+    <h3 style="margin-top:0; color:#2d3748; font-size:16px;">📖 常用郵件用戶端快速設定步驟</h3>
+    <ol>
+      <li><strong>新增帳戶：</strong> 開啟 Outlook、Thunderbird 或行動裝置郵件 App，選擇「新增帳戶」並輸入您的完整郵箱 <code>${USER_EMAIL}</code>。</li>
+      <li><strong>手動設定協定：</strong> 帳戶類型請選取 <strong>IMAP</strong>（建議使用 IMAP 以保持多裝置郵件同步）。</li>
+      <li><strong>填寫伺服器資訊：</strong>
+        <ul>
+          <li><strong>接收伺服器 (IMAP)：</strong> 主機填寫 <code>${MAIL_SERVER}</code>，連接埠設定為 <code>993</code>，加密連線類型選取 <code>SSL/TLS</code>。</li>
+          <li><strong>外寄伺服器 (SMTP)：</strong> 主機填寫 <code>${MAIL_SERVER}</code>，連接埠設定為 <code>465</code> (或 <code>587</code>)，加密連線類型選取 <code>SSL/TLS</code>。</li>
+        </ul>
+      </li>
+      <li><strong>驗證與安全性：</strong> 確保勾選「我的外寄伺服器 (SMTP) 需要驗證」，並選擇「使用與接收郵件伺服器相同的設定」。</li>
+      <li><strong>完成設定：</strong> 點擊連線測試，通過後即可開始收發公司日常業務郵件。</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <p>💡 本郵件由系統開戶排程自動寄發。若您在設定過程中遇到任何問題，請洽資訊管理部 (IT Service Desk)。</p>
+  </div>
+</div>
+</body>
+</html>

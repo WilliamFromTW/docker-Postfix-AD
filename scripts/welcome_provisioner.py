@@ -563,11 +563,13 @@ def process_onboarding(args):
     templates_dir = args.templates_dir
     if not templates_dir:
         candidates = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "welcome_templates"),
+            "/usr/lib/dovecot/sieve-pipe/welcome_templates",
             "/etc/dovecot/welcome_templates",
             os.path.join(os.path.dirname(__file__), "..", "dovecot", "welcome_templates"),
         ]
         for c in candidates:
-            if os.path.isdir(c):
+            if os.path.isdir(c) and glob.glob(os.path.join(c, "*.eml")):
                 templates_dir = c
                 break
 
@@ -575,7 +577,13 @@ def process_onboarding(args):
 
     sent_templates = []
     if not selected_templates:
-        sys.stderr.write("[welcome_provisioner] Warning: No template files found in templates directory\n")
+        sys.stderr.write(f"[welcome_provisioner] Warning: No template files found in {templates_dir or 'candidates'}. Rolling back lock.\n")
+        if os.path.exists(lock_path):
+            try:
+                os.remove(lock_path)
+            except Exception:
+                pass
+        return False
     else:
         for t_file in selected_templates:
             try:
@@ -623,6 +631,15 @@ def process_onboarding(args):
                         os.remove(lock_path)
                     except Exception:
                         pass
+
+    if not sent_templates:
+        sys.stderr.write(f"[welcome_provisioner] No templates were successfully sent to {user_email}. Rolling back lock.\n")
+        if os.path.exists(lock_path):
+            try:
+                os.remove(lock_path)
+            except Exception:
+                pass
+        return False
 
     # 7. 發送管理員開戶完成詳細通報信
     notify_admin_onboarding_done(
