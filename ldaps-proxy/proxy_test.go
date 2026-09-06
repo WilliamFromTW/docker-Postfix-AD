@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -284,4 +286,46 @@ func TestExtractPort(t *testing.T) {
 		}
 	}
 }
+
+func TestLdapGuardDropNonLdap(t *testing.T) {
+	ps, err := NewProxyServer(&Config{})
+	if err != nil {
+		t.Fatalf("NewProxyServer failed: %v", err)
+	}
+
+	// 1. 測試非 LDAP 協定 (例如 HTTP GET 'G'=0x47 或 SOCKS 0x05) 應被攔截回傳 EOF 避免 Panic
+	serverConn, clientConn := net.Pipe()
+	guard := &ldapGuardConn{Conn: serverConn, ps: ps, port: "3269"}
+
+	go func() {
+		_, _ = clientConn.Write([]byte("GET / HTTP/1.1\r\n\r\n"))
+		_ = clientConn.Close()
+	}()
+
+	buf := make([]byte, 1024)
+	n, err := guard.Read(buf)
+	if err != io.EOF {
+		t.Errorf("Expected io.EOF on non-LDAP traffic, got n=%d, err=%v", n, err)
+	}
+	_ = serverConn.Close()
+
+	// 2. 測試合法 LDAP ASN.1 SEQUENCE (0x30) 封包應正常放行
+	serverConn2, clientConn2 := net.Pipe()
+	guard2 := &ldapGuardConn{Conn: serverConn2, ps: ps, port: "3268"}
+
+	go func() {
+		_, _ = clientConn2.Write([]byte{0x30, 0x0c, 0x02, 0x01, 0x01})
+		_ = clientConn2.Close()
+	}()
+
+	n2, err2 := guard2.Read(buf)
+	if err2 != nil && err2 != io.EOF {
+		t.Errorf("Expected successful read on valid LDAP 0x30 header, got err=%v", err2)
+	}
+	if n2 < 1 || buf[0] != 0x30 {
+		t.Errorf("Expected first byte 0x30, got %v", buf[:n2])
+	}
+	_ = serverConn2.Close()
+}
+
 

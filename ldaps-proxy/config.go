@@ -203,18 +203,37 @@ func LoadConfig(configPath string) (*Config, error) {
 			cfg.CertFile = leCert
 			cfg.KeyFile = leKey
 		} else {
-			// 回退自簽憑證或暫存憑證
-			fallbackCert := "/etc/dovecot/cert.pem"
-			fallbackKey := "/etc/dovecot/key.pem"
-			if fileExists(fallbackCert) && fileExists(fallbackKey) {
-				cfg.CertFile = fallbackCert
-				cfg.KeyFile = fallbackKey
-			} else {
-				// 自動產生記憶體臨時憑證供測試或防呆
-				tempCert, tempKey, err := generateSelfSignedCert(hostName)
-				if err == nil {
-					cfg.CertFile = tempCert
-					cfg.KeyFile = tempKey
+			// 若指定 hostName 目錄不存在，自動搜尋 /etc/letsencrypt/live 下任何有效的子目錄 (例如 pmg.kafeiou.pw)
+			foundValid := false
+			if entries, err := os.ReadDir("/etc/letsencrypt/live"); err == nil {
+				for _, entry := range entries {
+					if entry.IsDir() {
+						candidateCert := filepath.Join("/etc/letsencrypt/live", entry.Name(), "fullchain.pem")
+						candidateKey := filepath.Join("/etc/letsencrypt/live", entry.Name(), "privkey.pem")
+						if fileExists(candidateCert) && fileExists(candidateKey) {
+							cfg.CertFile = candidateCert
+							cfg.KeyFile = candidateKey
+							foundValid = true
+							break
+						}
+					}
+				}
+			}
+
+			if !foundValid {
+				// 回退自簽憑證或暫存憑證
+				fallbackCert := "/etc/dovecot/cert.pem"
+				fallbackKey := "/etc/dovecot/key.pem"
+				if fileExists(fallbackCert) && fileExists(fallbackKey) {
+					cfg.CertFile = fallbackCert
+					cfg.KeyFile = fallbackKey
+				} else {
+					// 自動產生記憶體臨時憑證供測試或防呆
+					tempCert, tempKey, err := generateSelfSignedCert(hostName)
+					if err == nil {
+						cfg.CertFile = tempCert
+						cfg.KeyFile = tempKey
+					}
 				}
 			}
 		}

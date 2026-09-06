@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -128,7 +129,7 @@ func (s *ProxyServer) isAllowedAttr(name string) bool {
 	return false
 }
 
-// getBackendGC 嘗試連線至可用的後端 Global Catalog (Port 3268) 主機 (支援 StartTLS 與 LDAPS)
+// getBackendGC 嘗試連線至可用的後端 Global Catalog 主機 (支援 LDAPS 與純 TCP)
 func (s *ProxyServer) getBackendGC() (*ldap.Conn, error) {
 	var lastErr error
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
@@ -149,7 +150,21 @@ func (s *ProxyServer) getBackendGC() (*ldap.Conn, error) {
 			continue
 		}
 
-		// 2. 對於 Port 3268 / 389：先建立 TCP 連線，並自動升級 StartTLS 傳輸加密 (滿足 AD "Transport encryption required" 要求)
+		// 2. 對於 Port 3268 (微軟 AD Global Catalog)：純 TCP 直連
+		// 注意：微軟 AD 的 Global Catalog (3268) 原生不支援 StartTLS 擴展操作 (RFC 4511)，
+		// 發送 StartTLS 會導致 AD 回絕或嚴重延遲，因此 3268 必須直接以明文 TCP 通訊。
+		if backend.Port == 3268 {
+			conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s", addr),
+				ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}),
+			)
+			if err == nil {
+				return conn, nil
+			}
+			lastErr = err
+			continue
+		}
+
+		// 3. 對於標準 Port 389：先嘗試升級 StartTLS，若不支援則以明文連線
 		conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s", addr),
 			ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}),
 		)
@@ -157,9 +172,12 @@ func (s *ProxyServer) getBackendGC() (*ldap.Conn, error) {
 			if tlsErr := conn.StartTLS(tlsConfig); tlsErr == nil {
 				return conn, nil
 			}
-
-			// 若無法升級 TLS，返回原明文連線以相容未開啟 TLS 的純內網測試環境
-			return conn, nil
+			_ = conn.Close()
+			// 重新建立乾淨的明文連線 (避免 StartTLS 失敗殘留損壞狀態)
+			if plainConn, pErr := ldap.DialURL(fmt.Sprintf("ldap://%s", addr),
+				ldap.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second})); pErr == nil {
+				return plainConn, nil
+			}
 		}
 		lastErr = err
 	}
@@ -559,6 +577,52 @@ func (l *diagnosticListener) Accept() (net.Conn, error) {
 	return &diagnosticConn{Conn: conn, ps: l.ps, port: l.port}, nil
 }
 
+type ldapGuardConn struct {
+	net.Conn
+	ps        *ProxyServer
+	port      string
+	firstByte sync.Once
+	isInvalid bool
+}
+
+func (c *ldapGuardConn) Read(b []byte) (n int, err error) {
+	if c.isInvalid {
+		return 0, io.EOF
+	}
+
+	n, err = c.Conn.Read(b)
+	if n > 0 {
+		c.firstByte.Do(func() {
+			// LDAP message envelope 必須以 ASN.1 SEQUENCE (0x30) 起始。
+			// 若客戶端傳送非 LDAP 協定 (如 HTTP GET、SOCKS 0x05 等公網探測)，
+			// 直接由守衛層返回 EOF 斷開，避免 vjeantet/ldapserver 觸發未捕獲之 Panic 導致服務崩潰。
+			if b[0] != 0x30 {
+				c.isInvalid = true
+				c.ps.logAudit("[GUARD_DROP] client=%s sent non-LDAP byte 0x%02x on port %s, safely dropped to prevent crash",
+					c.RemoteAddr(), b[0], c.port)
+			}
+		})
+		if c.isInvalid {
+			return 0, io.EOF
+		}
+	}
+	return n, err
+}
+
+type ldapGuardListener struct {
+	net.Listener
+	ps   *ProxyServer
+	port string
+}
+
+func (l *ldapGuardListener) Accept() (net.Conn, error) {
+	conn, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return &ldapGuardConn{Conn: conn, ps: l.ps, port: l.port}, nil
+}
+
 func extractPort(addr string, defaultPort string) string {
 	_, port, err := net.SplitHostPort(addr)
 	if err == nil && port != "" {
@@ -596,7 +660,8 @@ func (s *ProxyServer) Start() error {
 		s.logAudit("[PROXY_START] Listening on Plain TCP %s (Port %s)", s.cfg.PlainListenAddr, plainPort)
 		go func() {
 			err := serverPlain.ListenAndServe(s.cfg.PlainListenAddr, func(srv *ldapserver.Server) {
-				srv.Listener = &diagnosticListener{Listener: srv.Listener, ps: s, port: plainPort}
+				diagListener := &diagnosticListener{Listener: srv.Listener, ps: s, port: plainPort}
+				srv.Listener = &ldapGuardListener{Listener: diagListener, ps: s, port: plainPort}
 			})
 			if err != nil {
 				s.logMu.Lock()
@@ -638,7 +703,8 @@ func (s *ProxyServer) Start() error {
 		go func() {
 			err := serverTLS.ListenAndServe(s.cfg.ListenAddr, func(srv *ldapserver.Server) {
 				diagListener := &diagnosticListener{Listener: srv.Listener, ps: s, port: tlsPort}
-				srv.Listener = tls.NewListener(diagListener, tlsConfig)
+				tlsListener := tls.NewListener(diagListener, tlsConfig)
+				srv.Listener = &ldapGuardListener{Listener: tlsListener, ps: s, port: tlsPort}
 			})
 			if err != nil {
 				s.logMu.Lock()
