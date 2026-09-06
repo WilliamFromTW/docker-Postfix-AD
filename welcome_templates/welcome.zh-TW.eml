@@ -1,0 +1,123 @@
+From: IT Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Date: ${DATE}
+Subject: 【歡迎使用】企業郵件設定指南 - ${EMAIL} (Outlook / Thunderbird / iOS / Android)
+Message-ID: ${MESSAGE_ID}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>企業郵件用戶端設定指南</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
+    .container { max-width: 720px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { color: #0d6efd; margin: 0 0 8px 0; font-size: 24px; }
+    .badge { background: #e7f1ff; color: #0d6efd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+    .table-box { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+    .table-box th, .table-box td { border: 1px solid #dee2e6; padding: 10px 14px; text-align: left; }
+    .table-box th { background-color: #f1f4f9; color: #495057; width: 32%; }
+    .step-box { background: #fdfdfd; border-left: 4px solid #198754; padding: 15px 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .step-box h3 { margin-top: 0; color: #198754; font-size: 18px; }
+    .step-box ol { margin: 0; padding-left: 20px; }
+    .step-box li { margin-bottom: 6px; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #dee2e6; font-size: 13px; color: #6c757d; text-align: center; }
+    code { background: #f1f3f5; color: #d63384; padding: 2px 6px; border-radius: 3px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>歡迎使用企業雲端郵件系統</h1>
+      <div>親愛的同仁您好，您的專屬信箱已順利啟用：<span class="badge">${EMAIL}</span></div>
+    </div>
+
+    <p>為了讓您能在電腦與手機上順暢收發信件，請參考以下連線參數與各平台軟體之設定步驟。</p>
+
+    <h2>📋 伺服器連線資訊速查表</h2>
+    <table class="table-box">
+      <tr>
+        <th>使用者帳號 (Account)</th>
+        <td><code>${ACCOUNT}</code> 或 <code>${EMAIL}</code></td>
+      </tr>
+      <tr>
+        <th>登入密碼 (Password)</th>
+        <td>您的 Windows AD 網域登入密碼</td>
+      </tr>
+      <tr>
+        <th>收信伺服器 (IMAP - 推薦)</th>
+        <td>主機：<code>${HOST_NAME}</code><br>連接埠：<code>993</code> (加密：SSL/TLS) 或 <code>143</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>收信伺服器 (POP3)</th>
+        <td>主機：<code>${HOST_NAME}</code><br>連接埠：<code>995</code> (加密：SSL/TLS) 或 <code>110</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>發信伺服器 (SMTP)</th>
+        <td>主機：<code>${HOST_NAME}</code><br>連接埠：<code>465</code> (加密：SSL/TLS) 或 <code>587</code> (STARTTLS)<br>驗證：<strong>必須勾選「外寄伺服器需要驗證」</strong>(帳密同收信)</td>
+      </tr>
+    </table>
+
+    <h2>📱 四大常用客戶端設定指南</h2>
+
+    <div class="step-box">
+      <h3>1. Microsoft Outlook (Windows / Mac)</h3>
+      <ol>
+        <li>開啟 Outlook，依序點選「檔案」➔「新增帳戶」。</li>
+        <li>輸入完整信箱 <code>${EMAIL}</code>，展開「進階選項」並勾選「讓我手動設定我的帳戶」，點擊「連線」。</li>
+        <li>帳戶類型選擇 <strong>IMAP</strong>。</li>
+        <li>內送伺服器填入 <code>${HOST_NAME}</code>，連接埠 <code>993</code>，加密方法選擇 <strong>SSL/TLS</strong>。</li>
+        <li>外寄伺服器填入 <code>${HOST_NAME}</code>，連接埠 <code>465</code>，加密方法選擇 <strong>SSL/TLS</strong>。</li>
+        <li>輸入您的 AD 登入密碼，點擊完成即可開始收發信！</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>2. Mozilla Thunderbird (PC / Mac / Linux)</h3>
+      <ol>
+        <li>開啟 Thunderbird，選擇「設定現有電子郵件帳戶」。</li>
+        <li>輸入您的全名、電子郵件 <code>${EMAIL}</code> 及密碼，點選「手動設定」。</li>
+        <li>接收協定選擇 <strong>IMAP</strong>，主機名稱輸入 <code>${HOST_NAME}</code>，通訊埠 <code>993</code>，連線安全選擇 <strong>SSL/TLS</strong>。</li>
+        <li>外寄伺服器主機名稱輸入 <code>${HOST_NAME}</code>，通訊埠 <code>465</code>，連線安全選擇 <strong>SSL/TLS</strong>。</li>
+        <li>使用者名稱填入 <code>${ACCOUNT}</code>，點擊「重新測試」通過後按下「完成」。</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>3. Apple iOS (iPhone / iPad 內建郵件)</h3>
+      <ol>
+        <li>進入手機「設定」➔「郵件」➔「帳號」➔「加入帳號」。</li>
+        <li>選擇最下方的「其他」➔「新增郵件帳號」。</li>
+        <li>輸入姓名、電子郵件 <code>${EMAIL}</code> 及密碼。</li>
+        <li>頂端選擇 <strong>IMAP</strong>：
+          <ul>
+            <li>收件伺服器主機名稱填寫 <code>${HOST_NAME}</code>，使用者名稱 <code>${ACCOUNT}</code>，密碼為 AD 密碼。</li>
+            <li>外寄伺服器 (SMTP) 主機名稱填寫 <code>${HOST_NAME}</code>，使用者名稱 <code>${ACCOUNT}</code>，密碼為 AD 密碼（<strong>請勿留空</strong>）。</li>
+          </ul>
+        </li>
+        <li>儲存後系統將自動驗證並完成設定。</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>4. Android (Gmail App / 內建郵件軟體)</h3>
+      <ol>
+        <li>開啟 Gmail App，點選右上角個人頭像 ➔「新增其他帳戶」。</li>
+        <li>在設定電子郵件畫面選擇「其他」。</li>
+        <li>輸入您的 Email <code>${EMAIL}</code>，點擊「手動設定」➔ 選擇 <strong>個人 (IMAP)</strong>。</li>
+        <li>內送伺服器設定：伺服器輸入 <code>${HOST_NAME}</code>，安全類型選擇 <strong>SSL/TLS</strong> (連接埠 993)。</li>
+        <li>外寄伺服器設定：SMTP 伺服器輸入 <code>${HOST_NAME}</code>，勾選「需要登入」，安全類型選擇 <strong>SSL/TLS</strong> (連接埠 465)。</li>
+        <li>點擊下一步即可順利完成帳號同步。</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      本郵件由企業郵件伺服器自動發送。若在設定過程遇到任何問題，請洽詢企業資訊維運小組 (IT Support)。<br>
+      &copy; ${DOMAIN_NAME} IT Department. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

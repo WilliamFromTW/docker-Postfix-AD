@@ -438,3 +438,56 @@ RECALL_MAX_HOURS=2         # 第二層同網域強制抹除有效時限 (小時)
   - 第一層 10 秒暫存期間，信件尚未進信箱，POP3 絕對收不到（100% 成功攔截）。
   - 若已超過暫存期且對方已使用 POP3 將信件收取下載至本地端電腦硬碟（.pst 檔案），伺服器端會抹除備份，但無法遠端刪除其電腦本機檔案（此時系統會在收回報告中向寄件者備註說明）。
 
+---
+
+## 📬 7. 新帳號首次登入歡迎信機制 (First-Login Localized Welcome Email)
+
+當企業新進員工首次以收信客戶端（Outlook、Thunderbird、iOS 或 Android）登入時，往往需要即時的伺服器連線參數與設定步驟。本系統透過 Dovecot 原生 `script-login`（Post-Login Hook），在帳號首次通過驗證的瞬間，自動依據 Active Directory 的語系屬性將專屬母語之連線指南精準投遞至其收件匣（INBOX）。
+
+```mermaid
+flowchart TD
+    Client["用戶端 (Outlook / Thunderbird / 手機)"] -->|"IMAP (:993) / POP3 (:995) 登入"| Dovecot["Dovecot 服務"]
+    Dovecot -->|"LDAP 認證成功"| Hook["script-login /usr/lib/dovecot/postlogin.sh"]
+    
+    subgraph FastPath ["極速放行檢查"]
+        Hook --> CheckSent{"檢查 .welcome_sent 是否存在?"}
+        CheckSent -- "已存在" --> ExecDirect["立即放行連線 (< 0.1ms)"]
+    end
+
+    subgraph ProvisionEngine ["Python 投放引擎 (provision_welcome_email.py)"]
+        CheckSent -- "不存在" --> TryLock{"原子目錄鎖 (mkdir .welcome_lock)"}
+        TryLock -- "搶鎖失敗 / 併發中" --> ExecDirect
+        TryLock -- "搶鎖成功" --> DetectLang["讀取 AD preferredLanguage 判定語系"]
+        DetectLang --> LoadTemplate["載入對應範本 (/etc/dovecot/welcome_templates)"]
+        LoadTemplate --> ReplaceVars["置換個人化變數 (${EMAIL}, ${ACCOUNT}, ${HOST_NAME})"]
+        ReplaceVars --> WriteMail["原子寫入 Maildir/tmp/ ➔ 搬移至 Maildir/new/"]
+        WriteMail --> CreateFlag["建立 .welcome_sent 標記並移除 .welcome_lock"]
+    end
+
+    CreateFlag --> ExecDirect
+    ExecDirect --> Session["啟動常規 IMAP / POP3 會話"]
+```
+
+### 🎯 核心設計與運作優勢
+
+1. **零背景負擔與精準時機**：
+   - 不使用資源消耗大的檔案系統監控常駐程式（Inotify），亦不頻繁輪詢 AD。
+   - 僅在使用者首次發起收發信連線的當下觸發，提供最具實用價值的設定指引。
+2. **原子目錄鎖與絕對冪等性 (Concurrency & Idempotency)**：
+   - 用戶端（如 Outlook 或 Thunderbird）啟動時通常會同時發起 2~5 條併發連線。
+   - 系統利用 POSIX `mkdir` 的原子特性，瞬間僅有 1 條連線能成功建鎖，其餘併發連線直接放行，徹底杜絕重複收到多封信的問題。
+   - 投放完成後產生 `.welcome_sent` 標記，未來所有連線耗時小於 0.1ms，對日常登入完全零延遲。
+   - 內建過期鎖超時保護（60 秒），即使伺服器中途非正常重啟亦能自動修復。
+3. **Active Directory 語系精準匹配與英文保底**：
+   - 系統僅讀取 AD 的 `preferredLanguage` 屬性（透過 Dovecot `user_attrs = ..., =user_lang=%{ldap:preferredLanguage}`）：
+     - 包含 `zh-TW`、`tw`、`Hant` ➔ 繁體中文 (`welcome.zh-TW.eml`)
+     - 包含 `zh-CN`、`cn`、`Hans` ➔ 簡體中文 (`welcome.zh-CN.eml`)
+     - 包含 `vi`、`vn` ➔ 越南文 (`welcome.vi.eml`)
+     - 未設定、為空、未知語系或範本缺失 ➔ **一律保底英文 (`welcome.en.eml`)**
+4. **個人化動態標籤置換**：
+   - 歡迎信範本自動替換 `${EMAIL}`、`${ACCOUNT}`、`${DOMAIN_NAME}`、`${HOST_NAME}`、`${DATE}`、`${MESSAGE_ID}`，讓同仁可直接按表複製貼上。
+5. **Docker Volume 範本擴充支援**：
+   - 系統將 `/etc/dovecot/welcome_templates/` 宣告為 Docker Volume（`mailserver_welcome`），並預設納入線上啟動指令產生器（`docs/genLaunchCommand.html`）。
+   - 企業管理人員可在宿主機直接自訂 `.eml` 範本排版與內文，容器重構升級亦能完整保留。
+
+

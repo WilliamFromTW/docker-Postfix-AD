@@ -10,13 +10,14 @@ RUN rpm --import https://rspamd.com/rpm-stable/gpg.key
 RUN dnf update -y
 RUN dnf -y install git man sudo chrony crontabs postfix-* htop procps-ng ca-certificates unbound valkey rspamd libffi-devel dovecot-pigeonhole python3 opendkim-tools opendkim bind-utils net-tools postfix cyrus-sasl cyrus-sasl-plain cyrus-sasl-md5 clamav clamd clamav-update clamav-devel clamav-scanner-systemd clamav-data clamav-server clamav-server-systemd dovecot supervisor httpd mod_ssl telnet rsyslog vi vim wget rsync glibc-gconv-extra 
 EXPOSE 25 143 465 587 993 995 4190
-VOLUME ["/etc/postfix","/etc/dovecot/","/etc/letsencrypt","/home/vmail","/var/log","/etc/rspamd","/etc/opendkim","/var/lib/rspamd"]
+VOLUME ["/etc/postfix","/etc/dovecot/","/etc/letsencrypt","/home/vmail","/var/log","/etc/rspamd","/etc/opendkim","/var/lib/rspamd","/etc/dovecot/welcome_templates"]
 RUN rm -rf /etc/logrotate.d/*
 COPY rsyslog.conf /etc/rsyslog.conf
 COPY listen.conf /etc/rsyslog.d/listen.conf
 COPY postfix_config/ /etc/postfix/
 COPY sysconfig/ /etc/sysconfig/
 COPY dovecot/ /etc/dovecot/
+COPY welcome_templates/ /etc/dovecot/welcome_templates/
 COPY opendkim/ /etc/opendkim/
 COPY rspamd/  /etc/rspamd/
 COPY clamd/clamd.d/   /etc/clamd.d/
@@ -26,7 +27,8 @@ COPY logrotate.d/ /etc/logrotate.d/
 COPY getOpenDKIM.sh /getOpenDKIM.sh
 COPY make_fake_cert.sh /make_fake_cert.sh
 COPY scripts/ /usr/lib/dovecot/sieve-pipe/
-RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*.py
+RUN cp /usr/lib/dovecot/sieve-pipe/postlogin.sh /usr/lib/dovecot/postlogin.sh && chmod 755 /usr/lib/dovecot/postlogin.sh
+RUN chmod 755 /usr/lib/dovecot/sieve-pipe/*.py /usr/lib/dovecot/sieve-pipe/*.sh
 RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem
 RUN unbound-control-setup
 RUN chown -R _rspamd:_rspamd /etc/rspamd/maps.d

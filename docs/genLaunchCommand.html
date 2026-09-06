@@ -502,7 +502,8 @@
           "docker volume create " + containerName + "_log\n" +
           "docker volume create " + containerName + "_opendkim\n" +
           "docker volume create " + containerName + "_rspamd_conf\n" +
-          "docker volume create " + containerName + "_rspamd_var\n\n" +
+          "docker volume create " + containerName + "_rspamd_var\n" +
+          "docker volume create " + containerName + "_welcome\n\n" +
           dict.commentRun + "\n" +
           "docker run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -510,6 +511,7 @@
           " -v " + containerName + "_opendkim:/etc/opendkim \\\n" +
           " -v " + containerName + "_postfix:/etc/postfix \\\n" +
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
+          " -v " + containerName + "_welcome:/etc/dovecot/welcome_templates \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
@@ -535,7 +537,8 @@
           "podman volume create " + containerName + "_log\n" +
           "podman volume create " + containerName + "_opendkim\n" +
           "podman volume create " + containerName + "_rspamd_conf\n" +
-          "podman volume create " + containerName + "_rspamd_var\n\n" +
+          "podman volume create " + containerName + "_rspamd_var\n" +
+          "podman volume create " + containerName + "_welcome\n\n" +
           dict.commentRun + "\n" +
           "podman run --name " + containerName + " \\\n" +
           " -v /etc/letsencrypt:/etc/letsencrypt \\\n" +
@@ -543,6 +546,7 @@
           " -v " + containerName + "_opendkim:/etc/opendkim \\\n" +
           " -v " + containerName + "_postfix:/etc/postfix \\\n" +
           " -v " + containerName + "_dovecot:/etc/dovecot \\\n" +
+          " -v " + containerName + "_welcome:/etc/dovecot/welcome_templates \\\n" +
           " -v " + containerName + "_rspamd_conf:/etc/rspamd \\\n" +
           " -v " + containerName + "_rspamd_var:/var/lib/rspamd \\\n" +
           " -v " + containerName + "_log:/var/log \\\n" +
@@ -603,6 +607,7 @@
           "      - " + containerName + "_opendkim:/etc/opendkim\n" +
           "      - " + containerName + "_postfix:/etc/postfix\n" +
           "      - " + containerName + "_dovecot:/etc/dovecot\n" +
+          "      - " + containerName + "_welcome:/etc/dovecot/welcome_templates\n" +
           "      - " + containerName + "_rspamd_conf:/etc/rspamd\n" +
           "      - " + containerName + "_rspamd_var:/var/lib/rspamd\n" +
           "      - " + containerName + "_log:/var/log\n\n" +
@@ -611,6 +616,7 @@
           "  " + containerName + "_opendkim:\n" +
           "  " + containerName + "_postfix:\n" +
           "  " + containerName + "_dovecot:\n" +
+          "  " + containerName + "_welcome:\n" +
           "  " + containerName + "_rspamd_conf:\n" +
           "  " + containerName + "_rspamd_var:\n" +
           "  " + containerName + "_log:\n";

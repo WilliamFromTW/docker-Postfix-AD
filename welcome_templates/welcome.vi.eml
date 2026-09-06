@@ -1,0 +1,123 @@
+From: IT Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Date: ${DATE}
+Subject: [Chào mừng] Hướng dẫn cấu hình Email doanh nghiệp - ${EMAIL} (Outlook / Thunderbird / iOS / Android)
+Message-ID: ${MESSAGE_ID}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hướng dẫn cấu hình Email doanh nghiệp</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
+    .container { max-width: 720px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { color: #0d6efd; margin: 0 0 8px 0; font-size: 24px; }
+    .badge { background: #e7f1ff; color: #0d6efd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+    .table-box { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+    .table-box th, .table-box td { border: 1px solid #dee2e6; padding: 10px 14px; text-align: left; }
+    .table-box th { background-color: #f1f4f9; color: #495057; width: 34%; }
+    .step-box { background: #fdfdfd; border-left: 4px solid #198754; padding: 15px 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .step-box h3 { margin-top: 0; color: #198754; font-size: 18px; }
+    .step-box ol { margin: 0; padding-left: 20px; }
+    .step-box li { margin-bottom: 6px; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #dee2e6; font-size: 13px; color: #6c757d; text-align: center; }
+    code { background: #f1f3f5; color: #d63384; padding: 2px 6px; border-radius: 3px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Chào mừng bạn đến với hệ thống Email doanh nghiệp</h1>
+      <div>Xin chào, hộp thư công việc của bạn đã được kích hoạt thành công: <span class="badge">${EMAIL}</span></div>
+    </div>
+
+    <p>Để thuận tiện nhận và gửi email trên máy tính cũng như thiết bị di động, vui lòng tham khảo các thông số kết nối và hướng dẫn cài đặt chi tiết dưới đây.</p>
+
+    <h2>📋 Bảng thông số kết nối máy chủ</h2>
+    <table class="table-box">
+      <tr>
+        <th>Tài khoản đăng nhập (Account)</th>
+        <td><code>${ACCOUNT}</code> hoặc <code>${EMAIL}</code></td>
+      </tr>
+      <tr>
+        <th>Mật khẩu (Password)</th>
+        <td>Mật khẩu tài khoản miền Windows AD của bạn</td>
+      </tr>
+      <tr>
+        <th>Máy chủ nhận thư (IMAP - Khuyên dùng)</th>
+        <td>Máy chủ: <code>${HOST_NAME}</code><br>Cổng: <code>993</code> (Bảo mật: SSL/TLS) hoặc <code>143</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>Máy chủ nhận thư (POP3)</th>
+        <td>Máy chủ: <code>${HOST_NAME}</code><br>Cổng: <code>995</code> (Bảo mật: SSL/TLS) hoặc <code>110</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>Máy chủ gửi thư (SMTP)</th>
+        <td>Máy chủ: <code>${HOST_NAME}</code><br>Cổng: <code>465</code> (Bảo mật: SSL/TLS) hoặc <code>587</code> (STARTTLS)<br>Xác thực: <strong>Bắt buộc bật "Máy chủ gửi thư yêu cầu xác thực"</strong> (chung thông tin đăng nhập)</td>
+      </tr>
+    </table>
+
+    <h2>📱 Hướng dẫn cài đặt trên 4 ứng dụng phổ biến</h2>
+
+    <div class="step-box">
+      <h3>1. Microsoft Outlook (Windows / Mac)</h3>
+      <ol>
+        <li>Mở Outlook, chọn File ➔ Add Account.</li>
+        <li>Nhập địa chỉ email <code>${EMAIL}</code>, mở Advanced options, tích chọn "Let me set up my account manually", rồi nhấn Connect.</li>
+        <li>Chọn loại tài khoản <strong>IMAP</strong>.</li>
+        <li>Máy chủ nhận (Incoming server): nhập <code>${HOST_NAME}</code>, Cổng <code>993</code>, Phương thức mã hóa chọn <strong>SSL/TLS</strong>.</li>
+        <li>Máy chủ gửi (Outgoing server): nhập <code>${HOST_NAME}</code>, Cổng <code>465</code>, Phương thức mã hóa chọn <strong>SSL/TLS</strong>.</li>
+        <li>Nhập mật khẩu AD của bạn và hoàn tất thiết lập.</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>2. Mozilla Thunderbird (PC / Mac / Linux)</h3>
+      <ol>
+        <li>Mở Thunderbird, chọn "Set up existing email account".</li>
+        <li>Nhập tên hiển thị, địa chỉ email <code>${EMAIL}</code> và mật khẩu, chọn "Configure manually".</li>
+        <li>Giao thức nhận: <strong>IMAP</strong>, Tên máy chủ: <code>${HOST_NAME}</code>, Cổng <code>993</code>, Bảo mật kết nối: <strong>SSL/TLS</strong>.</li>
+        <li>Máy chủ gửi thư: Tên máy chủ: <code>${HOST_NAME}</code>, Cổng <code>465</code>, Bảo mật kết nối: <strong>SSL/TLS</strong>.</li>
+        <li>Tên người dùng (Username): nhập <code>${ACCOUNT}</code>, nhấn "Re-test" và bấm "Done".</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>3. Apple iOS (Ứng dụng Mail trên iPhone / iPad)</h3>
+      <ol>
+        <li>Vào Cài đặt ➔ Mail ➔ Tài khoản ➔ Thêm tài khoản.</li>
+        <li>Chọn mục cuối cùng "Khác" ➔ "Thêm tài khoản Mail".</li>
+        <li>Nhập tên, địa chỉ email <code>${EMAIL}</code> và mật khẩu.</li>
+        <li>Chọn tab <strong>IMAP</strong>:
+          <ul>
+            <li>Máy chủ thư đến: Tên máy chủ <code>${HOST_NAME}</code>, Tên người dùng <code>${ACCOUNT}</code>, Mật khẩu AD.</li>
+            <li>Máy chủ thư đi (SMTP): Tên máy chủ <code>${HOST_NAME}</code>, Tên người dùng <code>${ACCOUNT}</code>, Mật khẩu AD (<strong>không được để trống</strong>).</li>
+          </ul>
+        </li>
+        <li>Lưu lại để hệ thống tự động xác thực và hoàn tất cài đặt.</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>4. Android (Ứng dụng Gmail / Ứng dụng Mail mặc định)</h3>
+      <ol>
+        <li>Mở ứng dụng Gmail, chạm vào ảnh đại diện góc trên bên phải ➔ "Thêm một tài khoản khác".</li>
+        <li>Chọn "Khác" trong danh sách cài đặt.</li>
+        <li>Nhập email <code>${EMAIL}</code>, chọn "Cài đặt thủ công" ➔ <strong>Cá nhân (IMAP)</strong>.</li>
+        <li>Cài đặt máy chủ đến: nhập máy chủ <code>${HOST_NAME}</code>, Loại bảo mật chọn <strong>SSL/TLS</strong> (Cổng 993).</li>
+        <li>Cài đặt máy chủ đi: nhập máy chủ SMTP <code>${HOST_NAME}</code>, tích chọn "Yêu cầu đăng nhập", Loại bảo mật <strong>SSL/TLS</strong> (Cổng 465).</li>
+        <li>Nhấn Tiếp theo để hoàn thành quá trình đồng bộ hóa hòm thư.</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      Email này được gửi tự động từ hệ thống máy chủ thư điện tử doanh nghiệp. Nếu bạn cần hỗ trợ, vui lòng liên hệ Bộ phận hỗ trợ CNTT (IT Support).<br>
+      &copy; ${DOMAIN_NAME} IT Department. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

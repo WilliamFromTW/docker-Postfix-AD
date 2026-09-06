@@ -1,0 +1,123 @@
+From: IT Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Date: ${DATE}
+Subject: 【欢迎使用】企业邮件设置指南 - ${EMAIL} (Outlook / Thunderbird / iOS / Android)
+Message-ID: ${MESSAGE_ID}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>企业邮件客户端设置指南</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
+    .container { max-width: 720px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { color: #0d6efd; margin: 0 0 8px 0; font-size: 24px; }
+    .badge { background: #e7f1ff; color: #0d6efd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+    .table-box { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+    .table-box th, .table-box td { border: 1px solid #dee2e6; padding: 10px 14px; text-align: left; }
+    .table-box th { background-color: #f1f4f9; color: #495057; width: 32%; }
+    .step-box { background: #fdfdfd; border-left: 4px solid #198754; padding: 15px 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .step-box h3 { margin-top: 0; color: #198754; font-size: 18px; }
+    .step-box ol { margin: 0; padding-left: 20px; }
+    .step-box li { margin-bottom: 6px; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #dee2e6; font-size: 13px; color: #6c757d; text-align: center; }
+    code { background: #f1f3f5; color: #d63384; padding: 2px 6px; border-radius: 3px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>欢迎使用企业云端邮件系统</h1>
+      <div>亲爱的同事您好，您的专属邮箱已顺利启用：<span class="badge">${EMAIL}</span></div>
+    </div>
+
+    <p>为了让您能在电脑与手机上顺畅收发邮件，请参考以下连接参数与各平台软件之设置步骤。</p>
+
+    <h2>📋 服务器连接信息速查表</h2>
+    <table class="table-box">
+      <tr>
+        <th>用户账号 (Account)</th>
+        <td><code>${ACCOUNT}</code> 或 <code>${EMAIL}</code></td>
+      </tr>
+      <tr>
+        <th>登录密码 (Password)</th>
+        <td>您的 Windows AD 域账号登录密码</td>
+      </tr>
+      <tr>
+        <th>收信服务器 (IMAP - 推荐)</th>
+        <td>主机：<code>${HOST_NAME}</code><br>端口：<code>993</code> (加密：SSL/TLS) 或 <code>143</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>收信服务器 (POP3)</th>
+        <td>主机：<code>${HOST_NAME}</code><br>端口：<code>995</code> (加密：SSL/TLS) 或 <code>110</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>发信服务器 (SMTP)</th>
+        <td>主机：<code>${HOST_NAME}</code><br>端口：<code>465</code> (加密：SSL/TLS) 或 <code>587</code> (STARTTLS)<br>身份验证：<strong>必须勾选“发送服务器需要身份验证”</strong>(账号密码同收信)</td>
+      </tr>
+    </table>
+
+    <h2>📱 四大常用客户端设置指南</h2>
+
+    <div class="step-box">
+      <h3>1. Microsoft Outlook (Windows / Mac)</h3>
+      <ol>
+        <li>启动 Outlook，依次点击“文件”➔“添加账户”。</li>
+        <li>输入完整邮箱 <code>${EMAIL}</code>，展开“高级选项”并勾选“让我手动设置我的账户”，点击“连接”。</li>
+        <li>账户类型选择 <strong>IMAP</strong>。</li>
+        <li>接收邮件服务器填入 <code>${HOST_NAME}</code>，端口 <code>993</code>，加密方法选择 <strong>SSL/TLS</strong>。</li>
+        <li>发送邮件服务器填入 <code>${HOST_NAME}</code>，端口 <code>465</code>，加密方法选择 <strong>SSL/TLS</strong>。</li>
+        <li>输入您的 AD 登录密码，点击完成即可开始收发邮件！</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>2. Mozilla Thunderbird (PC / Mac / Linux)</h3>
+      <ol>
+        <li>启动 Thunderbird，选择“设置现有电子邮件账户”。</li>
+        <li>输入您的姓名、电子邮件 <code>${EMAIL}</code> 及密码，点击“手动配置”。</li>
+        <li>接收协议选择 <strong>IMAP</strong>，主机名输入 <code>${HOST_NAME}</code>，端口 <code>993</code>，连接安全选择 <strong>SSL/TLS</strong>。</li>
+        <li>发送服务器主机名输入 <code>${HOST_NAME}</code>，端口 <code>465</code>，连接安全选择 <strong>SSL/TLS</strong>。</li>
+        <li>用户名填入 <code>${ACCOUNT}</code>，点击“重新测试”通过后点击“完成”。</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>3. Apple iOS (iPhone / iPad 内置邮件)</h3>
+      <ol>
+        <li>进入手机“设置”➔“邮件”➔“账户”➔“添加账户”。</li>
+        <li>选择最下方的“其他”➔“添加邮件账户”。</li>
+        <li>输入名称、电子邮件 <code>${EMAIL}</code> 及密码。</li>
+        <li>顶部选择 <strong>IMAP</strong> 标签：
+          <ul>
+            <li>收件服务器主机名填写 <code>${HOST_NAME}</code>，用户名 <code>${ACCOUNT}</code>，密码为 AD 密码。</li>
+            <li>发件服务器 (SMTP) 主机名填写 <code>${HOST_NAME}</code>，用户名 <code>${ACCOUNT}</code>，密码为 AD 密码（<strong>切勿留空</strong>）。</li>
+          </ul>
+        </li>
+        <li>存储后系统将自动验证并完成设置。</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>4. Android (Gmail App / 系统内置邮件)</h3>
+      <ol>
+        <li>打开 Gmail App，点击右上角个人头像 ➔“添加其他账户”。</li>
+        <li>在设置电子邮件页面选择“其他”。</li>
+        <li>输入您的邮箱 <code>${EMAIL}</code>，点击“手动设置”➔ 选择 <strong>个人 (IMAP)</strong>。</li>
+        <li>接收服务器设置：服务器输入 <code>${HOST_NAME}</code>，安全类型选择 <strong>SSL/TLS</strong> (端口 993)。</li>
+        <li>发送服务器设置：SMTP 服务器输入 <code>${HOST_NAME}</code>，勾选“要求登录”，安全类型选择 <strong>SSL/TLS</strong> (端口 465)。</li>
+        <li>点击下一步即可顺利完成账号同步。</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      本邮件由企业邮件服务器自动发送。如在设置过程中遇到任何问题，请联系企业 IT 运维团队 (IT Support)。<br>
+      &copy; ${DOMAIN_NAME} IT Department. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

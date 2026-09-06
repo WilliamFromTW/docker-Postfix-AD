@@ -1,0 +1,123 @@
+From: IT Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Date: ${DATE}
+Subject: [Welcome] Enterprise Mail Setup Guide - ${EMAIL} (Outlook / Thunderbird / iOS / Android)
+Message-ID: ${MESSAGE_ID}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enterprise Email Client Configuration Guide</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
+    .container { max-width: 720px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { color: #0d6efd; margin: 0 0 8px 0; font-size: 24px; }
+    .badge { background: #e7f1ff; color: #0d6efd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+    .table-box { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+    .table-box th, .table-box td { border: 1px solid #dee2e6; padding: 10px 14px; text-align: left; }
+    .table-box th { background-color: #f1f4f9; color: #495057; width: 34%; }
+    .step-box { background: #fdfdfd; border-left: 4px solid #198754; padding: 15px 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .step-box h3 { margin-top: 0; color: #198754; font-size: 18px; }
+    .step-box ol { margin: 0; padding-left: 20px; }
+    .step-box li { margin-bottom: 6px; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #dee2e6; font-size: 13px; color: #6c757d; text-align: center; }
+    code { background: #f1f3f5; color: #d63384; padding: 2px 6px; border-radius: 3px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to Enterprise Cloud Mail</h1>
+      <div>Hello, your business mailbox is now ready for use: <span class="badge">${EMAIL}</span></div>
+    </div>
+
+    <p>Please follow the connection settings and step-by-step instructions below to configure your desktop and mobile email clients.</p>
+
+    <h2>📋 Server Connection Quick Reference</h2>
+    <table class="table-box">
+      <tr>
+        <th>Username / Account</th>
+        <td><code>${ACCOUNT}</code> or <code>${EMAIL}</code></td>
+      </tr>
+      <tr>
+        <th>Password</th>
+        <td>Your Windows AD domain account password</td>
+      </tr>
+      <tr>
+        <th>Incoming Server (IMAP - Recommended)</th>
+        <td>Host: <code>${HOST_NAME}</code><br>Port: <code>993</code> (SSL/TLS) or <code>143</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>Incoming Server (POP3)</th>
+        <td>Host: <code>${HOST_NAME}</code><br>Port: <code>995</code> (SSL/TLS) or <code>110</code> (STARTTLS)</td>
+      </tr>
+      <tr>
+        <th>Outgoing Server (SMTP)</th>
+        <td>Host: <code>${HOST_NAME}</code><br>Port: <code>465</code> (SSL/TLS) or <code>587</code> (STARTTLS)<br>Auth: <strong>Require Authentication (Same credentials as incoming)</strong></td>
+      </tr>
+    </table>
+
+    <h2>📱 Client Configuration Guides</h2>
+
+    <div class="step-box">
+      <h3>1. Microsoft Outlook (Windows / Mac)</h3>
+      <ol>
+        <li>Open Outlook, navigate to File ➔ Add Account.</li>
+        <li>Enter <code>${EMAIL}</code>, expand Advanced options, check "Let me set up my account manually", and click Connect.</li>
+        <li>Choose <strong>IMAP</strong> account type.</li>
+        <li>Incoming Server: <code>${HOST_NAME}</code>, Port: <code>993</code>, Encryption: <strong>SSL/TLS</strong>.</li>
+        <li>Outgoing Server: <code>${HOST_NAME}</code>, Port: <code>465</code>, Encryption: <strong>SSL/TLS</strong>.</li>
+        <li>Enter your password and complete setup.</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>2. Mozilla Thunderbird (PC / Mac / Linux)</h3>
+      <ol>
+        <li>Open Thunderbird and choose "Set up existing email account".</li>
+        <li>Enter your name, <code>${EMAIL}</code>, and password, then select "Configure manually".</li>
+        <li>Incoming Protocol: <strong>IMAP</strong>, Hostname: <code>${HOST_NAME}</code>, Port: <code>993</code>, Security: <strong>SSL/TLS</strong>.</li>
+        <li>Outgoing Hostname: <code>${HOST_NAME}</code>, Port: <code>465</code>, Security: <strong>SSL/TLS</strong>.</li>
+        <li>Username: <code>${ACCOUNT}</code>, click "Re-test" and then "Done".</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>3. Apple iOS (iPhone / iPad Mail)</h3>
+      <ol>
+        <li>Go to Settings ➔ Mail ➔ Accounts ➔ Add Account.</li>
+        <li>Select "Other" ➔ "Add Mail Account".</li>
+        <li>Enter your name, <code>${EMAIL}</code>, and password.</li>
+        <li>Select <strong>IMAP</strong> tab:
+          <ul>
+            <li>Incoming Server: Host <code>${HOST_NAME}</code>, Username <code>${ACCOUNT}</code>, Password (AD password).</li>
+            <li>Outgoing Server: Host <code>${HOST_NAME}</code>, Username <code>${ACCOUNT}</code>, Password (AD password, <strong>do not leave blank</strong>).</li>
+          </ul>
+        </li>
+        <li>Save to verify and complete setup.</li>
+      </ol>
+    </div>
+
+    <div class="step-box">
+      <h3>4. Android (Gmail App / Native Mail)</h3>
+      <ol>
+        <li>Open Gmail App, tap your profile icon ➔ "Add another account".</li>
+        <li>Choose "Other".</li>
+        <li>Enter <code>${EMAIL}</code>, select "Manual setup" ➔ <strong>Personal (IMAP)</strong>.</li>
+        <li>Incoming Server: <code>${HOST_NAME}</code>, Security: <strong>SSL/TLS</strong> (Port 993).</li>
+        <li>Outgoing SMTP Server: <code>${HOST_NAME}</code>, check "Require sign-in", Security: <strong>SSL/TLS</strong> (Port 465).</li>
+        <li>Tap Next to finish synchronization.</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      This is an automated welcome message. If you need assistance, please contact the IT Helpdesk.<br>
+      &copy; ${DOMAIN_NAME} IT Department. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -161,6 +161,20 @@ mkdir -p /usr/lib/dovecot/sieve-pipe
 chown -R vmail:vmail /usr/lib/dovecot/sieve-pipe
 chmod -R 755 /usr/lib/dovecot/sieve-pipe
 
+# -------------------------------------------------------------
+# 首次登入歡迎信 (First-Login Welcome Email) 初始化
+# -------------------------------------------------------------
+mkdir -p /etc/dovecot/welcome_templates
+chown -R vmail:vmail /etc/dovecot/welcome_templates
+chmod -R 755 /etc/dovecot/welcome_templates
+
+if [ -f "/usr/lib/dovecot/sieve-pipe/postlogin.sh" ]; then
+  cp -f /usr/lib/dovecot/sieve-pipe/postlogin.sh /usr/lib/dovecot/postlogin.sh
+  chmod 755 /usr/lib/dovecot/postlogin.sh
+  chown vmail:vmail /usr/lib/dovecot/postlogin.sh
+fi
+
+
 if [ -d "/etc/dovecot/sieve/global" ]; then
   for sf in /etc/dovecot/sieve/global/*.sieve; do
     [ -f "$sf" ] && (/usr/bin/sievec "$sf" 2>/dev/null || /usr/sbin/sievec "$sf" 2>/dev/null || true)
