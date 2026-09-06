@@ -70,6 +70,28 @@ func TestCircuitBreaker(t *testing.T) {
 	}
 }
 
+func TestRateLimitDebounce(t *testing.T) {
+	cb := NewCircuitBreaker(5, 5*time.Minute, 30*time.Second)
+	ip := "192.168.1.100:54321"
+	user := "william"
+
+	// 第一次請求應通過 (非 rate limited)
+	if limited := cb.CheckRateLimit(ip, user, 100*time.Millisecond); limited {
+		t.Fatal("First request should not be rate limited")
+	}
+
+	// 緊接著立即發起第二次請求 (間隔 < 100ms)，應被限流判定為 Busy
+	if limited := cb.CheckRateLimit(ip, user, 100*time.Millisecond); !limited {
+		t.Fatal("Immediate second request must be rate limited (reply Busy)")
+	}
+
+	// 等待超過間隔時間
+	time.Sleep(120 * time.Millisecond)
+	if limited := cb.CheckRateLimit(ip, user, 100*time.Millisecond); limited {
+		t.Fatal("Request after interval should be permitted")
+	}
+}
+
 func TestSensitiveAttributeFiltering(t *testing.T) {
 	cfg := &Config{
 		AllowedAttrs: DefaultAllowedAttrs,

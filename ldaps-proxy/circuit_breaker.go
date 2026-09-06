@@ -7,14 +7,15 @@ import (
 	"time"
 )
 
-// FailureRecord 記錄特定「來源 IP + 帳號」的失敗狀態
+// FailureRecord 記錄特定「來源 IP + 帳號」的失敗狀態與請求頻率
 type FailureRecord struct {
-	Failures     int
-	LastFailAt   time.Time
-	BlockedUntil time.Time
+	Failures      int
+	LastFailAt    time.Time
+	LastRequestAt time.Time
+	BlockedUntil  time.Time
 }
 
-// CircuitBreaker 負責保護後端 Active Directory 免於帳號鎖定 (Anti-Lockout)
+// CircuitBreaker 負責保護後端 Active Directory 免於帳號鎖定 (Anti-Lockout) 與短時間防抖
 type CircuitBreaker struct {
 	mu          sync.RWMutex
 	records     map[string]*FailureRecord
@@ -26,13 +27,13 @@ type CircuitBreaker struct {
 // NewCircuitBreaker 建立新的防爆破熔斷器實例
 func NewCircuitBreaker(maxFailures int, window time.Duration, cooldown time.Duration) *CircuitBreaker {
 	if maxFailures <= 0 {
-		maxFailures = 3
+		maxFailures = 5
 	}
 	if window <= 0 {
 		window = 5 * time.Minute
 	}
 	if cooldown <= 0 {
-		cooldown = 10 * time.Minute
+		cooldown = 30 * time.Second
 	}
 
 	cb := &CircuitBreaker{
@@ -80,6 +81,31 @@ func (cb *CircuitBreaker) IsBlocked(clientIP, username string) bool {
 		return false
 	}
 
+	return false
+}
+
+// CheckRateLimit 檢查短時間內同帳號是否發起過於頻繁的請求 (Debounce 防抖)
+// 若請求間隔小於 minInterval，回傳 true 代表過於頻繁 (應回傳 Busy)
+func (cb *CircuitBreaker) CheckRateLimit(clientIP, username string, minInterval time.Duration) bool {
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
+	key := cb.makeKey(clientIP, username)
+	now := time.Now()
+
+	record, exists := cb.records[key]
+	if !exists {
+		cb.records[key] = &FailureRecord{
+			LastRequestAt: now,
+		}
+		return false
+	}
+
+	if !record.LastRequestAt.IsZero() && now.Sub(record.LastRequestAt) < minInterval {
+		return true
+	}
+
+	record.LastRequestAt = now
 	return false
 }
 

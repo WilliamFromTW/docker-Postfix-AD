@@ -41,6 +41,7 @@ type Config struct {
 	AllowedAttrs []string      `yaml:"allowed_attrs"`
 	MaxFailures  int           `yaml:"max_failures"`
 	CooldownMin  int           `yaml:"cooldown_min"`
+	CooldownSec  int           `yaml:"cooldown_sec"`
 	WindowMin    int           `yaml:"window_min"`
 	SearchBase   string        `yaml:"search_base"`
 	BindDN       string        `yaml:"bind_dn"`
@@ -75,8 +76,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	cfg := &Config{
 		ListenAddr:   ":3269",
 		LogFile:      "/var/log/ldaps-gal-proxy.log",
-		MaxFailures:  3,
-		CooldownMin:  10,
+		MaxFailures:  5,
+		CooldownSec:  30,
+		CooldownMin:  0,
 		WindowMin:    5,
 		AllowedAttrs: DefaultAllowedAttrs,
 	}

@@ -53,10 +53,17 @@ type ProxyServer struct {
 
 // NewProxyServer 建立 LDAPS GAL Proxy 伺服器
 func NewProxyServer(cfg *Config) (*ProxyServer, error) {
+	cooldownDuration := 30 * time.Second
+	if cfg.CooldownSec > 0 {
+		cooldownDuration = time.Duration(cfg.CooldownSec) * time.Second
+	} else if cfg.CooldownMin > 0 {
+		cooldownDuration = time.Duration(cfg.CooldownMin) * time.Minute
+	}
+
 	cb := NewCircuitBreaker(
 		cfg.MaxFailures,
 		time.Duration(cfg.WindowMin)*time.Minute,
-		time.Duration(cfg.CooldownMin)*time.Minute,
+		cooldownDuration,
 	)
 
 	ps := &ProxyServer{
@@ -246,10 +253,17 @@ func (s *ProxyServer) HandleBind(w ldapserver.ResponseWriter, m *ldapserver.Mess
 		return
 	}
 
-	// 2. 檢查防爆破熔斷器 (Anti-Lockout)
+	// 2. 檢查短時間頻率防抖 (Debounce 1s)：同帳號請求間隔小於 1 秒回傳 Busy，避免瞬時並發刷爆
+	if s.cb.CheckRateLimit(clientAddr, rawUser, 1*time.Second) {
+		s.logAudit("[RATE_LIMIT_BUSY] client=%s user=%q request too frequent (<1s), replying busy", clientAddr, rawUser)
+		w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultBusy))
+		return
+	}
+
+	// 3. 檢查防爆破熔斷器 (Anti-Lockout)：處於冷卻期時回傳 Busy 打破 Thunderbird 無限彈窗死循環
 	if s.cb.IsBlocked(clientAddr, rawUser) {
-		s.logAudit("[CIRCUIT_BREAK] client=%s user=%q blocked for cooldown window (protecting AD from lockout)", clientAddr, rawUser)
-		w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultInvalidCredentials))
+		s.logAudit("[CIRCUIT_BREAK] client=%s user=%q blocked for cooldown window (protecting AD from lockout), replying busy", clientAddr, rawUser)
+		w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultBusy))
 		return
 	}
 
@@ -299,7 +313,9 @@ func (s *ProxyServer) HandleBind(w ldapserver.ResponseWriter, m *ldapserver.Mess
 		s.logAudit("[AUTH_FAIL] client=%s user=%q bind_target=%q err=%v", clientAddr, rawUser, targetBindUser, err)
 		blocked := s.cb.RecordFailure(clientAddr, rawUser)
 		if blocked {
-			s.logAudit("[CIRCUIT_TRIGGERED] client=%s user=%q triggered cooldown for %d minutes", clientAddr, rawUser, s.cfg.CooldownMin)
+			s.logAudit("[CIRCUIT_TRIGGERED] client=%s user=%q triggered cooldown for 30s", clientAddr, rawUser)
+			w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultBusy))
+			return
 		}
 		w.Write(ldapserver.NewBindResponse(ldapserver.LDAPResultInvalidCredentials))
 		return
