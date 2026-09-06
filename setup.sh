@@ -99,13 +99,14 @@ else
  sed -i "s/\,MY_NETWORKS/ /g" /etc/postfix/main.cf
 fi
 
-if [ -n "${SPAM_EMAIL}" ]; then
- sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
- sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
-else
- sed -i "s/SPAM_EMAIL/postmaster/g" /etc/postfix/milter_header_checks
- sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
+if [ -z "${SPAM_EMAIL}" ]; then
+  echo "ERROR: SPAM_EMAIL environment variable is required! Exiting..." >&2
+  exit 1
 fi
+
+sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
+sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
+sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/aliases
 
 
 if [[ "${ENABLE_QUOTA}" == "true" ]]; then

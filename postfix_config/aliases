@@ -4,7 +4,9 @@
 #
 
 mailer-daemon  postmaster
-postmaster     root
+postmaster     SPAM_EMAIL
+root           SPAM_EMAIL
+abuse          SPAM_EMAIL
 
 #### example ####
 # xxx@test.com   1@test.com, 2@test2.com.tw

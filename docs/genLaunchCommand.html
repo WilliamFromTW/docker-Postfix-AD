@@ -126,8 +126,8 @@
             </div>
 
             <div class="col-md-6">
-              <label for="inputSpamEmail" class="form-label" data-i18n="spamEmail">SPAM_EMAIL (optional)</label>
-              <input type="email" class="form-control" id="inputSpamEmail" data-i18n-placeholder="placeholderSpam" placeholder="spam@test.com">
+              <label for="inputSpamEmail" class="form-label font-weight-bold" data-i18n="spamEmail">SPAM_EMAIL</label>
+              <input type="email" class="form-control" id="inputSpamEmail" data-i18n-placeholder="placeholderSpam" placeholder="spam@test.com" required>
             </div>
 
             <div class="col-md-6">
@@ -230,7 +230,7 @@
           aliases: "AD Aliases (optional)",
           domain: "Email Domain",
           mailServerName: "Email Server Name (FQDN)",
-          spamEmail: "SPAM_EMAIL (optional)",
+          spamEmail: "SPAM_EMAIL",
           permitNetwork: "Permit Trusted Networks (optional)",
           timeZone: "Time Zone",
           tzLink: "List of Time Zones",
@@ -278,7 +278,7 @@
           aliases: "AD 別名群組 (Aliases，選填)",
           domain: "電子郵件網域 (Email Domain)",
           mailServerName: "郵件主機完整名稱 (Server FQDN)",
-          spamEmail: "垃圾郵件信箱 (SPAM_EMAIL，選填)",
+          spamEmail: "管理員與隔離信箱 (SPAM_EMAIL)",
           permitNetwork: "信任網段 (Permit Networks，選填)",
           timeZone: "時區 (Time Zone)",
           tzLink: "查看時區列表 (List of Time Zones)",
@@ -326,7 +326,7 @@
           aliases: "AD 别名组 (Aliases，选填)",
           domain: "电子邮件域名 (Email Domain)",
           mailServerName: "邮件主机完整名称 (Server FQDN)",
-          spamEmail: "垃圾邮件邮箱 (SPAM_EMAIL，选填)",
+          spamEmail: "管理员与隔离邮箱 (SPAM_EMAIL)",
           permitNetwork: "信任网络网段 (Permit Networks，选填)",
           timeZone: "时区 (Time Zone)",
           tzLink: "查看时区列表 (List of Time Zones)",
@@ -374,7 +374,7 @@
           aliases: "Bí danh nhóm AD (Aliases, tùy chọn)",
           domain: "Tên miền Email (Email Domain)",
           mailServerName: "Tên đầy đủ của máy chủ Mail (Server FQDN)",
-          spamEmail: "Hòm thư thư rác (SPAM_EMAIL, tùy chọn)",
+          spamEmail: "Hòm thư quản trị & thư rác (SPAM_EMAIL)",
           permitNetwork: "Dải mạng tin cậy (Permit Networks, tùy chọn)",
           timeZone: "Múi giờ (Time Zone)",
           tzLink: "Xem danh sách múi giờ (List of Time Zones)",
@@ -486,9 +486,6 @@
         if (permitNetwork !== "") {
           cliOptional += " -e MY_NETWORKS='" + permitNetwork + "' \\\n";
         }
-        if (spamEmail !== "") {
-          cliOptional += " -e SPAM_EMAIL='" + spamEmail + "' \\\n";
-        }
         if (ollamaHost !== "") {
           cliOptional += " -e OLLAMA_HOST='" + ollamaHost + "' \\\n";
           if (ollamaModel !== "") {
@@ -525,6 +522,7 @@
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
           " -e TZ='" + timeZone + "' \\\n" +
           " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
+          " -e SPAM_EMAIL='" + spamEmail + "' \\\n" +
           cliOptional +
           " -d --restart always --net=host \\\n " +
           image + "\n";
@@ -557,6 +555,7 @@
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
           " -e TZ='" + timeZone + "' \\\n" +
           " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
+          " -e SPAM_EMAIL='" + spamEmail + "' \\\n" +
           cliOptional +
           " --label=disable -d --restart always --net=host \\\n " +
           podmanImage + "\n";
@@ -569,13 +568,11 @@
           "      - BIND_DN='" + bindDn + "'\n" +
           "      - BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>'\n" +
           "      - TZ='" + timeZone + "'\n" +
-          "      - ENABLE_QUOTA='" + enableQuota + "'\n";
+          "      - ENABLE_QUOTA='" + enableQuota + "'\n" +
+          "      - SPAM_EMAIL='" + spamEmail + "'\n";
         
         if (enableLdaps === "true") {
           composeEnv += "      - ENABLE_LDAPS='true'\n";
-        }
-        if (spamEmail !== "") {
-          composeEnv += "      - SPAM_EMAIL='" + spamEmail + "'\n";
         }
         if (aliases !== "") {
           composeEnv += "      - ALIASES='" + aliases + "'\n";

@@ -85,8 +85,31 @@ sequenceDiagram
   docker exec -it mailserver rspamadm pw --encrypt -p <您的新密碼>
   ```
   將產出的雜湊字串貼入 `/etc/rspamd/local.d/worker-controller.inc`。
-- **垃圾郵件轉發 (`SPAM_EMAIL`)**:
-  當設定了 `SPAM_EMAIL` 變數時，被判定為垃圾郵件隔離的信件會自動轉發至指定信箱（如 `spam@smile.taipei`）。
+- **管理員與垃圾郵件轉發 (`SPAM_EMAIL`，必填參數)**:
+  `SPAM_EMAIL` 為容器啟動之**核心必填參數**（未設定將中止啟動 `exit 1`）。除了被判定為隔離的垃圾郵件會自動重定向至該信箱外，系統標準角色帳號亦透過 `/etc/postfix/aliases` 統一轉發至 `SPAM_EMAIL`：
+  - `postmaster@<domain>` ➔ 轉發至 `SPAM_EMAIL` (符合 RFC 5321)
+  - `root@<domain>` ➔ 轉發至 `SPAM_EMAIL`
+  - `abuse@<domain>` ➔ 轉發至 `SPAM_EMAIL` (符合 RFC 2142)
+  - `mailer-daemon@<domain>` ➔ 導向 `postmaster` (最終交由 `SPAM_EMAIL` 收件)
+
+```mermaid
+flowchart TD
+    subgraph Senders [外部寄件 / 系統通知 / 垃圾郵件]
+        M1[寄至 postmaster@網域]
+        M2[寄至 root@網域]
+        M3[寄至 abuse@網域]
+        M4[寄至 mailer-daemon@網域]
+        M5[Rspamd 判定垃圾隔離郵件]
+    end
+
+    subgraph PostfixRouting [Postfix 虛擬別名表 virtual_alias_maps]
+        M1 -->|/etc/postfix/aliases| D[SPAM_EMAIL 管理員信箱]
+        M2 -->|/etc/postfix/aliases| D
+        M3 -->|/etc/postfix/aliases| D
+        M4 -->|postmaster| D
+        M5 -->|milter_header_checks| D
+    end
+```
 - **完整 Rspamd 設定指南**:
   關於黑白名單、關鍵字正則、危險副檔名與隔離郵件救援完整範例，請參閱專屬的 **[Rspamd 防護指南 (RSPAMD.zh-TW.md)](RSPAMD.zh-TW.md)**。
 
