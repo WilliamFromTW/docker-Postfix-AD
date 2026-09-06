@@ -264,5 +264,10 @@ chown clamupdate:clamupdate /var/lib/clamav
 chmod 755 /var/lib/clamav
 sudo mkdir -p /run/clamd.scan
 sudo chown clamscan:clamscan /run/clamd.scan
+# 確保 Postfix 關閉 SMTPUTF8 以免 Dovecot LMTP 退信
+if [ -f "/etc/postfix/main.cf" ]; then
+  grep -q "^smtputf8_enable" /etc/postfix/main.cf || echo "smtputf8_enable = no" >> /etc/postfix/main.cf
+fi
+
 freshclam
 /usr/bin/supervisord -c /etc/supervisord.conf
