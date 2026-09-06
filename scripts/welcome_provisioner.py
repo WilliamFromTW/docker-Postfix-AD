@@ -563,8 +563,6 @@ def process_onboarding(args):
     templates_dir = args.templates_dir
     if not templates_dir:
         candidates = [
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "welcome_templates"),
-            "/usr/lib/dovecot/sieve-pipe/welcome_templates",
             "/etc/dovecot/welcome_templates",
             os.path.join(os.path.dirname(__file__), "..", "dovecot", "welcome_templates"),
         ]
