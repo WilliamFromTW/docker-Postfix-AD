@@ -72,7 +72,7 @@ Các máy chủ email truyền thống khi phát hiện thư rác thường tr�
 
 ### 🛡️ Cơ Chế Bảo Vệ Tích Hợp:
 1. **Chính sách không trả thư (Zero-Bounce)**: Trong [`actions.conf`](rspamd/local.d/actions.conf), `reject` được đặt thành `null`. Thư rác điểm cao (≧ 15 điểm) sẽ thực thi `add_header` (gắn thẻ `X-Spam: YES` và `X-Rspamd-Action: add header`).
-2. **Tự động chuyển hướng cách ly**: Postfix bắt các tiêu đề này thông qua [`milter_header_checks`](postfix_config/milter_header_checks) và tự động thực hiện lệnh `REDIRECT` về hòm thư chỉ định **`SPAM_EMAIL`** (ví dụ: `spam@kafeiou.pw`, mặc định là `postmaster`).
+2. **Tự động chuyển hướng cách ly**: Postfix bắt các tiêu đề này thông qua [`milter_header_checks`](postfix_config/milter_header_checks) và tự động thực hiện lệnh `REDIRECT` về hòm thư bắt buộc **`SPAM_EMAIL`** (ví dụ: `spam@kafeiou.pw`, với `postmaster` tự động liên kết đến hòm thư này).
 
 ---
 

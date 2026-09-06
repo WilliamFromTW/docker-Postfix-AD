@@ -102,6 +102,18 @@ fi
 if [ -n "${SPAM_EMAIL}" ]; then
  sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/milter_header_checks
  sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
+
+ # 自動將 postmaster, abuse, root, mailer-daemon 綁定轉寄至 SPAM_EMAIL (滿足 RFC 5321 與系統告警承接)
+ if [ -f "/etc/postfix/aliases" ] && [ -n "${DOMAIN_NAME}" ]; then
+   for d in "${DOMAIN_NAME}" ${LOCAL_ONLY_DOMAINS} ${LOCAL_ONLY2_DOMAINS}; do
+     [ -z "$d" ] && continue
+     grep -q "^postmaster@${d}" /etc/postfix/aliases || echo "postmaster@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
+     grep -q "^abuse@${d}" /etc/postfix/aliases || echo "abuse@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
+     grep -q "^root@${d}" /etc/postfix/aliases || echo "root@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
+     grep -q "^mailer-daemon@${d}" /etc/postfix/aliases || echo "mailer-daemon@${d} ${SPAM_EMAIL}" >> /etc/postfix/aliases
+   done
+   /usr/sbin/postmap /etc/postfix/aliases 2>/dev/null || true
+ fi
 else
  sed -i "s/SPAM_EMAIL/postmaster/g" /etc/postfix/milter_header_checks
  sed -i "s/SPAM_EMAIL/postmaster/g" /etc/rspamd/kafeiou.d/quarantine_redirect.lua
@@ -166,6 +178,14 @@ if [ -d "/etc/dovecot/sieve/global" ]; then
   done
   chown -R vmail:vmail /etc/dovecot/sieve
 fi
+
+mkdir -p /etc/dovecot/welcome_templates
+chown -R vmail:vmail /etc/dovecot/welcome_templates
+chmod -R 755 /etc/dovecot/welcome_templates
+
+# 初始化 LDAPS 通訊錄代理審計日誌
+touch /var/log/ldaps-gal-proxy.log
+chmod 666 /var/log/ldaps-gal-proxy.log
 
 # 導出 Ollama 與時區設定供 Sieve 外部腳本讀取（Dovecot sieve_extprograms 預設隔離環境變數）
 cat << EOF > /etc/dovecot/ollama.env

@@ -85,8 +85,8 @@ sequenceDiagram
   docker exec -it mailserver rspamadm pw --encrypt -p <mat_khau_moi>
   ```
   Dán chuỗi băm nhận được vào tệp `/etc/rspamd/local.d/worker-controller.inc`.
-- **Chuyển tiếp thư rác (`SPAM_EMAIL`)**:
-  Khi cấu hình biến `SPAM_EMAIL`, các email bị đánh dấu cách ly sẽ tự động được chuyển tiếp đến hòm thư chỉ định (ví dụ: `spam@smile.taipei`).
+- **Hòm thư quản trị & cách ly (`SPAM_EMAIL`, Bắt buộc)**:
+  `SPAM_EMAIL` là biến môi trường bắt buộc. Ngoài việc tự động nhận các email bị cách ly từ Rspamd, hệ thống khi khởi động sẽ tự động liên kết các vai trò hệ thống bắt buộc theo RFC 5321 (`postmaster@${DOMAIN_NAME}`, `abuse@${DOMAIN_NAME}`, `root@${DOMAIN_NAME}`) tới hòm thư này trong `/etc/postfix/aliases` để đảm bảo tuân thủ tên miền và cảnh báo hệ thống.
 - **Hướng Dẫn Rspamd Toàn Diện**:
   Để biết chi tiết về danh sách trắng/đen, từ khóa biểu thức chính quy, tệp nén độc hại và khôi phục thư cách ly, vui lòng xem **[Hướng dẫn Rspamd (RSPAMD.vi.md)](RSPAMD.vi.md)**.
 

@@ -85,8 +85,8 @@ sequenceDiagram
   docker exec -it mailserver rspamadm pw --encrypt -p <your_new_password>
   ```
   Paste the output hash into `/etc/rspamd/local.d/worker-controller.inc`.
-- **Spam Redirection (`SPAM_EMAIL`)**:
-  When `SPAM_EMAIL` is configured, emails classified as spam with quarantine action will be automatically redirected to the specified mailbox (e.g., `spam@example.com`).
+- **Admin & Quarantine Mailbox (`SPAM_EMAIL`, Required)**:
+  `SPAM_EMAIL` is a required environment variable. In addition to collecting quarantined spam messages from Rspamd, the system automatically aliases RFC 5321 mandatory roles (`postmaster@${DOMAIN_NAME}`, `abuse@${DOMAIN_NAME}`, `root@${DOMAIN_NAME}`) to this mailbox in `/etc/postfix/aliases` upon startup to ensure domain compliance and administrative alert delivery.
 - **Comprehensive Rspamd Guide**:
   For detailed instructions on whitelist/blacklist maps, regex keywords, dangerous extensions, and false-positive rescue, refer to **[Rspamd Security Guide (RSPAMD.md)](RSPAMD.md)**.
 

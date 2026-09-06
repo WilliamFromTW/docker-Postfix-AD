@@ -85,8 +85,8 @@ sequenceDiagram
   docker exec -it mailserver rspamadm pw --encrypt -p <您的新密码>
   ```
   将生成的哈希字符串填入 `/etc/rspamd/local.d/worker-controller.inc`。
-- **垃圾邮件转发 (`SPAM_EMAIL`)**:
-  当设置了 `SPAM_EMAIL` 变量时，被判定为垃圾邮件隔离的信件会自动转发至指定邮箱（如 `spam@smile.taipei`）。
+- **管理员与隔离邮箱 (`SPAM_EMAIL`，必填)**:
+  `SPAM_EMAIL` 为必填环境变量。除用于自动接收 Rspamd 判定为隔离的垃圾邮件外，系统启动时会自动在 Postfix 别名表中将 RFC 5321 要求的 `postmaster@${DOMAIN_NAME}`、`abuse@${DOMAIN_NAME}`、`root@${DOMAIN_NAME}` 等关键系统角色自动绑定转发至此邮箱，确保系统警报与域名合规。
 - **完整 Rspamd 配置指南**:
   关于黑白名单、关键字正则、危险后缀名与隔离邮件救援完整范例，请参阅专属的 **[Rspamd 防护指南 (RSPAMD.zh-CN.md)](RSPAMD.zh-CN.md)**。
 

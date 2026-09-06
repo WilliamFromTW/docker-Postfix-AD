@@ -72,7 +72,7 @@ Traditional mail servers that immediately reject spam with `5xx Reject` introduc
 
 ### 🛡️ Built-in Zero-Bounce Protection:
 1. **Zero-Bounce Policy**: In [`actions.conf`](rspamd/local.d/actions.conf), `reject` is set to `null`. High-scoring spam (≧ 15 points) executes `add_header` (injecting `X-Spam: YES` and `X-Rspamd-Action: add header`).
-2. **Automated Quarantine Routing**: Postfix catches these headers via [`milter_header_checks`](postfix_config/milter_header_checks) and silently executes a `REDIRECT` to the configured **`SPAM_EMAIL`** mailbox (e.g. `spam@kafeiou.pw`, defaults to `postmaster`).
+2. **Automated Quarantine Routing**: Postfix catches these headers via [`milter_header_checks`](postfix_config/milter_header_checks) and silently executes a `REDIRECT` to the required **`SPAM_EMAIL`** mailbox (e.g. `spam@kafeiou.pw`, with `postmaster` automatically aliased to this mailbox).
 
 ---
 
