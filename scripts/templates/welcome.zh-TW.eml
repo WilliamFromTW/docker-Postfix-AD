@@ -1,0 +1,67 @@
+From: 資訊管理處 <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: 歡迎加入！公司電子郵箱使用指南與空間配額說明
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>歡迎使用企業電子郵箱</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">歡迎加入！您的企業電子郵箱已開通</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">客戶端連線參數與信箱儲存空間政策指引</p>
+  </div>
+
+  <p>親愛的同仁 ${ACCOUNT} 您好：</p>
+  <p>歡迎您加入團隊！您的公司專屬電子郵件帳號已初始化完成，以下為您的信箱儲存配額與連線資訊：</p>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">信箱空間配額資訊</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">個人信箱配額上限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">容量預警提醒：</td>
+      <td style="padding: 10px 15px;">使用量達到 <strong>95%</strong> 時，系統將自動發送清理與預警通知。</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">郵件伺服器連線設定參數</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+    <tr style="background-color: #f7fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">通訊協定</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">伺服器位址 (Host)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">連接埠 / 加密方式</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (收件推薦)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (收件)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (外寄信件)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">驗證帳號</td>
+      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+    </tr>
+  </table>
+
+  <p>您可使用上述參數於 Microsoft Outlook、Mozilla Thunderbird、Apple Mail 或智慧型手機上完成收發信設定。</p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #718096; margin: 0;">資訊系統運維小組 | 系統自動發送通知信</p>
+</body>
+</html>

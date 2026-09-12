@@ -23,8 +23,8 @@
 - **OpenDKIM**: Ký và xác thực chữ ký số email.
 - **Rspamd**: Bộ lọc thư rác hiệu suất cao với giao diện Web UI.
 - **ClamAV**: Tích hợp quét mã độc/virus.
-- **Hạn ngạch hòm thư (Quota)**: Mặc định 20GB (có thể tùy chỉnh).
-- **Email chào mừng bản địa hóa khi đăng nhập lần đầu (First-Login Localized Welcome Email)**: Khi nhân viên mới đăng nhập lần đầu qua ứng dụng email (Outlook, Thunderbird, iOS, Android), hệ thống tự động đọc thuộc tính `preferredLanguage` trong Active Directory (hỗ trợ Tiếng Việt, Tiếng Anh, Tiếng Trung phồn thể/giản thể) để gửi hướng dẫn cấu hình chi tiết vào Hộp thư đến (INBOX).
+- **Hạn ngạch hòm thư (Quota)**: Mặc định 50GB (hệ thống luôn bật, tự động gửi cảnh báo khi dung lượng vượt quá 95%, có thể tùy chỉnh linh hoạt).
+- **Email chào mừng bản địa hóa khi đăng nhập lần đầu (First-Login Localized Welcome Email)**: Khi nhân viên mới đăng nhập lần đầu qua ứng dụng email (Outlook, Thunderbird, iOS, Android), hệ thống tự động đọc thuộc tính `preferredLanguage` trong Active Directory (hỗ trợ Tiếng Việt, Tiếng Trung phồn thể/giản thể, Tiếng Anh, Tiếng Pháp, Tiếng Đức, Tiếng Nhật, Tiếng Tây Ban Nha, dự phòng Tiếng Anh) để gửi thông số máy chủ, hạn ngạch dung lượng động và hướng dẫn cấu hình chi tiết vào Hộp thư đến (INBOX).
 
 ---
 
@@ -72,7 +72,6 @@ services:
       - BIND_DN=CN=ldap,CN=Users,DC=test,DC=com
       - BIND_PW='your_bind_dn_password'
       - TZ=Asia/Taipei
-      - ENABLE_QUOTA=true
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
@@ -136,14 +135,44 @@ Khi người dùng đăng nhập lần đầu tiên qua IMAP/POP3, hệ thống 
 | **Tiếng Việt** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
 | **Tiếng Trung phồn thể** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
 | **Tiếng Trung giản thể** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
-| **Tiếng Anh** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
-| **Chưa thiết lập / Để trống / Khác** | *(Để trống)* hoặc ví dụ `ja`, `ko` | Bất kỳ mã ngôn ngữ nào chưa được hỗ trợ | **Tự động dùng Tiếng Anh dự phòng (`welcome.en.eml`)** |
+| **Tiếng Anh** | `en` | `en-US`, `en-GB`, `eng` | `welcome.en.eml` |
+| **Tiếng Pháp** | `fr` | `fr-FR`, `fra` | `welcome.fr.eml` |
+| **Tiếng Đức** | `de` | `de-DE`, `deu`, `ger` | `welcome.de.eml` |
+| **Tiếng Nhật** | `ja` | `ja-JP`, `jp`, `jpn` | `welcome.ja.eml` |
+| **Tiếng Tây Ban Nha** | `es` | `es-ES`, `spa` | `welcome.es.eml` |
+| **Chưa thiết lập / Để trống / Khác** | *(Để trống)* hoặc ví dụ `ko` | Bất kỳ mã ngôn ngữ nào chưa được hỗ trợ | **Tự động dùng Tiếng Anh dự phòng (`welcome.en.eml`)** |
 
 > **💡 Các bước thiết lập cho Quản trị viên AD**:
 > 1. Mở Windows Server **Active Directory Users and Computers** (`dsa.msc`).
 > 2. Trên thanh menu trên cùng, chọn **View** ➔ tích chọn **Advanced Features**.
 > 3. Nhấp đúp vào tài khoản người dùng ➔ chuyển sang tab **Attribute Editor**.
-> 4. Tìm thuộc tính `preferredLanguage`, nhấp Edit, nhập mã ngôn ngữ mong muốn (ví dụ: `vi` hoặc `zh-TW`) và nhấn lưu.
+> 4. Tìm thuộc tính `preferredLanguage`, nhấp Edit, nhập mã ngôn ngữ mong muốn (ví dụ: `vi`, `en` hoặc `ja`) và nhấn lưu.
+
+---
+
+#### 💾 Hướng dẫn quản lý và tùy chỉnh dung lượng hộp thư (Mailbox Quota Management)
+Hệ thống **mặc định luôn kích hoạt hạn ngạch dung lượng 50GB**, không cần thiết lập bất kỳ biến môi trường nào. Email được kiểm tra tức thì qua Dovecot Quota Policy (Port 12340) trong giai đoạn Postfix SMTP, tự động từ chối khi hòm thư đã đầy để bảo vệ an toàn ổ đĩa.
+
+1. **Cách sửa đổi dung lượng hạn ngạch toàn cục**:
+   Gắn kết (mount) hoặc chỉnh sửa trực tiếp tệp `/etc/dovecot/conf.d/90-quota.conf` (tương ứng với Volume `mailserver_dovecot` trên máy chủ):
+   ```ini
+   plugin {
+     quota_rule = *:storage=100G  # Thay đổi 50G thành dung lượng bạn mong muốn (ví dụ: 100G, 20G)
+   }
+   ```
+   Sau khi lưu, chạy lệnh sau trên máy chủ để áp dụng ngay lập tức (không cần khởi động lại container):
+   ```bash
+   docker exec -it mailserver doveadm reload
+   ```
+
+2. **Cách tra cứu dung lượng và hạn ngạch hiện tại của người dùng**:
+   ```bash
+   docker exec -it mailserver doveadm quota get -u william@smile.taipei
+   ```
+   Terminal sẽ hiển thị ngay lập tức dung lượng hiện đang sử dụng (KB), giới hạn hạn ngạch và phần trăm đã sử dụng.
+
+3. **Cơ chế cảnh báo tức thì khi đạt 95% dung lượng**:
+   Khi dung lượng hòm thư của nhân viên vượt ngưỡng **95%**, công cụ lưu trữ Dovecot sẽ **ngay lập tức kích hoạt sự kiện** để lưu email cảnh báo trực tiếp vào Hộp thư đến (INBOX), nhắc nhở người dùng dọn dẹp thư rác hoặc tệp đính kèm dung lượng lớn; hệ thống tích hợp sẵn **cơ chế làm nguội 90 ngày (3 tháng)** để tránh gửi cảnh báo lặp lại liên tục gây phiền toái cho người dùng.
 
 ---
 
@@ -181,7 +210,6 @@ docker run --name mailserver \
   -e BIND_DN="CN=ldap,CN=Users,DC=test,DC=com" \
   -e BIND_PW='your_bind_dn_password' \
   -e TZ="Asia/Taipei" \
-  -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \

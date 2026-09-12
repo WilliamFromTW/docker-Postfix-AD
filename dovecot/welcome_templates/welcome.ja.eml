@@ -1,0 +1,67 @@
+From: ITサポート <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: ようこそ！メールボックス設定ガイドと容量ポリシーのご案内
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>企業メールアカウントへようこそ</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Meiryo', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">ようこそ！企業メールアカウントが開設されました</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">メール設定手順およびストレージ容量ポリシーのご案内</p>
+  </div>
+
+  <p>${ACCOUNT} 様</p>
+  <p>チームへのご参加を心より歓迎いたします。社用メールアカウントの初期設定が完了いたしました。以下に接続設定および容量制限の詳細を記載いたします：</p>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">メールボックス容量情報</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">割り当て容量制限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">容量警告通知：</td>
+      <td style="padding: 10px 15px;">使用量が <strong>95%</strong> に達した際、自動的に整理を促す警告メールが送信されます。</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">メールサーバー接続設定パラメータ</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+    <tr style="background-color: #f7fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">プロトコル</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">サーバーアドレス (Host)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">ポート / 暗号化方式</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (受信推奨)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (受信)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (送信)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">ユーザー名</td>
+      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+    </tr>
+  </table>
+
+  <p>上記のパラメータを使用して、Microsoft Outlook、Mozilla Thunderbird、Apple Mail、またはスマートフォンで設定いただけます。</p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #718096; margin: 0;">ITインフラ運用チーム | システム自動送信メール</p>
+</body>
+</html>

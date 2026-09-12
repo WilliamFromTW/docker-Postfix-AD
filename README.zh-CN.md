@@ -23,8 +23,8 @@
 - **OpenDKIM**：邮件数字签名与验证。
 - **Rspamd**：高性能垃圾邮件过滤引擎与 Web 控制台。
 - **ClamAV**：内置防病毒扫描。
-- **邮箱配额限制 (Quota)**：默认 20GB（可灵活调整）。
-- **新账号首次登录欢迎信 (First-Login Localized Welcome Email)**：新进员工首次以收信软件（Outlook、Thunderbird、iOS、Android）连接时，系统自动依据 Active Directory 的 `preferredLanguage` 属性（支持简中、繁中、越文、英文保底）将包含服务器参数与设置教学的专属欢迎信投递至收件箱。
+- **邮箱配额限制 (Quota)**：默认 50GB（系统一律启用，超过 95% 时自动发送预警通知，可灵活调整）。
+- **新账号首次登录欢迎信 (First-Login Localized Welcome Email)**：新进员工首次以收信软件（Outlook、Thunderbird、iOS、Android）连接时，系统自动依据 Active Directory 的 `preferredLanguage` 属性（支持简中、繁中、英文、越文、法文、德文、日文、西文，保底英文）将包含服务器参数、动态容量配额与设置教学的专属欢迎信投递至收件箱。
 
 ---
 
@@ -72,7 +72,6 @@ services:
       - BIND_DN=CN=ldap,CN=Users,DC=test,DC=com
       - BIND_PW='your_bind_dn_password'
       - TZ=Asia/Taipei
-      - ENABLE_QUOTA=true
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
@@ -135,15 +134,45 @@ docker compose up -d
 | :--- | :--- | :--- | :--- |
 | **简体中文** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
 | **繁体中文** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
+| **英文** | `en` | `en-US`, `en-GB`, `eng` | `welcome.en.eml` |
 | **越南文** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
-| **英文** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
-| **未设置 / 留空 / 其他语言** | *(空白)* 或如 `ja`, `ko` | 任何不在上述清单中的代码 | **自动保底英文 (`welcome.en.eml`)** |
+| **法文** | `fr` | `fr-FR`, `fra` | `welcome.fr.eml` |
+| **德文** | `de` | `de-DE`, `deu`, `ger` | `welcome.de.eml` |
+| **日文** | `ja` | `ja-JP`, `jp`, `jpn` | `welcome.ja.eml` |
+| **西班牙文** | `es` | `es-ES`, `spa` | `welcome.es.eml` |
+| **未设置 / 留空 / 其他语言** | *(空白)* 或如 `ko` | 任何不在上述清单中的代码 | **自动保底英文 (`welcome.en.eml`)** |
 
 > **💡 AD 管理员设置步骤**：
 > 1. 打开 Windows Server“Active Directory 用户和计算机”(dsa.msc)。
 > 2. 上方菜单栏点击“查看 (View)”➔ 勾选 **“高级功能 (Advanced Features)”**。
 > 3. 双击该名用户 ➔ 切换至 **“属性编辑器 (Attribute Editor)”** 标签页。
-> 4. 找到 `preferredLanguage` 属性，点击编辑填入代码（例如 `zh-CN` 或 `vi`）并保存即可。
+> 4. 找到 `preferredLanguage` 属性，点击编辑填入代码（例如 `zh-CN`、`en` 或 `ja`）并保存即可。
+
+---
+
+#### 💾 邮箱配额管理与修改指南 (Mailbox Quota Management)
+本系统**默认一律启用 50GB 空间配额**，无需设置任何环境变量开关。邮件于 Postfix SMTP 阶段即时查询 Dovecot Quota Policy（Port 12340），满额时自动拒收以保护磁盘安全。
+
+1. **如何修改全局配额大小**：
+   直接挂载或编辑 `/etc/dovecot/conf.d/90-quota.conf`（对应宿主机的 `mailserver_dovecot` Volume）：
+   ```ini
+   plugin {
+     quota_rule = *:storage=100G  # 将 50G 改为您期望的容量（例如 100G、20G）
+   }
+   ```
+   修改保存后，于宿主机执行以下命令立即生效（无需重启容器）：
+   ```bash
+   docker exec -it mailserver doveadm reload
+   ```
+
+2. **如何查询用户当前用量与配额**：
+   ```bash
+   docker exec -it mailserver doveadm quota get -u william@smile.taipei
+   ```
+   终端将即时列出目前使用容量（KB）、配额上限与已使用百分比。
+
+3. **95% 容量即时警报机制**：
+   当员工邮箱使用量冲破 **95%** 时，Dovecot 存储引擎会于进信当下**即时通过事件触发**警报信存入收件箱，提醒同仁清理垃圾邮件或过期大文件；系统内置 **90 天（3 个月）冷却保护**，避免在容量边界反复打扰用户。
 
 ---
 
@@ -181,7 +210,6 @@ docker run --name mailserver \
   -e BIND_DN="CN=ldap,CN=Users,DC=test,DC=com" \
   -e BIND_PW='your_bind_dn_password' \
   -e TZ="Asia/Taipei" \
-  -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \

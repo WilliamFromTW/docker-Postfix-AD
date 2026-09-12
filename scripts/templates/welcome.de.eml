@@ -1,0 +1,67 @@
+From: IT-Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: Willkommen! Postfach-Einrichtungsanleitung und Speicherplatzrichtlinie
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Willkommen bei Ihrem Firmen-E-Mail-Konto</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">Willkommen bei Ihrem Firmen-E-Mail-Konto</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Einrichtungsanleitung und Speicherplatzrichtlinie</p>
+  </div>
+
+  <p>Guten Tag ${ACCOUNT},</p>
+  <p>Herzlich willkommen im Team! Ihr geschäftliches E-Mail-Konto wurde erfolgreich eingerichtet. Nachfolgend finden Sie Ihre Verbindungsdaten und Speicherplatzinformationen:</p>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Speicherplatz-Informationen</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">Zugewiesener Speicherplatz:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Kapazitätswarnung:</td>
+      <td style="padding: 10px 15px;">Eine automatische Warnmeldung wird versendet, sobald die Speicherauslastung <strong>95%</strong> erreicht.</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Mailserver-Verbindungseinstellungen</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+    <tr style="background-color: #f7fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Protokoll</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Serveradresse (Host)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Port / Sicherheit</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (Posteingang empfohlen)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (Posteingang)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (Postausgang)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Benutzername</td>
+      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+    </tr>
+  </table>
+
+  <p>Sie können Microsoft Outlook, Mozilla Thunderbird, Apple Mail oder mobile Geräte mit den oben genannten Parametern konfigurieren.</p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #718096; margin: 0;">IT-Infrastruktur-Team | Automatisch generierte Systembenachrichtigung</p>
+</body>
+</html>

@@ -1,0 +1,67 @@
+From: 信息管理处 <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: 欢迎加入！公司电子邮箱使用指南与空间配额说明
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>欢迎使用企业电子邮箱</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">欢迎加入！您的企业电子邮箱已开通</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">客户端连接参数与邮箱存储空间政策指引</p>
+  </div>
+
+  <p>亲爱的同仁 ${ACCOUNT} 您好：</p>
+  <p>欢迎您加入团队！您的公司专属电子邮件账号已初始化完成，以下为您的邮箱存储配额与连接信息：</p>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">邮箱空间配额信息</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">个人邮箱配额上限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">容量预警提醒：</td>
+      <td style="padding: 10px 15px;">使用量达到 <strong>95%</strong> 时，系统将自动发送清理与预警通知。</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">邮件服务器连接设置参数</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+    <tr style="background-color: #f7fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">通讯协议</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">服务器地址 (Host)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">端口 / 加密方式</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (收件推荐)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (收件)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (外发邮件)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">验证账号</td>
+      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+    </tr>
+  </table>
+
+  <p>您可使用上述参数于 Microsoft Outlook、Mozilla Thunderbird、Apple Mail 或智能手机上完成收发信设置。</p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #718096; margin: 0;">信息系统运维小组 | 系统自动发送通知信</p>
+</body>
+</html>

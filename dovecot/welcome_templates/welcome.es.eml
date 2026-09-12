@@ -1,0 +1,67 @@
+From: Soporte TI <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: Bienvenido! Guia de configuracion del buzon y politica de almacenamiento
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bienvenido a su correo corporativo</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">¡Bienvenido a su cuenta de correo corporativo!</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Instrucciones de configuración y política de almacenamiento</p>
+  </div>
+
+  <p>Estimado/a ${ACCOUNT}:</p>
+  <p>¡Bienvenido/a al equipo! Su cuenta de correo corporativo ha sido inicializada correctamente. A continuación encontrará sus parámetros de conexión y detalles de almacenamiento:</p>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Información de cuota de almacenamiento</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">Límite de cuota asignado:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Alerta de umbral:</td>
+      <td style="padding: 10px 15px;">Se enviará una advertencia automática cuando el almacenamiento alcance el <strong>95%</strong>.</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Parámetros de conexión al servidor</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+    <tr style="background-color: #f7fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Protocolo</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Dirección del servidor (Host)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Puerto / Seguridad</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (Entrante recomendado)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Puerto 993 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (Entrante)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Puerto 995 (SSL/TLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (Saliente)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Puerto 465 (SSL/TLS) / 587 (STARTTLS)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Nombre de usuario</td>
+      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+    </tr>
+  </table>
+
+  <p>Puede configurar Microsoft Outlook, Mozilla Thunderbird, Apple Mail o dispositivos móviles con los parámetros anteriores.</p>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #718096; margin: 0;">Equipo de Infraestructura TI | Notificación automática del sistema</p>
+</body>
+</html>

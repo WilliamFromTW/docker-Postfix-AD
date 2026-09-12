@@ -1,0 +1,53 @@
+From: Mail System Administrator <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: [WARNING] Mailbox storage capacity has reached 95%
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mailbox Storage Warning</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">Mailbox Storage Alert (95% Full)</h2>
+    <p style="margin: 0; color: #856404;">Your email storage has reached <strong>95%</strong> of its allocated quota.</p>
+  </div>
+
+  <p>Dear ${ACCOUNT},</p>
+
+  <p>This is an automated notification to inform you that your corporate mailbox (<code>${EMAIL}</code>) has reached <strong>95%</strong> of its total capacity.</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">Account:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">Mailbox Quota Limit:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Current Status:</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">Critical (95% reached)</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">Recommended Actions:</h3>
+  <ul>
+    <li><strong>Empty Trash &amp; Spam folders:</strong> Deleted items and spam still count toward your quota.</li>
+    <li><strong>Archive large attachments:</strong> Download attachments to your local device or archive old emails.</li>
+    <li><strong>Permanently remove unneeded messages:</strong> Delete older marketing or notification emails.</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>Important Notice:</strong> When your mailbox reaches 100%, incoming emails will be rejected by the server and returned to the sender with a "Quota Exceeded" bounce error.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">This is an automated system notification from ${HOST_NAME}. You will not receive this alert more than once every 90 days.</p>
+</body>
+</html>

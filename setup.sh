@@ -109,14 +109,36 @@ sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/rspamd/kafeiou.d/quarantine_redirect.
 sed -i "s/SPAM_EMAIL/${SPAM_EMAIL}/g" /etc/postfix/aliases
 
 
-if [[ "${ENABLE_QUOTA}" == "true" ]]; then
-  sed -i "s/QUOTA_MAIN/check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
-  sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.conf
-  sed -i "s/QUOTA_IMAP/imap_quota/g" /etc/dovecot/conf.d/20-imap.conf
-else
-  sed -i "s/QUOTA_MAIN/#check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
-  sed -i "s/QUOTA_MAIL/ /g" /etc/dovecot/conf.d/10-mail.conf
-  sed -i "s/QUOTA_IMAP/ /g" /etc/dovecot/conf.d/20-imap.conf  
+# -------------------------------------------------------------
+# Quota 儲存配額防護一律啟用 (預設 50GB 與 Volume 平滑升級)
+# -------------------------------------------------------------
+sed -i "s/QUOTA_MAIN/check_policy_service inet\:localhost\:12340/g" /etc/postfix/main.cf
+sed -i "s/QUOTA_MAIL/quota/g" /etc/dovecot/conf.d/10-mail.conf
+sed -i "s/QUOTA_IMAP/imap_quota/g" /etc/dovecot/conf.d/20-imap.conf
+
+# Volume 掛載舊版 20G 自動平滑升級至 50G（保留管理者自訂非 20G 數值）
+if [ -f "/etc/dovecot/conf.d/90-quota.conf" ]; then
+  if grep -q "quota_rule = \*:storage=20G" /etc/dovecot/conf.d/90-quota.conf; then
+    sed -i "s/quota_rule = \*:storage=20G/quota_rule = \*:storage=50G/g" /etc/dovecot/conf.d/90-quota.conf
+  fi
+  # 確保 Volume 內的 90-quota.conf 具備 quota-warning 設定
+  if ! grep -q "service quota-warning" /etc/dovecot/conf.d/90-quota.conf; then
+    cat << 'EOF' >> /etc/dovecot/conf.d/90-quota.conf
+
+plugin {
+  quota_warning = storage=95%% quota-warning 95 %u
+}
+
+service quota-warning {
+  executable = script /usr/lib/dovecot/sieve-pipe/quota_warning.sh
+  user = vmail
+  unix_listener quota-warning {
+    user = vmail
+    mode = 0660
+  }
+}
+EOF
+  fi
 fi
 
 if [ -n "${TZ}" ] ; then
@@ -172,6 +194,39 @@ if [ -f "/usr/lib/dovecot/sieve-pipe/postlogin.sh" ]; then
   cp -f /usr/lib/dovecot/sieve-pipe/postlogin.sh /usr/lib/dovecot/postlogin.sh
   chmod 755 /usr/lib/dovecot/postlogin.sh
   chown vmail:vmail /usr/lib/dovecot/postlogin.sh
+fi
+
+if [ -f "/etc/dovecot/conf.d/10-master.conf" ]; then
+  if ! grep -q "imap-postlogin" /etc/dovecot/conf.d/10-master.conf; then
+    cat << 'EOF' >> /etc/dovecot/conf.d/10-master.conf
+
+service imap {
+  executable = imap imap-postlogin
+}
+
+service imap-postlogin {
+  executable = script-login /usr/lib/dovecot/postlogin.sh
+  user = vmail
+  unix_listener imap-postlogin {
+    user = vmail
+    mode = 0660
+  }
+}
+
+service pop3 {
+  executable = pop3 pop3-postlogin
+}
+
+service pop3-postlogin {
+  executable = script-login /usr/lib/dovecot/postlogin.sh
+  user = vmail
+  unix_listener pop3-postlogin {
+    user = vmail
+    mode = 0660
+  }
+}
+EOF
+  fi
 fi
 
 

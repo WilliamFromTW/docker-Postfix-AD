@@ -23,8 +23,8 @@ A full-featured Postfix Mail Server container with Active Directory (LDAP) backe
 - **OpenDKIM**: Email signature verification & signing.
 - **Rspamd**: High-performance spam filter with Web UI.
 - **ClamAV**: Antivirus scanner integration.
-- **Mailbox Quota**: Dovecot quota management (default 20GB, configurable).
-- **First-Login Localized Welcome Email**: When a new user logs in via IMAP/POP3 for the first time (Outlook, Thunderbird, iOS, Android), the server automatically detects their native language from AD's `preferredLanguage` attribute and deposits a personalized setup guide into their INBOX (supports zh-TW, zh-CN, vi, with en fallback).
+- **Mailbox Quota**: Dovecot quota management enabled by default at 50GB (automatic 95% threshold alert, configurable).
+- **First-Login Localized Welcome Email**: When a new user logs in via IMAP/POP3 for the first time (Outlook, Thunderbird, iOS, Android), the server automatically detects their native language from AD's `preferredLanguage` attribute (supports zh-TW, zh-CN, en, vi, fr, de, ja, es, with en fallback) and deposits a personalized setup guide with dynamic quota details into their INBOX.
 
 ---
 
@@ -72,7 +72,6 @@ services:
       - BIND_DN=CN=ldap,CN=Users,DC=test,DC=com
       - BIND_PW='your_bind_dn_password'
       - TZ=Asia/Taipei
-      - ENABLE_QUOTA=true
       - SPAM_EMAIL=spam@test.com
       # - ALIASES=OU=aliases,DC=test,DC=com
       # - MY_NETWORKS=192.168.1.0/24
@@ -135,15 +134,45 @@ When a user logs in via IMAP/POP3 for the first time, the system reads their Act
 | :--- | :--- | :--- | :--- |
 | **Traditional Chinese** | `zh-TW` | `tw`, `zh-Hant`, `Hant`, `zh-HK` | `welcome.zh-TW.eml` |
 | **Simplified Chinese** | `zh-CN` | `cn`, `zh-Hans`, `Hans`, `zh-SG` | `welcome.zh-CN.eml` |
+| **English** | `en` | `en-US`, `en-GB`, `eng` | `welcome.en.eml` |
 | **Vietnamese** | `vi` | `vi-VN`, `vn` | `welcome.vi.eml` |
-| **English** | `en` | `en-US`, `en-GB` | `welcome.en.eml` |
-| **Unset / Empty / Other** | *(Blank)* or e.g. `ja`, `ko` | Any unsupported language code | **Default English Fallback (`welcome.en.eml`)** |
+| **French** | `fr` | `fr-FR`, `fra` | `welcome.fr.eml` |
+| **German** | `de` | `de-DE`, `deu`, `ger` | `welcome.de.eml` |
+| **Japanese** | `ja` | `ja-JP`, `jp`, `jpn` | `welcome.ja.eml` |
+| **Spanish** | `es` | `es-ES`, `spa` | `welcome.es.eml` |
+| **Unset / Empty / Other** | *(Blank)* or e.g. `ko` | Any unsupported language code | **Default English Fallback (`welcome.en.eml`)** |
 
 > **💡 AD Administrator Setup Steps**:
 > 1. Open Windows Server **Active Directory Users and Computers** (`dsa.msc`).
 > 2. In the top menu, select **View** ➔ check **Advanced Features**.
 > 3. Double-click the user ➔ switch to the **Attribute Editor** tab.
-> 4. Locate the `preferredLanguage` attribute, click Edit, enter the desired code (e.g. `zh-TW` or `vi`), and save.
+> 4. Locate the `preferredLanguage` attribute, click Edit, enter the desired code (e.g. `zh-TW`, `en`, or `ja`), and save.
+
+---
+
+#### 💾 Mailbox Quota Management & Customization Guide
+This system **enables a 50GB storage quota by default** without requiring any environment variables. Postfix checks Dovecot Quota Policy on port 12340 in real time during the SMTP transaction, automatically rejecting deliveries when a mailbox is full.
+
+1. **How to customize the default quota**:
+   Directly mount or edit `/etc/dovecot/conf.d/90-quota.conf` (corresponding to host volume `mailserver_dovecot`):
+   ```ini
+   plugin {
+     quota_rule = *:storage=100G  # Change 50G to your desired quota (e.g., 100G, 20G)
+   }
+   ```
+   Save the file and run the following command on the host for immediate effect (no container restart required):
+   ```bash
+   docker exec -it mailserver doveadm reload
+   ```
+
+2. **How to inspect user storage usage and quota**:
+   ```bash
+   docker exec -it mailserver doveadm quota get -u william@smile.taipei
+   ```
+   The terminal will display the current storage consumed (KB), quota limit, and percentage used.
+
+3. **95% Capacity Alert Mechanism**:
+   When a user's mailbox usage exceeds **95%**, Dovecot triggers an immediate warning email deposited directly into the user's INBOX. A **90-day cooldown** prevents repeated notification flooding.
 
 ---
 
@@ -181,7 +210,6 @@ docker run --name mailserver \
   -e BIND_DN="CN=ldap,CN=Users,DC=test,DC=com" \
   -e BIND_PW='your_bind_dn_password' \
   -e TZ="Asia/Taipei" \
-  -e ENABLE_QUOTA="true" \
   -e SPAM_EMAIL="spam@test.com" \
   -e OLLAMA_HOST="http://192.168.1.100:11434" \
   -e OLLAMA_MODEL="qwen2.5:7b" \
