@@ -247,6 +247,19 @@ TZ="${TZ}"
 EOF
 chmod 644 /etc/dovecot/ollama.env
 
+# 導出環境變數供 Dovecot postlogin 與 quota 腳本讀取（Dovecot script-login 預設隔離環境變數）
+cat << EOF > /etc/dovecot/postlogin.env
+DOMAIN_NAME="${DOMAIN_NAME}"
+HOST_NAME="${HOST_NAME}"
+HOST_IP="${HOST_IP}"
+SEARCH_BASE="${SEARCH_BASE}"
+BIND_DN="${BIND_DN}"
+BIND_PW="${BIND_PW}"
+ENABLE_LDAPS="${ENABLE_LDAPS}"
+EOF
+chown vmail:vmail /etc/dovecot/postlogin.env
+chmod 640 /etc/dovecot/postlogin.env
+
 # -------------------------------------------------------------
 # 企業級雙層郵件收回 (Two-Tier Message Recall) 初始化
 # -------------------------------------------------------------

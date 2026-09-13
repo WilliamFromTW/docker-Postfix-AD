@@ -8,6 +8,9 @@
 #   - Native injection via doveadm save with quota:noenforcing
 # ==============================================================================
 
+# 確保 PATH 環境變數存在，防止 doveadm 等 C 程式呼叫 t_binary_abspath() 時拋出 PATH undefined 致命錯誤
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
+
 PERCENT="${1:-95}"
 USER_ID="$2"
 
@@ -22,6 +25,11 @@ if [[ "$USER_ID" == *"@"* ]]; then
   DOMAIN_NAME="${USER_ID#*@}"
 else
   ACCOUNT="$USER_ID"
+  if [ -z "$DOMAIN_NAME" ] || [ "$DOMAIN_NAME" = "example.com" ]; then
+    if [ -f "/etc/postfix/domains" ]; then
+      DOMAIN_NAME=$(head -n 1 /etc/postfix/domains 2>/dev/null | tr -d '\r\n ')
+    fi
+  fi
   DOMAIN_NAME="${DOMAIN_NAME:-example.com}"
   USER_EMAIL="${ACCOUNT}@${DOMAIN_NAME}"
 fi

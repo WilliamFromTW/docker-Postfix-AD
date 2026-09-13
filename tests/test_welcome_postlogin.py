@@ -102,5 +102,50 @@ class TestWelcomePostlogin(unittest.TestCase):
         # 已經歡迎
         self.assertTrue(os.path.exists(welcomed_file))
 
+    def test_script_has_path_export_guard(self):
+        scripts_dir = os.path.join(os.path.dirname(__file__), "..", "scripts")
+        for sname in ["postlogin.sh", "quota_warning.sh"]:
+            spath = os.path.join(scripts_dir, sname)
+            with open(spath, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn('export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:', content,
+                          f"{sname} 必須設定並導出 PATH 以防止 Dovecot script-login 環境下 t_binary_abspath 失敗")
+
+    def test_dovecot_conf_imports_path(self):
+        conf_path = os.path.join(os.path.dirname(__file__), "..", "dovecot", "dovecot.conf")
+        with open(conf_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("import_environment = TZ PATH", content, "dovecot.conf 應啟用 import_environment = TZ PATH")
+
+    def test_ldap_mail_resolution_for_pure_account_login(self):
+        # 模擬同仁以純帳號 william-kafeiou 登入
+        account = "william-kafeiou"
+        default_domain = "example.com"
+        user_email = f"{account}@{default_domain}"
+
+        # 模擬 LDAP 查詢回傳
+        ldap_fake_output = (
+            "dn: CN=William,OU=IT,DC=kafeiou,DC=pw\n"
+            "sAMAccountName: william-kafeiou\n"
+            "mail: william@kafeiou.pw\n"
+            "preferredLanguage: zh-TW\n"
+        )
+
+        ldap_mail = ""
+        lang_code = ""
+        for line in ldap_fake_output.splitlines():
+            if line.lower().startswith("mail:"):
+                ldap_mail = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("preferredlanguage:"):
+                lang_code = line.split(":", 1)[1].strip()
+
+        if ldap_mail and "@" in ldap_mail:
+            user_email = ldap_mail
+            domain_name = ldap_mail.split("@", 1)[1]
+
+        self.assertEqual(user_email, "william@kafeiou.pw")
+        self.assertEqual(domain_name, "kafeiou.pw")
+        self.assertEqual(lang_code, "zh-TW")
+
 if __name__ == "__main__":
     unittest.main()

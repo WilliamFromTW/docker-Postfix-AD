@@ -3,6 +3,15 @@
 # Dovecot Post-Login Hook: First-Login Welcome Email Delivery
 # ==============================================================================
 
+# 確保 PATH 環境變數存在，防止 doveadm 等 C 程式呼叫 t_binary_abspath() 時拋出 PATH undefined 致命錯誤
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
+
+# 載入 Dovecot postlogin 專用環境變數（若存在）
+if [ -f "/etc/dovecot/postlogin.env" ]; then
+  # shellcheck source=/dev/null
+  . "/etc/dovecot/postlogin.env"
+fi
+
 # 1. 快速防呆：若無 USER 變數直接放行
 if [ -z "$USER" ]; then
   exec "$@"
@@ -47,21 +56,34 @@ fi
     DOMAIN_NAME="${USER_ID#*@}"
   else
     ACCOUNT="$USER_ID"
+    if [ -z "$DOMAIN_NAME" ] || [ "$DOMAIN_NAME" = "example.com" ]; then
+      if [ -f "/etc/postfix/domains" ]; then
+        DOMAIN_NAME=$(head -n 1 /etc/postfix/domains 2>/dev/null | tr -d '\r\n ')
+      fi
+    fi
     DOMAIN_NAME="${DOMAIN_NAME:-example.com}"
     USER_EMAIL="${ACCOUNT}@${DOMAIN_NAME}"
   fi
 
-  # 5. 判定使用者語系 (8 國語言，保底英文)
+  # 5. 判定使用者語系與真實 Email (8 國語言，保底英文)
   LANG_CODE="${user_lang:-${USER_LANG}}"
-  if [ -z "$LANG_CODE" ] && command -v ldapsearch >/dev/null 2>&1; then
+  if command -v ldapsearch >/dev/null 2>&1; then
     HOST_IP="${HOST_IP:-127.0.0.1}"
     SEARCH_BASE="${SEARCH_BASE:-}"
     BIND_DN="${BIND_DN:-}"
     BIND_PW="${BIND_PW:-}"
     if [ -n "$SEARCH_BASE" ]; then
-      LDAP_CMD=("ldapsearch" "-x" "-h" "$HOST_IP" "-b" "$SEARCH_BASE" "(|(sAMAccountName=${ACCOUNT})(mail=${USER_EMAIL}))" "preferredLanguage")
+      LDAP_CMD=("ldapsearch" "-x" "-h" "$HOST_IP" "-b" "$SEARCH_BASE" "(|(sAMAccountName=${ACCOUNT})(mail=${USER_EMAIL}))" "preferredLanguage" "mail")
       [ -n "$BIND_DN" ] && [ -n "$BIND_PW" ] && LDAP_CMD+=("-D" "$BIND_DN" "-w" "$BIND_PW")
-      LANG_CODE=$("${LDAP_CMD[@]}" 2>/dev/null | grep -i "^preferredLanguage:" | awk '{print $2}' | tr -d '\r\n')
+      LDAP_RES=$("${LDAP_CMD[@]}" 2>/dev/null)
+      if [ -z "$LANG_CODE" ]; then
+        LANG_CODE=$(echo "$LDAP_RES" | grep -i "^preferredLanguage:" | awk '{print $2}' | tr -d '\r\n')
+      fi
+      LDAP_MAIL=$(echo "$LDAP_RES" | grep -i "^mail:" | awk '{print $2}' | tr -d '\r\n')
+      if [ -n "$LDAP_MAIL" ] && [[ "$LDAP_MAIL" == *"@"* ]]; then
+        USER_EMAIL="$LDAP_MAIL"
+        DOMAIN_NAME="${LDAP_MAIL#*@}"
+      fi
     fi
   fi
 
