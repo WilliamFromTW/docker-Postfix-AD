@@ -143,15 +143,6 @@
 
             <div class="col-md-6 d-flex align-items-center">
               <div class="form-check mt-3">
-                <input class="form-check-input" type="checkbox" id="inputEnableQuota" checked>
-                <label class="form-check-label" for="inputEnableQuota" data-i18n="enableQuota">
-                  Enable Mailbox Quota Limit (ENABLE_QUOTA)
-                </label>
-              </div>
-            </div>
-
-            <div class="col-md-6 d-flex align-items-center">
-              <div class="form-check mt-3">
                 <input class="form-check-input" type="checkbox" id="inputEnableLdaps">
                 <label class="form-check-label" for="inputEnableLdaps" data-i18n="enableLdaps">
                   Enable LDAPS TLS Encryption (Port 636) (ENABLE_LDAPS)
@@ -234,7 +225,6 @@
           permitNetwork: "Permit Trusted Networks (optional)",
           timeZone: "Time Zone",
           tzLink: "List of Time Zones",
-          enableQuota: "Enable Mailbox Quota Limit (ENABLE_QUOTA)",
           enableLdaps: "Enable LDAPS TLS Encryption (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 Generate Configs",
           outputFormat: "Output Format:",
@@ -282,7 +272,6 @@
           permitNetwork: "信任網段 (Permit Networks，選填)",
           timeZone: "時區 (Time Zone)",
           tzLink: "查看時區列表 (List of Time Zones)",
-          enableQuota: "啟用信箱配額限制 (ENABLE_QUOTA)",
           enableLdaps: "啟用 LDAPS TLS 加密連線 (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 產生設定 (Generate)",
           outputFormat: "輸出格式：",
@@ -330,7 +319,6 @@
           permitNetwork: "信任网络网段 (Permit Networks，选填)",
           timeZone: "时区 (Time Zone)",
           tzLink: "查看时区列表 (List of Time Zones)",
-          enableQuota: "启用邮箱配额限制 (ENABLE_QUOTA)",
           enableLdaps: "启用 LDAPS TLS 加密连接 (Port 636) (ENABLE_LDAPS)",
           btnGen: "🚀 生成配置 (Generate)",
           outputFormat: "输出格式：",
@@ -378,7 +366,6 @@
           permitNetwork: "Dải mạng tin cậy (Permit Networks, tùy chọn)",
           timeZone: "Múi giờ (Time Zone)",
           tzLink: "Xem danh sách múi giờ (List of Time Zones)",
-          enableQuota: "Bật giới hạn dung lượng hòm thư (ENABLE_QUOTA)",
           enableLdaps: "Bật mã hóa LDAPS TLS (Cổng 636) (ENABLE_LDAPS)",
           btnGen: "🚀 Tạo cấu hình (Generate)",
           outputFormat: "Định dạng xuất:",
@@ -469,7 +456,6 @@
         var spamEmail = $("#inputSpamEmail").val().trim();
         var permitNetwork = $("#inputPermitNetwork").val().trim();
         var timeZone = $("#inputTimeZone").val().trim() || "Asia/Taipei";
-        var enableQuota = $("#inputEnableQuota").is(":checked") ? "true" : "false";
         var enableLdaps = $("#inputEnableLdaps").is(":checked") ? "true" : "false";
         var ollamaHost = $("#inputOllamaHost").val().trim();
         var ollamaModel = $("#inputOllamaModel").val().trim();
@@ -523,7 +509,6 @@
           " -e BIND_DN='" + bindDn + "' \\\n" +
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
           " -e TZ='" + timeZone + "' \\\n" +
-          " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
           " -e SPAM_EMAIL='" + spamEmail + "' \\\n" +
           cliOptional +
           " -d --restart always --net=host \\\n " +
@@ -558,7 +543,6 @@
           " -e BIND_DN='" + bindDn + "' \\\n" +
           " -e BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>' \\\n" +
           " -e TZ='" + timeZone + "' \\\n" +
-          " -e ENABLE_QUOTA='" + enableQuota + "' \\\n" +
           " -e SPAM_EMAIL='" + spamEmail + "' \\\n" +
           cliOptional +
           " --label=disable -d --restart always --net=host \\\n " +
@@ -572,7 +556,6 @@
           "      - BIND_DN='" + bindDn + "'\n" +
           "      - BIND_PW='<span class=\"text-danger fw-bold\">your_bind_dn_password</span>'\n" +
           "      - TZ='" + timeZone + "'\n" +
-          "      - ENABLE_QUOTA='" + enableQuota + "'\n" +
           "      - SPAM_EMAIL='" + spamEmail + "'\n";
         
         if (enableLdaps === "true") {
