@@ -1,0 +1,57 @@
+From: Bộ phận CNTT <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: [CẢNH BÁO] Dung lượng hòm thư doanh nghiệp đã đạt 95%
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cảnh báo dung lượng hòm thư</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ Cảnh báo dung lượng hòm thư (Đã dùng 95%)</h2>
+    <p style="margin: 0; color: #856404;">Dung lượng lưu trữ email của bạn đã đạt <strong>95%</strong> hạn mức được phân bổ.</p>
+  </div>
+
+  <p>Thân gửi <strong>${ACCOUNT}</strong>:</p>
+
+  <p>Hệ thống phát hiện hòm thư doanh nghiệp của bạn (<code>${EMAIL}</code>) đã sử dụng đến <strong>95%</strong> tổng dung lượng được cấp.</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">Tài khoản:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">Hạn mức dung lượng:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Trạng thái hiện tại:</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">Báo động nghiêm trọng (Đạt 95%)</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">Các hành động khuyến nghị:</h3>
+  <ul>
+    <li><strong>Dọn sạch thư mục Thùng rác &amp; Thư rác:</strong> Email đã xóa vẫn chiếm dụng dung lượng.</li>
+    <li><strong>Tải xuống và lưu trữ tệp đính kèm lớn:</strong> Lưu trữ tệp vào máy tính cá nhân và xóa khỏi hòm thư.</li>
+    <li><strong>Xóa vĩnh viễn các email không cần thiết:</strong> Xóa các email thông báo cũ hoặc thư quảng cáo.</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ Lưu ý quan trọng khi đầy hòm thư:</strong> Khi dung lượng đạt <strong>100%</strong>, máy chủ sẽ tạm ngưng tiếp nhận thư mới và tự động trả thư về cho người gửi kèm lỗi "Quota Exceeded".
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>Mẹo tự kiểm tra dung lượng tức thì:</strong> Sau khi dọn dẹp, bạn có thể gửi email cho chính mình với tiêu đề <code>#status</code> hoặc <code>#quota</code> để kiểm tra ngay dung lượng đã giải phóng!
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">Bộ phận CNTT | Thông báo cảnh báo tự động từ hệ thống ${HOST_NAME}. Bạn sẽ không nhận lại thông báo này trong vòng 90 ngày.</p>
+</body>
+</html>

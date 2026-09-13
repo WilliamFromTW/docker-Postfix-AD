@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>Tippen Sie auf Speichern / Anmelden, um das Postfach erfolgreich einzurichten!</li>
       </ol>
     </div>
+  <!-- 5. SSL/TLS-Sicherheitszertifikat-Warnung & Leitfaden -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 SSL/TLS-Sicherheitszertifikat-Warnung & Selbstsignierte Zertifikate</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      Falls dieser Mailserver ein internes oder selbstsigniertes Zertifikat verwendet, zeigt Ihr E-Mail-Programm oder Smartphone bei der Ersteinrichtung möglicherweise eine Sicherheitswarnung an. Gehen Sie wie folgt vor, um das Zertifikat zu akzeptieren und fortzufahren:
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (Desktop):</strong> Wenn die Sicherheitswarnung («Zertifikat kann nicht verifiziert werden») erscheint, klicken Sie einfach auf <strong>«Ja (Yes)»</strong>, um fortzufahren.</li>
+      <li><strong>Mozilla Thunderbird:</strong> Im Fenster Sicherheits-Ausnahmeregel aktivieren Sie «Diese Ausnahme dauerhaft speichern» und klicken auf <strong>«Sicherheits-Ausnahmeregel bestätigen»</strong>.</li>
+      <li><strong>Apple iPhone / iPad (iOS Mail):</strong> Wenn die Meldung <strong>«Serveridentität kann nicht überprüft werden»</strong> erscheint, tippen Sie auf <strong>«Fortfahren (Continue)»</strong> (oder unter Details auf «Vertrauen»).</li>
+      <li><strong>Android-Geräte (Gmail / Samsung Mail / Outlook Mobile):</strong> Tippen Sie bei einer Zertifikatswarnung auf <strong>«Erweitert» ➔ «Trotzdem fortfahren (Continue anyway)»</strong>; oder wählen Sie im Menü Sicherheitstyp die Option mit <strong>«Alle Zertifikate akzeptieren»</strong>.</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

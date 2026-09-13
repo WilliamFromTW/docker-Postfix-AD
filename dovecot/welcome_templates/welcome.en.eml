@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>Tap Save / Sign In to complete the setup and start emailing!</li>
       </ol>
     </div>
+  <!-- 5. SSL/TLS Certificate Warning Guidance -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 SSL/TLS Security Certificate Warning & Self-Signed Certificate Guide</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      If this mail server uses an internal or self-signed certificate, your email software or mobile app may display a "Security Alert" or "Untrusted Certificate" warning upon initial connection. Please follow the instructions below to trust/bypass and continue:
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (Desktop):</strong> When the security warning window appears ("Cannot verify certificate"), simply click <strong>"Yes"</strong> to continue using this server.</li>
+      <li><strong>Mozilla Thunderbird:</strong> When the security exception window appears, check "Permanently store this exception" and click <strong>"Confirm Security Exception"</strong>.</li>
+      <li><strong>Apple iPhone / iPad (iOS Mail):</strong> When the <strong>"Cannot Verify Server Identity"</strong> pop-up appears, tap <strong>"Continue"</strong> to proceed (or tap "Details" and tap "Trust" in the top right).</li>
+      <li><strong>Android Devices (Gmail / Samsung Mail / Outlook Mobile):</strong> If an untrusted certificate warning appears, tap <strong>"Advanced" ➔ "Continue anyway"</strong>; or in the security type menu, select an option with <strong>"Accept all certificates"</strong> (e.g., SSL/TLS accept all).</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

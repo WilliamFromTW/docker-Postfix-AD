@@ -1,0 +1,57 @@
+From: ITサポート <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: 【容量警告】メールボックスの空き容量が 95% に達しました
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>メールボックス容量警告</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Meiryo', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ メールボックス容量警告（95% 使用）</h2>
+    <p style="margin: 0; color: #856404;">メール保存容量が割り当て制限の <strong>95%</strong> に達しました。</p>
+  </div>
+
+  <p><strong>${ACCOUNT}</strong> 様</p>
+
+  <p>社用メールアカウント（<code>${EMAIL}</code>）の容量使用率が <strong>95%</strong> に達しましたのでお知らせいたします。</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">アカウント：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">容量上限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">現在の状態：</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">厳重警戒（95% 到達）</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">推奨される対応手順：</h3>
+  <ul>
+    <li><strong>「ごみ箱」や「迷惑メール」フォルダを空にする：</strong>削除済みアイテムも容量に含まれます。</li>
+    <li><strong>大容量の添付ファイルを退避：</strong>添付ファイルをPCにダウンロード保存し、メールを整理してください。</li>
+    <li><strong>不要な古いメールの削除：</strong>過去の通知メールや広告メールを削除してください。</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ 満杯時の重要ポリシー：</strong>容量が <strong>100%</strong> に達すると、新規メールの受信が停止され、送信元にエラー（Quota Exceeded）として返送されます。
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>即時容量確認のヒント：</strong>整理完了後、件名に <code>#status</code> または <code>#quota</code> と記載して自身宛てにメールを送信すると、最新の空き容量を即座に確認できます！
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">ITインフラ運用チーム | ${HOST_NAME} システム自動送信通知。同一アカウントへは90日間に1回のみ送信されます。</p>
+</body>
+</html>

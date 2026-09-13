@@ -1,0 +1,57 @@
+From: IT-Support <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: [WARNUNG] Die Speicherkapazitaet Ihres Postfachs hat 95% erreicht
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Postfach-Speicherplatzwarnung</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ Postfach-Speicherplatzwarnung (95% belegt)</h2>
+    <p style="margin: 0; color: #856404;">Ihr Postfachspeicher hat <strong>95%</strong> des zugewiesenen Kontingents erreicht.</p>
+  </div>
+
+  <p>Guten Tag <strong>${ACCOUNT}</strong>,</p>
+
+  <p>dies ist eine automatische Benachrichtigung, dass Ihr geschäftliches E-Mail-Konto (<code>${EMAIL}</code>) <strong>95%</strong> der Gesamtkapazität erreicht hat.</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">Konto:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">Postfach-Kontingent:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Aktueller Status:</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">Kritisch (95% erreicht)</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">Empfohlene Maßnahmen:</h3>
+  <ul>
+    <li><strong>Papierkorb &amp; Spam leeren:</strong> Gelöschte E-Mails belegen weiterhin Speicherplatz.</li>
+    <li><strong>Große Dateianhänge archivieren:</strong> Anhänge lokal speichern und aus dem Postfach entfernen.</li>
+    <li><strong>Veraltete Nachrichten löschen:</strong> Alte Benachrichtigungen oder Rundschreiben entfernen.</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ Wichtiger Hinweis:</strong> Sobald Ihr Postfach <strong>100%</strong> erreicht, werden eingehende E-Mails vom Server abgewiesen («Quota Exceeded»).
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>Sofortige Statusabfrage:</strong> Senden Sie nach der Bereinigung eine E-Mail mit dem Betreff <code>#status</code> oder <code>#quota</code> an sich selbst, um Ihren aktuellen Speicherverbrauch sofort zu prüfen!
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">IT-Infrastruktur-Team | Automatische Systembenachrichtigung von ${HOST_NAME}. Sie erhalten diesen Hinweis maximal einmal alle 90 Tage.</p>
+</body>
+</html>

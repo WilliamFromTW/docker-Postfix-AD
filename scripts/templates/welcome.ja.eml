@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>保存／サインインをタップすれば、無事に接続が完了しメールの送受信が可能になります！</li>
       </ol>
     </div>
+  <!-- 5. SSL/TLS 証明書警告および自己署名証明書の対応手順 -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 SSL/TLS セキュリティ証明書警告・自己署名証明書の対応手順</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      本メールサーバーが社内専用または自己署名証明書を使用している場合、PCやスマートフォンでの初回接続時に「セキュリティ警告」が表示されることがあります。以下の手順で証明書を信頼／スキップして続行してください：
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (パソコン版)：</strong>「セキュリティ警告／証明書を検証できません」画面が表示されたら、<strong>「はい (Yes)」</strong>をクリックして接続を続行します。</li>
+      <li><strong>Mozilla Thunderbird：</strong>例外承認画面にて「次回以降もこの例外を記憶する」にチェックを入れ、<strong>「セキュリティ例外を承認」</strong>をクリックします。</li>
+      <li><strong>Apple iPhone / iPad (iOS メール)：</strong><strong>「サーバの識別情報を検証できません」</strong>とダイアログが表示されたら、そのまま<strong>「続ける (Continue)」</strong>をタップしてください（または「詳細」➔「信頼」）。</li>
+      <li><strong>Android 端末 (Gmail / Galaxy メール / Outlook モバイル)：</strong>証明書警告画面が出た場合は<strong>「詳細設定」➔「そのまま続行 (Continue anyway)」</strong>をタップするか、セキュリティ設定で<strong>「すべての証明書を許可」</strong>を選択してください。</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

@@ -1,0 +1,57 @@
+From: 資訊管理處 <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: 【容量警告】您的企業信箱儲存空間已達 95% 警戒線
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>信箱容量警告通知</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ 信箱容量嚴重警戒 (已使用 95%)</h2>
+    <p style="margin: 0; color: #856404;">您的電子郵件儲存空間已達配額上限的 <strong>95%</strong>，請儘速清理以避免影響正常收信。</p>
+  </div>
+
+  <p>親愛的同仁 <strong>${ACCOUNT}</strong> 您好：</p>
+
+  <p>系統偵測到您的企業電子郵箱（<code>${EMAIL}</code>）儲存用量已達容量上限的 <strong>95%</strong>。</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">電子郵件帳號：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">信箱配額上限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">目前容量狀態：</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">嚴重警戒（已達 95%）</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">建議清理步驟：</h3>
+  <ul>
+    <li><strong>清空「垃圾桶」與「垃圾郵件」資料夾：</strong>已刪除郵件仍會佔用信箱配額空間。</li>
+    <li><strong>下載並封存大型附件：</strong>將大容量附件儲存至本機電腦後從信箱中移除。</li>
+    <li><strong>永久刪除過期郵件：</strong>刪除過期的系統通知信、廣告信或大量歷史報告。</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ 重要滿額政策提醒：</strong>當信箱容量達到 <strong>100%</strong> 時，伺服器將立即暫停收受新信件，外來信件將被自動退回給寄件者（Quota Exceeded）。
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>即時容量自查提示：</strong>清理完畢後，您可以隨時寄送一封主旨為 <code>#status</code> 或 <code>#quota</code> 的信件給自己，系統將立即回覆您當前最新的使用容量與進度條！
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">資訊管理處 | 來自 ${HOST_NAME} 的系統自動容量預警通知信。同一個帳號在 90 天內不會重複發送本警告。</p>
+</body>
+</html>

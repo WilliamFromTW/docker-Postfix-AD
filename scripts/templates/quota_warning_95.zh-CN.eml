@@ -1,0 +1,57 @@
+From: 信息技术处 <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: 【容量警告】您的企业邮箱存储空间已达 95% 警戒线
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>邮箱容量警告通知</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ 邮箱容量严重警戒 (已使用 95%)</h2>
+    <p style="margin: 0; color: #856404;">您的电子邮件存储空间已达配额上限的 <strong>95%</strong>，请尽快清理以免影响正常收信。</p>
+  </div>
+
+  <p>亲爱的同仁 <strong>${ACCOUNT}</strong> 您好：</p>
+
+  <p>系统检测到您的企业电子邮箱（<code>${EMAIL}</code>）存储用量已达容量上限的 <strong>95%</strong>。</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">电子邮件账号：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">邮箱配额上限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">当前容量状态：</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">严重警戒（已达 95%）</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">建议清理步骤：</h3>
+  <ul>
+    <li><strong>清空“已删除邮件”与“垃圾邮件”文件夹：</strong>已删除邮件仍会占用邮箱配额空间。</li>
+    <li><strong>下载并归档大型附件：</strong>将大容量附件保存至本地电脑后从邮箱中移除。</li>
+    <li><strong>永久删除过期邮件：</strong>删除过期的系统通知信、推广信或大量历史报告。</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ 重要满额政策提醒：</strong>当邮箱容量达到 <strong>100%</strong> 时，服务器将立即暂停接收新邮件，外来邮件将被自动退回给发件人（Quota Exceeded）。
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>即时容量自查提示：</strong>清理完毕后，您可以随时发送一封主题为 <code>#status</code> 或 <code>#quota</code> 的邮件给自己，系统将立即回复您当前最新的使用容量与进度条！
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">信息技术处 | 来自 ${HOST_NAME} 的系统自动容量预警通知邮件。同一个账号在 90 天内不会重复发送本警告。</p>
+</body>
+</html>

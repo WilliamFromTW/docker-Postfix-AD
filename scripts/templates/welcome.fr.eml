@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>Touchez Enregistrer / Connexion pour valider et utiliser votre messagerie !</li>
       </ol>
     </div>
+  <!-- 5. Guide sur les alertes de certificats de sécurité SSL/TLS -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 Alertes de certificats de sécurité SSL/TLS et certificats auto-signés</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      Si ce serveur de messagerie utilise un certificat interne ou auto-signé, votre logiciel de messagerie ou application mobile peut afficher une alerte de sécurité lors de la première connexion. Suivez les instructions ci-dessous pour faire confiance au certificat et continuer :
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (PC) :</strong> Lorsqu'une alerte de sécurité s'affiche, cliquez simplement sur <strong>« Oui (Yes) »</strong> pour continuer à utiliser ce serveur.</li>
+      <li><strong>Mozilla Thunderbird :</strong> Dans la fenêtre d'exception, cochez « Enregistrer définitivement cette exception » et cliquez sur <strong>« Confirmer l'exception de sécurité »</strong>.</li>
+      <li><strong>Apple iPhone / iPad (iOS Mail) :</strong> Lorsque la boîte de dialogue <strong>« Impossible de vérifier l'identité du serveur »</strong> apparaît, appuyez sur <strong>« Continuer (Continue) »</strong> (ou appuyez sur Détails ➔ Faire confiance).</li>
+      <li><strong>Appareils Android (Gmail / Samsung Mail / Outlook Mobile) :</strong> Si un avertissement de certificat non approuvé s'affiche, appuyez sur <strong>« Avancé » ➔ « Continuer quand même (Continue anyway) »</strong> ; ou dans le menu type de sécurité, sélectionnez l'option avec <strong>« Accepter tous les certificats »</strong>.</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

@@ -1,0 +1,57 @@
+From: Support Informatique <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: [AVERTISSEMENT] Le stockage de votre boite aux lettres a atteint 95%
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Alerte de stockage de la boîte aux lettres</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ Alerte de stockage de boîte aux lettres (95% atteint)</h2>
+    <p style="margin: 0; color: #856404;">Votre espace de stockage a atteint <strong>95%</strong> du quota qui vous a été alloué.</p>
+  </div>
+
+  <p>Bonjour <strong>${ACCOUNT}</strong>,</p>
+
+  <p>Ceci est une notification automatique pour vous informer que votre boîte aux lettres professionnelle (<code>${EMAIL}</code>) a atteint <strong>95%</strong> de sa capacité totale.</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">Compte :</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">Limite de quota :</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">État actuel :</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">Critique (95% atteint)</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">Actions recommandées :</h3>
+  <ul>
+    <li><strong>Vider la corbeille et les courriers indésirables :</strong> Les éléments supprimés occupent toujours de l'espace.</li>
+    <li><strong>Archiver les pièces jointes volumineuses :</strong> Téléchargez les pièces jointes localement puis supprimez-les.</li>
+    <li><strong>Supprimer définitivement les e-mails obsolètes :</strong> Supprimez les anciennes notifications ou publicités.</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ Remarque importante :</strong> Lorsque votre boîte aux lettres atteint <strong>100%</strong>, les e-mails entrants seront refusés par le serveur avec l'erreur « Quota Exceeded ».
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>Auto-vérification immédiate :</strong> Après nettoyage, envoyez un e-mail à vous-même avec pour objet <code>#status</code> ou <code>#quota</code> pour consulter immédiatement votre espace libéré !
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">Support Informatique | Notification automatique du système depuis ${HOST_NAME}. Vous ne recevrez pas cette alerte plus d'une fois tous les 90 jours.</p>
+</body>
+</html>

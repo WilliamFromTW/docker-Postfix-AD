@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>再次点击保存／登录，即可顺利连接收发邮件！</li>
       </ol>
     </div>
+  <!-- 5. SSL/TLS 证书不受信任／安全警告处理指引 -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 SSL/TLS 安全证书提示／第三方自签名证书处理指引</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      若本邮件服务器使用内部专用或第三方自签名证书，在电脑或手机首次连接时，软件可能会弹出“安全警告”或“证书不受信任”提示，请按下列方式忽略或信任证书继续：
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (电脑版)：</strong>弹出“安全警示／无法验证证书”窗口时，直接点击<strong>“是 (Yes)”</strong>继续使用此服务器即可。</li>
+      <li><strong>Mozilla Thunderbird：</strong>弹出安全例外窗口时，勾选“永久保存此例外”，并点击<strong>“确认安全例外”</strong>。</li>
+      <li><strong>Apple iPhone / iPad (iOS 邮件)：</strong>弹出<strong>“无法验证服务器身份”</strong>对话框时，请直接点击<strong>“继续 (Continue)”</strong>即可忽略警告正常收发（或在“详细信息”点击右上角“信任”）。</li>
+      <li><strong>Android 手机 (Gmail / 三星邮件 / Outlook 移动版)：</strong>若提示证书不受信任，请点击<strong>“高级”➔“仍然继续 (Continue anyway)”</strong>；或在设置中的安全性类型下拉菜单改选带有<strong>“接受所有证书”</strong>的连接方式。</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

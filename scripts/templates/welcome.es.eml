@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>Toque en Guardar / Iniciar sesión para conectarse exitosamente y comenzar a usar su correo.</li>
       </ol>
     </div>
+  <!-- 5. Guía de advertencias de certificados de seguridad SSL/TLS -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 Advertencia de certificado de seguridad SSL/TLS y certificados autofirmados</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      Si este servidor de correo utiliza un certificado interno o autofirmado, su cliente de correo o aplicación móvil puede mostrar una advertencia de seguridad en la primera conexión. Siga estas instrucciones para confiar en el certificado y continuar:
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (PC):</strong> Cuando aparezca la ventana de advertencia de seguridad («No se puede verificar el certificado»), haga clic simplemente en <strong>«Sí (Yes)»</strong> para continuar.</li>
+      <li><strong>Mozilla Thunderbird:</strong> En la ventana de excepción, marque «Guardar esta excepción de manera permanente» y haga clic en <strong>«Confirmar excepción de seguridad»</strong>.</li>
+      <li><strong>Apple iPhone / iPad (iOS Mail):</strong> Cuando aparezca el aviso <strong>«No se puede verificar la identidad del servidor»</strong>, pulse directamente en <strong>«Continuar (Continue)»</strong> (o pulse en Detalles ➔ Confiar).</li>
+      <li><strong>Dispositivos Android (Gmail / Samsung Mail / Outlook Móvil):</strong> Si aparece una advertencia de certificado no confiable, pulse en <strong>«Avanzado» ➔ «Continuar de todos modos (Continue anyway)»</strong>; o en el menú de tipo de seguridad elija la opción que incluye <strong>«Aceptar todos los certificados»</strong>.</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

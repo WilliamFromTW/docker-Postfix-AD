@@ -77,5 +77,57 @@ plugin {
         quota_limit = f"{num} {unit}"
         self.assertEqual(quota_limit, "80 GB")
 
+    def test_all_8_quota_warning_templates_exist_and_sync(self):
+        dovecot_src_dir = os.path.join(os.path.dirname(__file__), "..", "dovecot", "welcome_templates")
+        scripts_src_dir = os.path.join(os.path.dirname(__file__), "..", "scripts", "templates")
+
+        for lang in ["zh-TW", "zh-CN", "en", "vi", "fr", "de", "ja", "es"]:
+            d_file = os.path.join(dovecot_src_dir, f"quota_warning_95.{lang}.eml")
+            s_file = os.path.join(scripts_src_dir, f"quota_warning_95.{lang}.eml")
+            self.assertTrue(os.path.exists(d_file), f"{d_file} 應存在")
+            self.assertTrue(os.path.exists(s_file), f"{s_file} 應存在")
+
+            with open(d_file, "r", encoding="utf-8") as df, open(s_file, "r", encoding="utf-8") as sf:
+                d_content = df.read()
+                s_content = sf.read()
+                self.assertEqual(d_content, s_content, f"quota_warning_95.{lang}.eml 兩目錄檔案必須完全一致")
+
+            self.assertIn("${QUOTA_LIMIT}", d_content)
+            self.assertIn("${EMAIL}", d_content)
+            self.assertIn("${ACCOUNT}", d_content)
+            self.assertIn("${HOST_NAME}", d_content)
+            self.assertTrue("#status" in d_content or "#quota" in d_content, f"範本 {lang} 應包含 #status 或 #quota 自查提示")
+
+    def test_quota_warning_language_detection(self):
+        def match_warning_lang(lang_code):
+            l = (lang_code or "").lower()
+            if any(k in l for k in ["zh-tw", "tw", "hant"]):
+                return "zh-TW"
+            elif any(k in l for k in ["zh-cn", "cn", "hans"]):
+                return "zh-CN"
+            elif any(k in l for k in ["vi", "vn"]):
+                return "vi"
+            elif any(k in l for k in ["fr", "fra"]):
+                return "fr"
+            elif any(k in l for k in ["de", "deu", "ger"]):
+                return "de"
+            elif any(k in l for k in ["ja", "jp", "jpn"]):
+                return "ja"
+            elif any(k in l for k in ["es", "spa"]):
+                return "es"
+            else:
+                return "en"
+
+        self.assertEqual(match_warning_lang("zh-TW"), "zh-TW")
+        self.assertEqual(match_warning_lang("TW"), "zh-TW")
+        self.assertEqual(match_warning_lang("zh-CN"), "zh-CN")
+        self.assertEqual(match_warning_lang("vi"), "vi")
+        self.assertEqual(match_warning_lang("fr"), "fr")
+        self.assertEqual(match_warning_lang("de"), "de")
+        self.assertEqual(match_warning_lang("ja"), "ja")
+        self.assertEqual(match_warning_lang("es"), "es")
+        self.assertEqual(match_warning_lang("other"), "en")
+
 if __name__ == "__main__":
     unittest.main()
+

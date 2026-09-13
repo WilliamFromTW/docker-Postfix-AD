@@ -1,0 +1,57 @@
+From: Soporte TI <postmaster@${DOMAIN_NAME}>
+To: ${EMAIL}
+Subject: [ADVERTENCIA] La capacidad del buzon ha alcanzado el 95%
+Date: ${DATE}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Advertencia de capacidad del buzón</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px;">
+    <h2 style="color: #856404; margin-top: 0; margin-bottom: 8px;">⚠️ Alerta de almacenamiento del buzón (95% alcanzado)</h2>
+    <p style="margin: 0; color: #856404;">El almacenamiento de su buzón ha alcanzado el <strong>95%</strong> de la cuota asignada.</p>
+  </div>
+
+  <p>Estimado/a <strong>${ACCOUNT}</strong>:</p>
+
+  <p>Esta es una notificación automática para informarle que su buzón corporativo (<code>${EMAIL}</code>) ha alcanzado el <strong>95%</strong> de su capacidad total.</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8f9fa; border-radius: 6px;">
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold; width: 40%;">Cuenta:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef;">${EMAIL}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; font-weight: bold;">Límite de cuota asignado:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; color: #d9534f; font-weight: bold;">${QUOTA_LIMIT}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 15px; font-weight: bold;">Estado actual:</td>
+      <td style="padding: 10px 15px; color: #d9534f; font-weight: bold;">Crítico (95% alcanzado)</td>
+    </tr>
+  </table>
+
+  <h3 style="color: #495057;">Acciones recomendadas:</h3>
+  <ul>
+    <li><strong>Vaciar la papelera y el correo no deseado:</strong> Los elementos eliminados siguen ocupando espacio de cuota.</li>
+    <li><strong>Descargar y archivar archivos adjuntos pesados:</strong> Guarde los adjuntos localmente y elimínelos del buzón.</li>
+    <li><strong>Eliminar correos antiguos innecesarios:</strong> Borre notificaciones antiguas o mensajes publicitarios.</li>
+  </ul>
+
+  <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 15px; border-radius: 4px; margin-top: 20px;">
+    <strong>⚠️ Aviso importante de buzón lleno:</strong> Cuando su buzón alcance el <strong>100%</strong>, el servidor rechazará los correos entrantes y los devolverá al remitente con el error "Quota Exceeded".
+  </div>
+
+  <p style="margin-top: 20px; font-size: 14px; color: #4a5568;">
+    💡 <strong>Autoconsulta inmediata:</strong> Tras limpiar su buzón, envíese un correo a sí mismo con el asunto <code>#status</code> o <code>#quota</code> para comprobar de inmediato el espacio liberado.
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #dee2e6; margin: 25px 0 15px 0;">
+  <p style="font-size: 12px; color: #6c757d; margin: 0;">Equipo de Soporte TI | Notificación automática del sistema desde ${HOST_NAME}. No recibirá esta alerta más de una vez cada 90 días.</p>
+</body>
+</html>

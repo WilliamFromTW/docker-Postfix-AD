@@ -77,6 +77,11 @@ class TestWelcomePostlogin(unittest.TestCase):
             self.assertIn("465", content, f"範本 {lang} 應包含外寄伺服器 Port 465 設定")
             self.assertIn("STARTTLS", content, f"範本 {lang} 應包含 STARTTLS 加密協定說明")
             self.assertTrue("#status" in content or "#quota" in content, f"範本 {lang} 應包含 #status 或 #quota 自助查詢指令")
+            self.assertIn("Outlook", content, f"範本 {lang} 應包含 Outlook 設定指引")
+            self.assertIn("Thunderbird", content, f"範本 {lang} 應包含 Thunderbird 設定指引")
+            self.assertTrue("iOS" in content or "iPhone" in content, f"範本 {lang} 應包含 iPhone/iOS 設定說明")
+            self.assertIn("Android", content, f"範本 {lang} 應包含 Android 設定說明")
+            self.assertTrue("SSL" in content or "TLS" in content, f"範本 {lang} 應包含憑證相關指引")
 
             # 驗證 dovecot/welcome_templates 與 scripts/templates 內容完全一致
             d_file = os.path.join(dovecot_src_dir, f"welcome.{lang}.eml")

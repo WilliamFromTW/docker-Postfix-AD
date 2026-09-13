@@ -109,6 +109,18 @@ Content-Type: text/html; charset=UTF-8
         <li>再次點選儲存／登入，即可順利連線收發郵件！</li>
       </ol>
     </div>
+  <!-- 5. SSL/TLS 憑證不受信任／安全性警告排除指南 -->
+  <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 18px 20px; border-radius: 6px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px;">🔒 SSL/TLS 安全憑證警示／第三方自簽憑證排除指引</h4>
+    <p style="margin: 0 0 10px 0; font-size: 13px; color: #4a5568;">
+      若本郵件伺服器使用內部專用或第三方自簽憑證，於電腦或手機首次連線時，軟體可能會彈出「安全性警告」或「憑證不受信任」提示，請依下列方式忽略或信任憑證繼續：
+    </p>
+    <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #2d3748; line-height: 1.8;">
+      <li><strong>Microsoft Outlook (電腦版)：</strong>跳出「安全性警示／無法驗證憑證」視窗時，直接點選<strong>「是 (Yes)」</strong>繼續使用此伺服器即可。</li>
+      <li><strong>Mozilla Thunderbird：</strong>跳出安全性例外視窗時，勾選「永久儲存此例外」，並點選<strong>「確認安全性例外網站」</strong>。</li>
+      <li><strong>Apple iPhone / iPad (iOS 郵件)：</strong>彈出<strong>「無法驗證伺服器身分」</strong>對話框時，請直接點選<strong>「繼續 (Continue)」</strong>即可略過警告並成功通訊（或點「詳細資訊」後點選右上角「信任」）。</li>
+      <li><strong>Android 手機 (Gmail / 三星郵件 / Outlook 行動版)：</strong>若提示憑證不受信任，請點選<strong>「進階」➔「仍然繼續 (Continue anyway)」</strong>；或在設定中的安全性類型下拉選單改選帶有<strong>「接受所有憑證」</strong>的連線方式。</li>
+    </ul>
   </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">

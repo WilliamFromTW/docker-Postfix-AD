@@ -34,6 +34,48 @@ else
   USER_EMAIL="${ACCOUNT}@${DOMAIN_NAME}"
 fi
 
+# 2. 判定使用者語系與真實 Email (8 國語言，保底英文)
+LANG_CODE="${user_lang:-${USER_LANG}}"
+if command -v ldapsearch >/dev/null 2>&1; then
+  HOST_IP="${HOST_IP:-127.0.0.1}"
+  SEARCH_BASE="${SEARCH_BASE:-}"
+  BIND_DN="${BIND_DN:-}"
+  BIND_PW="${BIND_PW:-}"
+  if [ -n "$SEARCH_BASE" ]; then
+    LDAP_CMD=("ldapsearch" "-x" "-h" "$HOST_IP" "-b" "$SEARCH_BASE" "(|(sAMAccountName=${ACCOUNT})(mail=${USER_EMAIL}))" "preferredLanguage" "mail")
+    [ -n "$BIND_DN" ] && [ -n "$BIND_PW" ] && LDAP_CMD+=("-D" "$BIND_DN" "-w" "$BIND_PW")
+    LDAP_RES=$("${LDAP_CMD[@]}" 2>/dev/null)
+    if [ -z "$LANG_CODE" ]; then
+      LANG_CODE=$(echo "$LDAP_RES" | grep -i "^preferredLanguage:" | awk '{print $2}' | tr -d '\r\n')
+    fi
+    LDAP_MAIL=$(echo "$LDAP_RES" | grep -i "^mail:" | awk '{print $2}' | tr -d '\r\n')
+    if [ -n "$LDAP_MAIL" ] && [[ "$LDAP_MAIL" == *"@"* ]]; then
+      USER_EMAIL="$LDAP_MAIL"
+      DOMAIN_NAME="${LDAP_MAIL#*@}"
+    fi
+  fi
+fi
+
+LANG_LOWER=$(echo "$LANG_CODE" | tr '[:upper:]' '[:lower:]')
+CHOSEN_LANG="en"
+if [[ "$LANG_LOWER" == *"zh-tw"* ]] || [[ "$LANG_LOWER" == *"tw"* ]] || [[ "$LANG_LOWER" == *"hant"* ]]; then
+  CHOSEN_LANG="zh-TW"
+elif [[ "$LANG_LOWER" == *"zh-cn"* ]] || [[ "$LANG_LOWER" == *"cn"* ]] || [[ "$LANG_LOWER" == *"hans"* ]]; then
+  CHOSEN_LANG="zh-CN"
+elif [[ "$LANG_LOWER" == *"vi"* ]] || [[ "$LANG_LOWER" == *"vn"* ]]; then
+  CHOSEN_LANG="vi"
+elif [[ "$LANG_LOWER" == *"fr"* ]] || [[ "$LANG_LOWER" == *"fra"* ]]; then
+  CHOSEN_LANG="fr"
+elif [[ "$LANG_LOWER" == *"de"* ]] || [[ "$LANG_LOWER" == *"deu"* ]] || [[ "$LANG_LOWER" == *"ger"* ]]; then
+  CHOSEN_LANG="de"
+elif [[ "$LANG_LOWER" == *"ja"* ]] || [[ "$LANG_LOWER" == *"jp"* ]] || [[ "$LANG_LOWER" == *"jpn"* ]]; then
+  CHOSEN_LANG="ja"
+elif [[ "$LANG_LOWER" == *"es"* ]] || [[ "$LANG_LOWER" == *"spa"* ]]; then
+  CHOSEN_LANG="es"
+else
+  CHOSEN_LANG="en"
+fi
+
 # 2. 定位使用者目錄
 USER_DIR=""
 for d in "/home/vmail/${USER_EMAIL}" "/home/vmail/${ACCOUNT}"; do
@@ -103,19 +145,36 @@ if [ -f "/etc/postfix/main.cf" ]; then
 fi
 DATE=$(date -R 2>/dev/null || date)
 
-# 6. 尋找範本檔案
-TEMPLATE="/etc/dovecot/welcome_templates/quota_warning_95.eml"
-if [ ! -f "$TEMPLATE" ]; then
-  TEMPLATE="/usr/lib/dovecot/sieve-pipe/templates/quota_warning_95.eml"
-fi
-if [ ! -f "$TEMPLATE" ]; then
+# 6. 尋找範本檔案（優先符合使用者語系，次選 en，末選通用 quota_warning_95.eml）
+TEMPLATE=""
+for t_candidate in \
+  "/etc/dovecot/welcome_templates/quota_warning_95.${CHOSEN_LANG}.eml" \
+  "/usr/lib/dovecot/sieve-pipe/templates/quota_warning_95.${CHOSEN_LANG}.eml" \
+  "/etc/dovecot/welcome_templates/quota_warning_95.en.eml" \
+  "/etc/dovecot/welcome_templates/quota_warning_95.eml" \
+  "/usr/lib/dovecot/sieve-pipe/templates/quota_warning_95.en.eml" \
+  "/usr/lib/dovecot/sieve-pipe/templates/quota_warning_95.eml"; do
+  if [ -f "$t_candidate" ]; then
+    TEMPLATE="$t_candidate"
+    break
+  fi
+done
+
+if [ -z "$TEMPLATE" ]; then
   # 搜尋相對路徑備用（本地測試支援）
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [ -f "${SCRIPT_DIR}/templates/quota_warning_95.eml" ]; then
-    TEMPLATE="${SCRIPT_DIR}/templates/quota_warning_95.eml"
-  elif [ -f "${SCRIPT_DIR}/../dovecot/welcome_templates/quota_warning_95.eml" ]; then
-    TEMPLATE="${SCRIPT_DIR}/../dovecot/welcome_templates/quota_warning_95.eml"
-  fi
+  for t_candidate in \
+    "${SCRIPT_DIR}/templates/quota_warning_95.${CHOSEN_LANG}.eml" \
+    "${SCRIPT_DIR}/../dovecot/welcome_templates/quota_warning_95.${CHOSEN_LANG}.eml" \
+    "${SCRIPT_DIR}/templates/quota_warning_95.en.eml" \
+    "${SCRIPT_DIR}/templates/quota_warning_95.eml" \
+    "${SCRIPT_DIR}/../dovecot/welcome_templates/quota_warning_95.en.eml" \
+    "${SCRIPT_DIR}/../dovecot/welcome_templates/quota_warning_95.eml"; do
+    if [ -f "$t_candidate" ]; then
+      TEMPLATE="$t_candidate"
+      break
+    fi
+  done
 fi
 
 if [ ! -f "$TEMPLATE" ]; then
