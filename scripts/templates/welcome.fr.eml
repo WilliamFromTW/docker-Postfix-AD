@@ -1,6 +1,6 @@
 From: Support Informatique <postmaster@${DOMAIN_NAME}>
 To: ${EMAIL}
-Subject: Bienvenue ! Guide de configuration de votre boite mail et politique de stockage
+Subject: Bienvenue ! Guide de configuration, quota de stockage et paramètres client
 Date: ${DATE}
 MIME-Version: 1.0
 Content-Type: text/html; charset=UTF-8
@@ -11,57 +11,86 @@ Content-Type: text/html; charset=UTF-8
   <meta charset="utf-8">
   <title>Bienvenue sur votre messagerie d'entreprise</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-    <h1 style="margin: 0; font-size: 22px;">Bienvenue sur votre compte de messagerie d'entreprise</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">Paramètres de configuration et politique de quota de stockage</p>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">Bienvenue ! Votre compte de messagerie d'entreprise est activé</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Paramètres de connexion client (SMTP 587 / IMAP 993) et guide du quota de stockage</p>
   </div>
 
-  <p>Bonjour ${ACCOUNT},</p>
-  <p>Bienvenue dans notre équipe ! Votre compte de messagerie professionnel a été initialisé avec succès. Vous trouverez ci-dessous vos paramètres de connexion et les détails de votre quota de stockage :</p>
+  <p>Bonjour <strong>${ACCOUNT}</strong>,</p>
+  <p>Bienvenue au sein de notre équipe ! Votre compte de messagerie professionnelle a été initialisé avec succès. Vous trouverez ci-dessous la politique de quota, les paramètres de connexion et le guide de configuration client :</p>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Informations sur le quota de stockage</h3>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 Informations sur le quota de stockage (Storage Quota)</h3>
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">Quota alloué :</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">Limite de quota allouée :</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
     </tr>
     <tr>
-      <td style="padding: 10px 15px; font-weight: bold;">Alerte de capacité :</td>
-      <td style="padding: 10px 15px;">Une notification automatique sera envoyée lorsque le stockage atteindra <strong>95%</strong>.</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Alerte de seuil et politique de dépassement :</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0;">
+        • Lorsque l'utilisation atteint <strong>95%</strong>, une notification d'avertissement automatique est envoyée pour vous rappeler de nettoyer les anciens messages ou volumineux fichiers.<br>
+        • Si l'utilisation atteint <strong>100%</strong> (saturation), le serveur suspendra temporairement la réception de nouveaux e-mails pour protéger l'intégrité des données.
+      </td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 10px 15px; font-weight: bold; color: #2b6cb0;">Commande d'auto-vérification :</td>
+      <td style="padding: 10px 15px; color: #2d3748;">
+        Envoyez un e-mail à vous-même avec pour objet <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#status</code> ou <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#quota</code>, le robot du système vous répondra instantanément avec votre capacité en temps réel, le pourcentage utilisé et l'état des services !
+      </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Paramètres de connexion au serveur de messagerie</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Paramètres de connexion et d'authentification du serveur (Client Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
     <tr style="background-color: #f7fafc;">
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Protocole</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Adresse du serveur (Host)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Port / Sécurité</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">Élément de configuration</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Valeur et instructions</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (Entrant recommandé)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Adresse e-mail</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
+    </tr>
+    <tr style="background-color: #fffaf0;">
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Nom d'utilisateur / Connexion</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
+        <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
+        <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
+          ⚠️ Important : L'identifiant de connexion est votre compte pur (identifiant). N'ajoutez PAS "@${DOMAIN_NAME}" !
+        </div>
+      </td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (Entrant)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Mot de passe</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Votre mot de passe de domaine Windows</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (Sortant)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Serveur entrant (IMAP)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Hôte <code>${HOST_NAME}</code> / Port <strong>993</strong> (Chiffrement SSL/TLS)</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Identifiant</td>
-      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Serveur entrant (POP3)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Hôte <code>${HOST_NAME}</code> / Port <strong>995</strong> (Chiffrement SSL/TLS)</td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Serveur sortant (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
+        • Adresse de l'hôte : <code>${HOST_NAME}</code><br>
+        • Port : <strong style="color: #2b6cb0; font-size: 15px;">587</strong> (Recommandé, chiffrement <strong>STARTTLS</strong>) ou <strong>465</strong> (chiffrement SSL/TLS)<br>
+        • <strong style="color: #c53030;">Authentification sortante</strong> : <strong>Cochez obligatoirement « Mon serveur sortant (SMTP) requiert une authentification »</strong> et utilisez les mêmes paramètres que le serveur entrant (Identifiant : <code>${ACCOUNT}</code>)
+      </td>
     </tr>
   </table>
 
-  <p>Vous pouvez configurer Microsoft Outlook, Mozilla Thunderbird, Apple Mail ou vos appareils mobiles à l'aide des paramètres ci-dessus.</p>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 Guide de configuration client (Outlook / Thunderbird / Mobile)</h3>
+  <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
+    <li>Ajoutez un compte dans votre client de messagerie et sélectionnez <strong>« Configuration manuelle (IMAP) »</strong>.</li>
+    <li>Dans le champ Nom d'utilisateur, saisissez votre compte pur <code>${ACCOUNT}</code> et votre mot de passe de domaine.</li>
+    <li>Dans l'onglet <strong>« Serveur sortant »</strong>, <strong>cochez « Mon serveur sortant (SMTP) requiert une authentification »</strong>.</li>
+    <li>Dans l'onglet <strong>« Avancé »</strong>, réglez le port du serveur sortant (SMTP) sur <strong>587</strong> et sélectionnez le chiffrement <strong>STARTTLS</strong> (ou TLS).</li>
+  </ol>
+
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
-  <p style="font-size: 12px; color: #718096; margin: 0;">Équipe d'administration informatique | Notification générée automatiquement</p>
+  <p style="font-size: 12px; color: #718096; margin: 0;">Support Informatique | Notification automatique du système - Merci de ne pas répondre à cet e-mail</p>
 </body>
 </html>

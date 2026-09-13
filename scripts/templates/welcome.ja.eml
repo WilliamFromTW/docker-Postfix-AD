@@ -1,6 +1,6 @@
 From: ITサポート <postmaster@${DOMAIN_NAME}>
 To: ${EMAIL}
-Subject: ようこそ！メールボックス設定ガイドと容量ポリシーのご案内
+Subject: ようこそ！社用メール設定ガイド・容量制限およびクライアント接続手順
 Date: ${DATE}
 MIME-Version: 1.0
 Content-Type: text/html; charset=UTF-8
@@ -11,57 +11,86 @@ Content-Type: text/html; charset=UTF-8
   <meta charset="utf-8">
   <title>企業メールアカウントへようこそ</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Meiryo', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-    <h1 style="margin: 0; font-size: 22px;">ようこそ！企業メールアカウントが開設されました</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">メール設定手順およびストレージ容量ポリシーのご案内</p>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Meiryo', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">ようこそ！社用メールアカウントが開設されました</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">クライアント接続設定（SMTP 587 / IMAP 993）およびストレージ容量ポリシーのご案内</p>
   </div>
 
-  <p>${ACCOUNT} 様</p>
-  <p>チームへのご参加を心より歓迎いたします。社用メールアカウントの初期設定が完了いたしました。以下に接続設定および容量制限の詳細を記載いたします：</p>
+  <p><strong>${ACCOUNT}</strong> 様</p>
+  <p>チームへのご参加を心より歓迎いたします。社用メールアカウントの初期設定が完了いたしました。以下にストレージ容量ポリシー、接続パラメータおよびクライアント設定手順をご案内いたします：</p>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">メールボックス容量情報</h3>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 メールボックス容量情報 (Storage Quota)</h3>
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">割り当て容量制限：</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">割り当て容量制限：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
     </tr>
     <tr>
-      <td style="padding: 10px 15px; font-weight: bold;">容量警告通知：</td>
-      <td style="padding: 10px 15px;">使用量が <strong>95%</strong> に達した際、自動的に整理を促す警告メールが送信されます。</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">容量警告および満杯時ポリシー：</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0;">
+        • 使用量が <strong>95%</strong> に達した際、不要な大容量メールの整理を促す警告メールが自動送信されます。<br>
+        • 使用量が <strong>100%</strong> に達した場合、データの保全を図るため、新規メールの受信が一時停止されます。
+      </td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 10px 15px; font-weight: bold; color: #2b6cb0;">リアルタイム容量自己照会コマンド：</td>
+      <td style="padding: 10px 15px; color: #2d3748;">
+        いつでも件名に <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#status</code> または <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#quota</code> と記載して自分宛てにメールを送信すると、システムボットが即座に現在の使用容量、パーセント進捗バー、サービス稼働状況を返信します！
+      </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">メールサーバー接続設定パラメータ</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ サーバー接続および認証設定 (Client Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
     <tr style="background-color: #f7fafc;">
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">プロトコル</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">サーバーアドレス (Host)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">ポート / 暗号化方式</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">設定項目</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">設定値および説明</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (受信推奨)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">メールアドレス</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
+    </tr>
+    <tr style="background-color: #fffaf0;">
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">ログイン／認証ユーザー名</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
+        <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
+        <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
+          ⚠️ 重要：ユーザー名には「純粋なアカウント名／社員番号」を入力してください。「@${DOMAIN_NAME}」は絶対に付けないでください！
+        </div>
+      </td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (受信)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">パスワード</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">お客様のWindowsドメインアカウントパスワード</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (送信)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">受信サーバー (IMAP)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">ホスト <code>${HOST_NAME}</code> / ポート <strong>993</strong> (SSL/TLS 暗号化)</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">ユーザー名</td>
-      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">受信サーバー (POP3)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">ホスト <code>${HOST_NAME}</code> / ポート <strong>995</strong> (SSL/TLS 暗号化)</td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">送信サーバー (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
+        • ホスト名：<code>${HOST_NAME}</code><br>
+        • ポート (Port)：<strong style="color: #2b6cb0; font-size: 15px;">587</strong>（推奨、<strong>STARTTLS</strong> 暗号化）または <strong>465</strong>（SSL/TLS 暗号化）<br>
+        • <strong style="color: #c53030;">送信サーバー認証</strong>：<strong>「送信サーバー (SMTP) は認証が必要」を必ず有効</strong>にし、受信サーバーと同じ設定を使用してください（ユーザー名：純粋なアカウント名 <code>${ACCOUNT}</code>）
+      </td>
     </tr>
   </table>
 
-  <p>上記のパラメータを使用して、Microsoft Outlook、Mozilla Thunderbird、Apple Mail、またはスマートフォンで設定いただけます。</p>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 メールソフト設定手順 (Outlook / Thunderbird / スマートフォン)</h3>
+  <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
+    <li>メールソフトにてアカウントを追加し、<strong>「手動設定 (IMAP)」</strong>を選択します。</li>
+    <li>ユーザー名欄に純粋なアカウント名 <code>${ACCOUNT}</code> を入力し、ドメインパスワードを入力します。</li>
+    <li><strong>「送信サーバー」</strong>タブを開き、<strong>「送信サーバー (SMTP) は認証が必要」に必ずチェック</strong>を入れます。</li>
+    <li><strong>「詳細設定」</strong>タブを開き、送信サーバー (SMTP) のポートを <strong>587</strong> に変更し、暗号化接続の種類として <strong>STARTTLS</strong>（または TLS）を選択します。</li>
+  </ol>
+
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
-  <p style="font-size: 12px; color: #718096; margin: 0;">ITインフラ運用チーム | システム自動送信メール</p>
+  <p style="font-size: 12px; color: #718096; margin: 0;">ITインフラ運用チーム | システム自動送信メール（直接返信はできません）</p>
 </body>
 </html>

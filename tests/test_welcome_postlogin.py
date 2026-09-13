@@ -61,6 +61,9 @@ class TestWelcomePostlogin(unittest.TestCase):
         self.assertEqual(match_lang("en-US"), "en")
 
     def test_all_8_templates_exist_and_contain_quota_placeholder(self):
+        dovecot_src_dir = os.path.join(os.path.dirname(__file__), "..", "dovecot", "welcome_templates")
+        scripts_src_dir = os.path.join(os.path.dirname(__file__), "..", "scripts", "templates")
+
         for lang in ["zh-TW", "zh-CN", "en", "vi", "fr", "de", "ja", "es"]:
             fpath = os.path.join(self.templates_dir, f"welcome.{lang}.eml")
             self.assertTrue(os.path.exists(fpath), f"範本 {fpath} 應存在")
@@ -70,6 +73,15 @@ class TestWelcomePostlogin(unittest.TestCase):
             self.assertIn("${HOST_NAME}", content)
             self.assertIn("${EMAIL}", content)
             self.assertIn("${ACCOUNT}", content)
+            self.assertIn("587", content, f"範本 {lang} 應包含外寄伺服器 Port 587 設定")
+            self.assertIn("STARTTLS", content, f"範本 {lang} 應包含 STARTTLS 加密協定說明")
+            self.assertTrue("#status" in content or "#quota" in content, f"範本 {lang} 應包含 #status 或 #quota 自助查詢指令")
+
+            # 驗證 dovecot/welcome_templates 與 scripts/templates 內容完全一致
+            d_file = os.path.join(dovecot_src_dir, f"welcome.{lang}.eml")
+            s_file = os.path.join(scripts_src_dir, f"welcome.{lang}.eml")
+            with open(d_file, "r", encoding="utf-8") as df, open(s_file, "r", encoding="utf-8") as sf:
+                self.assertEqual(df.read(), sf.read(), f"dovecot/welcome_templates/welcome.{lang}.eml 與 scripts/templates/welcome.{lang}.eml 必須同步一致")
 
     def test_template_dynamic_variable_substitution(self):
         fpath = os.path.join(self.templates_dir, "welcome.en.eml")

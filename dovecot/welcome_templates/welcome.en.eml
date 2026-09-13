@@ -1,6 +1,6 @@
 From: IT Support <postmaster@${DOMAIN_NAME}>
 To: ${EMAIL}
-Subject: Welcome to Your Corporate Mailbox - Configuration Guide & Storage Policy
+Subject: Welcome! Corporate Mailbox Setup Guide, Storage Quota & Client Configuration
 Date: ${DATE}
 MIME-Version: 1.0
 Content-Type: text/html; charset=UTF-8
@@ -11,57 +11,86 @@ Content-Type: text/html; charset=UTF-8
   <meta charset="utf-8">
   <title>Welcome to Your Corporate Mailbox</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #2b6cb0; color: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-    <h1 style="margin: 0; font-size: 22px;">Welcome to Your Corporate Email Account</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">Account setup instructions and mailbox policy</p>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
+    <h1 style="margin: 0; font-size: 22px;">Welcome! Your Corporate Email Account is Ready</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Client Connection Settings (SMTP 587 / IMAP 993) & Storage Quota Guide</p>
   </div>
 
-  <p>Dear ${ACCOUNT},</p>
-  <p>Welcome! Your corporate email account has been successfully initialized. Below are your connection settings and mailbox storage details:</p>
+  <p>Dear <strong>${ACCOUNT}</strong>,</p>
+  <p>Welcome to the team! Your corporate email account has been successfully initialized. Below are your storage quota policy, connection parameters, and client setup instructions:</p>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Storage Quota Information</h3>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 Storage Quota Information</h3>
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 40%;">Allocated Quota:</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">Allocated Mailbox Limit:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
     </tr>
     <tr>
-      <td style="padding: 10px 15px; font-weight: bold;">Threshold Alert:</td>
-      <td style="padding: 10px 15px;">Automated warning will be sent when storage reaches <strong>95%</strong>.</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Warning & Over-Quota Policy:</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0;">
+        • When storage reaches <strong>95%</strong>, an automated alert will be sent reminding you to clean up old or large emails.<br>
+        • When storage reaches <strong>100%</strong> (full), the server will temporarily suspend receiving new incoming messages to protect data integrity.
+      </td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 10px 15px; font-weight: bold; color: #2b6cb0;">Self-Service Status Query:</td>
+      <td style="padding: 10px 15px; color: #2d3748;">
+        Send an email to yourself with the subject <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#status</code> or <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#quota</code> anytime, and the system bot will reply within seconds with your real-time usage, percentage bar, and service status!
+      </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">Mail Server Connection Settings</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Server Connection & Authentication Settings</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
     <tr style="background-color: #f7fafc;">
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Protocol</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Server Address</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Port / Security</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">Configuration Item</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Setting & Notes</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">IMAP (Incoming)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 993 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Email Address</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
+    </tr>
+    <tr style="background-color: #fffaf0;">
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Login / Auth Username</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
+        <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
+        <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
+          ⚠️ Important: The login username is your pure account ID. DO NOT append "@${DOMAIN_NAME}"!
+        </div>
+      </td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">POP3 (Incoming)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 995 (SSL/TLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Password</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Your Windows Domain Password</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">SMTP (Outgoing)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${HOST_NAME}</code></td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Port 465 (SSL/TLS) / 587 (STARTTLS)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Incoming Server (IMAP)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Host <code>${HOST_NAME}</code> / Port <strong>993</strong> (SSL/TLS Encryption)</td>
     </tr>
     <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Username</td>
-      <td colspan="2" style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code>${EMAIL}</code></td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Incoming Server (POP3)</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Host <code>${HOST_NAME}</code> / Port <strong>995</strong> (SSL/TLS Encryption)</td>
+    </tr>
+    <tr style="background-color: #ebf8ff;">
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Outgoing Server (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
+        • Server Host: <code>${HOST_NAME}</code><br>
+        • Port: <strong style="color: #2b6cb0; font-size: 15px;">587</strong> (Recommended, <strong>STARTTLS</strong> encryption) or <strong>465</strong> (SSL/TLS encryption)<br>
+        • <strong style="color: #c53030;">Outgoing Authentication</strong>: <strong>Must check "My outgoing server (SMTP) requires authentication"</strong> and use same settings as incoming mail server (Username: <code>${ACCOUNT}</code>)
+      </td>
     </tr>
   </table>
 
-  <p>You can configure Microsoft Outlook, Mozilla Thunderbird, Apple Mail, or your mobile devices with the parameters above.</p>
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 Client Setup Guide (Outlook / Thunderbird / Mobile)</h3>
+  <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
+    <li>Add a new account in your email client and choose <strong>"Manual setup or additional server types (IMAP)"</strong>.</li>
+    <li>In the Username field, enter your pure account name <code>${ACCOUNT}</code>, and enter your domain password.</li>
+    <li>Go to the <strong>"Outgoing Server"</strong> tab and <strong>check "My outgoing server (SMTP) requires authentication"</strong>.</li>
+    <li>Go to the <strong>"Advanced"</strong> tab, set Outgoing Server (SMTP) port to <strong>587</strong>, and select <strong>STARTTLS</strong> (or TLS) as encryption type.</li>
+  </ol>
+
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
-  <p style="font-size: 12px; color: #718096; margin: 0;">IT Infrastructure Team | System Generated Notification</p>
+  <p style="font-size: 12px; color: #718096; margin: 0;">IT Infrastructure Team | System Generated Notification - Please do not reply directly to this email</p>
 </body>
 </html>

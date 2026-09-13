@@ -21,6 +21,9 @@ import subprocess
 import urllib.request
 import urllib.error
 
+# 確保 PATH 環境變數存在，防止 doveadm 等 C 程式呼叫 t_binary_abspath() 時拋出 PATH undefined 致命錯誤
+os.environ["PATH"] = f"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{os.environ.get('PATH', '')}"
+
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
@@ -463,6 +466,356 @@ def disable_autoreply(from_addr, lang="zh-TW"):
     send_notification(from_addr, subj, body)
     log_maillog(f"Auto-reply disabled for {from_addr} (lang: {lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
 
+def get_user_quota_info(from_addr):
+    """
+    動態向 Dovecot 查詢使用者的即時空間配額與使用量。
+    支援以完整的 Email 或純帳號 (sAMAccountName) 查詢。
+    """
+    candidates = [from_addr]
+    if "@" in from_addr:
+        candidates.append(from_addr.split("@")[0])
+
+    for cand in candidates:
+        try:
+            res = subprocess.run(
+                ["doveadm", "quota", "get", "-u", cand],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    parts = line.split()
+                    upper_parts = [p.upper() for p in parts]
+                    if "STORAGE" in upper_parts:
+                        s_idx = upper_parts.index("STORAGE")
+                        if len(parts) > s_idx + 3:
+                            try:
+                                val_kb = int(parts[s_idx + 1])
+                            except ValueError:
+                                val_kb = 0
+                            try:
+                                lim_kb = int(parts[s_idx + 2])
+                            except ValueError:
+                                lim_kb = 0
+                            pct = parts[s_idx + 3]
+                            used_mb = val_kb / 1024.0
+                            used_gb = used_mb / 1024.0
+                            lim_gb = (lim_kb / 1024.0 / 1024.0) if lim_kb > 0 else 50.0
+                            try:
+                                pct_num = float(pct.replace("%", ""))
+                            except ValueError:
+                                pct_num = (used_gb / lim_gb * 100.0) if lim_gb > 0 else 0.0
+                            return {
+                                "used_mb": round(used_mb, 2),
+                                "used_gb": round(used_gb, 2),
+                                "limit_gb": round(lim_gb, 1),
+                                "percent": round(pct_num, 1),
+                                "percent_str": f"{pct_num:.1f}%",
+                                "user": cand
+                            }
+        except Exception:
+            pass
+
+    # 若尚未啟動 doveadm 或測試環境，嘗試自 90-quota.conf 讀取預設配額
+    default_limit_gb = 50.0
+    try:
+        if os.path.exists("/etc/dovecot/conf.d/90-quota.conf"):
+            with open("/etc/dovecot/conf.d/90-quota.conf", "r", encoding="utf-8") as f:
+                for line in f:
+                    m = re.search(r"quota_rule\s*=\s*\*:storage=(\d+)([A-Za-z]*)", line)
+                    if m:
+                        num = float(m.group(1))
+                        unit = m.group(2).upper()
+                        if unit in ["G", "GB"]:
+                            default_limit_gb = num
+                        elif unit in ["M", "MB"]:
+                            default_limit_gb = num / 1024.0
+                        break
+    except Exception:
+        pass
+
+    return {
+        "used_mb": 0.0,
+        "used_gb": 0.0,
+        "limit_gb": default_limit_gb,
+        "percent": 0.0,
+        "percent_str": "0.0%",
+        "user": from_addr
+    }
+
+def make_progress_bar(percent, length=10):
+    filled = int(round(length * percent / 100.0))
+    filled = max(0, min(length, filled))
+    empty = length - filled
+    return "■" * filled + "□" * empty
+
+def handle_status_query(from_addr, lang="zh-TW"):
+    """
+    即時回覆同仁信箱容量用量、健康狀態、休假回覆設定與客戶端連線參數。
+    """
+    quota = get_user_quota_info(from_addr)
+    user_name = from_addr.split("@")[0]
+    bar = make_progress_bar(quota["percent"])
+    
+    # 檢查休假自動回覆當前狀態
+    sieve_dir = find_user_sieve_dir(from_addr)
+    cfg_file = os.path.join(sieve_dir, "autoreply_config.json")
+    vacation_active = False
+    vacation_period = ""
+    if os.path.exists(cfg_file):
+        try:
+            with open(cfg_file, "r", encoding="utf-8") as f:
+                c = json.load(f)
+                if c.get("enabled"):
+                    vacation_active = True
+                    start = c.get("start_str", "")
+                    end = c.get("end_str", "")
+                    vacation_period = f"{start} ~ {end}" if (start and end) else "常態啟用中"
+        except Exception:
+            pass
+
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    status_templates = {
+        "zh-TW": (
+            "【系統狀態報告】您的信箱容量與服務設定狀態",
+            f"您好：\n\n"
+            f"以下為您目前的電子郵件信箱容量、服務狀態與客戶端連線參數報告：\n"
+            f"=====================================================\n"
+            f"📊 信箱容量與空間配額 (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• 查詢帳號：{from_addr}\n"
+            f"• 目前使用容量：{quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• 空間配額上限：{quota['limit_gb']} GB\n"
+            f"• 容量使用比率：[{bar}] {quota['percent_str']}\n"
+            f"• 容量健康狀態：{'⚠️ 警告 (使用率 >= 95%，請儘速清理)' if quota['percent'] >= 95 else ('⚠️ 注意 (使用率 >= 90%)' if quota['percent'] >= 90 else '✅ 正常 (安全閾值內)')}\n"
+            f"• 系統預警政策：當容量達到 95% 時，系統將自動發送預警信件提醒。\n\n"
+            f"=====================================================\n"
+            f"🏖️ 休假自動回覆狀態 (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• 自動回覆功能：{'🟢 已啟用 (期間: ' + vacation_period + ')' if vacation_active else '⚪ 目前已關閉'}\n"
+            f"• 快速開啟指令：寄信給自己，主旨填寫「#autoreply on」或自然語言「明天休假」\n"
+            f"• 快速關閉指令：寄信給自己，主旨填寫「#autoreply off」或「取消休假」\n\n"
+            f"=====================================================\n"
+            f"⚙️ 客戶端連線參數速查 (Outlook / Thunderbird / 手機)\n"
+            f"=====================================================\n"
+            f"• 收件伺服器 (IMAP)：Port 993 (SSL/TLS)\n"
+            f"• 外寄伺服器 (SMTP)：Port 587 (STARTTLS) 或 Port 465 (SSL/TLS)\n"
+            f"• 登入驗證帳號：{user_name} (⚠️ 請輸入純帳號，切勿加上 @網域名稱)\n"
+            f"• 外寄伺服器驗證：必須勾選「我的外寄伺服器 (SMTP) 需要驗證」，設定同收件帳號\n"
+            f"-----------------------------------------------------\n"
+            f"報告產生時間：{now_str} (UTC+8 台北時間)\n"
+        ),
+        "zh-CN": (
+            "【系统状态报告】您的邮箱容量与服务设置状态",
+            f"您好：\n\n"
+            f"以下为您当前的电子邮件邮箱容量、服务状态与客户端连接参数报告：\n"
+            f"=====================================================\n"
+            f"📊 邮箱容量与空间配额 (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• 查询账号：{from_addr}\n"
+            f"• 当前使用容量：{quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• 空间配额上限：{quota['limit_gb']} GB\n"
+            f"• 容量使用比率：[{bar}] {quota['percent_str']}\n"
+            f"• 容量健康状态：{'⚠️ 警告 (使用率 >= 95%，请尽快清理)' if quota['percent'] >= 95 else ('⚠️ 注意 (使用率 >= 90%)' if quota['percent'] >= 90 else '✅ 正常 (安全阈值内)')}\n"
+            f"• 系统预警政策：当容量达到 95% 时，系统将自动发送预警邮件提醒。\n\n"
+            f"=====================================================\n"
+            f"🏖️ 休假自动回复状态 (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• 自动回复功能：{'🟢 已启用 (期间: ' + vacation_period + ')' if vacation_active else '⚪ 当前已关闭'}\n"
+            f"• 快速开启指令：发信给自己，主题填写“#autoreply on”或自然语言“明天休假”\n"
+            f"• 快速关闭指令：发信给自己，主题填写“#autoreply off”或“取消休假”\n\n"
+            f"=====================================================\n"
+            f"⚙️ 客户端连接参数速查 (Outlook / Thunderbird / 手机)\n"
+            f"=====================================================\n"
+            f"• 收件服务器 (IMAP)：Port 993 (SSL/TLS)\n"
+            f"• 外发服务器 (SMTP)：Port 587 (STARTTLS) 或 Port 465 (SSL/TLS)\n"
+            f"• 登录验证账号：{user_name} (⚠️ 请输入纯账号，切勿加上 @域名)\n"
+            f"• 外发服务器验证：必须勾选“我的发送服务器 (SMTP) 需要验证”，设置同收件账号\n"
+            f"-----------------------------------------------------\n"
+            f"报告生成时间：{now_str} (UTC+8 台北时间)\n"
+        ),
+        "vi": (
+            "[Báo cáo trạng thái hệ thống] Dung lượng hòm thư và cấu hình dịch vụ",
+            f"Xin chào:\n\n"
+            f"Dưới đây là báo cáo dung lượng hòm thư, trạng thái dịch vụ và thông số kết nối của bạn:\n"
+            f"=====================================================\n"
+            f"📊 Dung lượng hòm thư & Hạn ngạch (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• Tài khoản: {from_addr}\n"
+            f"• Dung lượng đã dùng: {quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• Giới hạn dung lượng: {quota['limit_gb']} GB\n"
+            f"• Tỷ lệ sử dụng: [{bar}] {quota['percent_str']}\n"
+            f"• Trạng thái sức khỏe: {'⚠️ Cảnh báo (>= 95%, vui lòng dọn dẹp)' if quota['percent'] >= 95 else ('⚠️ Lưu ý (>= 90%)' if quota['percent'] >= 90 else '✅ Bình thường (Trong ngưỡng an toàn)')}\n"
+            f"• Chính sách cảnh báo: Hệ thống tự động gửi thông báo khi đạt 95%.\n\n"
+            f"=====================================================\n"
+            f"🏖️ Trạng thái tự động trả lời (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• Tự động trả lời: {'🟢 Đang bật (Giai đoạn: ' + vacation_period + ')' if vacation_active else '⚪ Hiện đang tắt'}\n"
+            f"• Lệnh bật nhanh: Gửi email cho chính mình với tiêu đề '#autoreply on'\n"
+            f"• Lệnh tắt nhanh: Gửi email cho chính mình với tiêu đề '#autoreply off'\n\n"
+            f"=====================================================\n"
+            f"⚙️ Thông số kết nối máy khách (Outlook / Thunderbird / Di động)\n"
+            f"=====================================================\n"
+            f"• Máy chủ nhận (IMAP): Cổng 993 (SSL/TLS)\n"
+            f"• Máy chủ gửi (SMTP): Cổng 587 (STARTTLS) hoặc Cổng 465 (SSL/TLS)\n"
+            f"• Tên đăng nhập xác thực: {user_name} (⚠️ Điền tài khoản thuần, KHÔNG thêm @domain)\n"
+            f"• Xác thực SMTP gửi đi: Bắt buộc tích chọn 'Máy chủ gửi thư (SMTP) yêu cầu xác thực'\n"
+            f"-----------------------------------------------------\n"
+            f"Thời gian tạo báo cáo: {now_str}\n"
+        ),
+        "en": (
+            "[System Status Report] Mailbox Quota and Service Status",
+            f"Hello,\n\n"
+            f"Here is your real-time mailbox storage quota, service status, and client connection report:\n"
+            f"=====================================================\n"
+            f"📊 Mailbox Storage & Quota Allocation\n"
+            f"=====================================================\n"
+            f"• Account: {from_addr}\n"
+            f"• Used Storage: {quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• Allocated Quota: {quota['limit_gb']} GB\n"
+            f"• Usage Percentage: [{bar}] {quota['percent_str']}\n"
+            f"• Health Status: {'⚠️ Critical (>= 95%, cleanup required)' if quota['percent'] >= 95 else ('⚠️ Warning (>= 90%)' if quota['percent'] >= 90 else '✅ Healthy (Within safe range)')}\n"
+            f"• Threshold Policy: System automatically sends an alert at 95% capacity.\n\n"
+            f"=====================================================\n"
+            f"🏖️ Vacation Auto-Reply Status\n"
+            f"=====================================================\n"
+            f"• Auto-Reply Responder: {'🟢 Active (' + vacation_period + ')' if vacation_active else '⚪ Inactive (Disabled)'}\n"
+            f"• Quick Enable: Send an email to yourself with subject '#autoreply on'\n"
+            f"• Quick Disable: Send an email to yourself with subject '#autoreply off'\n\n"
+            f"=====================================================\n"
+            f"⚙️ Client Configuration Cheat Sheet (Outlook / Thunderbird / Mobile)\n"
+            f"=====================================================\n"
+            f"• Incoming Server (IMAP): Port 993 (SSL/TLS)\n"
+            f"• Outgoing Server (SMTP): Port 587 (STARTTLS) or Port 465 (SSL/TLS)\n"
+            f"• Authentication Username: {user_name} (⚠️ Enter pure account/sAMAccountName, DO NOT append @domain)\n"
+            f"• Outgoing Server Auth: Must check 'My outgoing server (SMTP) requires authentication'\n"
+            f"-----------------------------------------------------\n"
+            f"Report Generated At: {now_str}\n"
+        ),
+        "fr": (
+            "[Rapport d'état du système] Quota de boîte aux lettres et état des services",
+            f"Bonjour,\n\n"
+            f"Voici votre rapport en temps réel sur le quota de stockage, l'état des services et les paramètres de connexion client :\n"
+            f"=====================================================\n"
+            f"📊 Quota et espace de stockage (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• Compte : {from_addr}\n"
+            f"• Espace utilisé : {quota['used_mb']} Mo ({quota['used_gb']} Go)\n"
+            f"• Quota alloué : {quota['limit_gb']} Go\n"
+            f"• Taux d'utilisation : [{bar}] {quota['percent_str']}\n"
+            f"• État de santé : {'⚠️ Critique (>= 95%, nettoyage requis)' if quota['percent'] >= 95 else ('⚠️ Avertissement (>= 90%)' if quota['percent'] >= 90 else '✅ Normal (Dans la limite de sécurité)')}\n"
+            f"• Politique d'alerte : Le système envoie automatiquement un avertissement à 95% de capacité.\n\n"
+            f"=====================================================\n"
+            f"🏖️ État de la réponse automatique d'absence (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• Réponse automatique : {'🟢 Active (' + vacation_period + ')' if vacation_active else '⚪ Inactive (Désactivée)'}\n"
+            f"• Commande d'activation : Envoyez un e-mail à vous-même avec le sujet '#autoreply on'\n"
+            f"• Commande de désactivation : Envoyez un e-mail à vous-même avec le sujet '#autoreply off'\n\n"
+            f"=====================================================\n"
+            f"⚙️ Aide-mémoire de configuration client (Outlook / Thunderbird / Mobile)\n"
+            f"=====================================================\n"
+            f"• Serveur entrant (IMAP) : Port 993 (SSL/TLS)\n"
+            f"• Serveur sortant (SMTP) : Port 587 (STARTTLS) ou Port 465 (SSL/TLS)\n"
+            f"• Nom d'utilisateur : {user_name} (⚠️ Saisissez le compte pur, NE PAS ajouter @domaine)\n"
+            f"• Authentification du serveur sortant : Cochez obligatoirement 'Mon serveur sortant (SMTP) requiert une authentification'\n"
+            f"-----------------------------------------------------\n"
+            f"Rapport généré le : {now_str}\n"
+        ),
+        "de": (
+            "[System-Statusbericht] Postfach-Speicherplatz und Dienststatus",
+            f"Guten Tag,\n\n"
+            f"Hier ist Ihr Echtzeit-Bericht über Postfachspeicher, Dienststatus und Client-Verbindungsparameter:\n"
+            f"=====================================================\n"
+            f"📊 Postfachspeicher & Kontingent (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• Konto: {from_addr}\n"
+            f"• Belegter Speicher: {quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• Zugewiesenes Kontingent: {quota['limit_gb']} GB\n"
+            f"• Auslastungsgrad: [{bar}] {quota['percent_str']}\n"
+            f"• Zustand: {'⚠️ Kritisch (>= 95%, Bereinigung erforderlich)' if quota['percent'] >= 95 else ('⚠️ Warnung (>= 90%)' if quota['percent'] >= 90 else '✅ Normal (Im sicheren Bereich)')}\n"
+            f"• Warnrichtlinie: Das System sendet automatisch bei 95% Speicherauslastung eine Warnmeldung.\n\n"
+            f"=====================================================\n"
+            f"🏖️ Status der automatischen Abwesenheitsnotiz (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• Automatische Antwort : {'🟢 Aktiviert (' + vacation_period + ')' if vacation_active else '⚪ Derzeit deaktiviert'}\n"
+            f"• Schnelles Einschalten: Senden Sie eine E-Mail an sich selbst mit dem Betreff '#autoreply on'\n"
+            f"• Schnelles Ausschalten: Senden Sie eine E-Mail an sich selbst mit dem Betreff '#autoreply off'\n\n"
+            f"=====================================================\n"
+            f"⚙️ Client-Konfigurationsübersicht (Outlook / Thunderbird / Mobiltelefon)\n"
+            f"=====================================================\n"
+            f"• Posteingangsserver (IMAP): Port 993 (SSL/TLS)\n"
+            f"• Postausgangsserver (SMTP): Port 587 (STARTTLS) oder Port 465 (SSL/TLS)\n"
+            f"• Benutzername zur Authentifizierung: {user_name} (⚠️ Nur reinen Kontonamen eingeben, KEIN @Domain anhängen)\n"
+            f"• Postausgangsserver-Authentifizierung: 'Der Postausgangsserver (SMTP) erfordert Authentifizierung' muss aktiviert sein\n"
+            f"-----------------------------------------------------\n"
+            f"Bericht erstellt am: {now_str}\n"
+        ),
+        "ja": (
+            "【システム状態レポート】メールボックス容量およびサービス設定状況",
+            f"お疲れ様です。\n\n"
+            f"現在のメールボックス容量、サービス設定状況、およびクライアント接続設定パラメータは以下の通りです：\n"
+            f"=====================================================\n"
+            f"📊 メールボックス容量とストレージ制限 (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• 対象アカウント: {from_addr}\n"
+            f"• 現在の使用量: {quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• 割り当て容量制限: {quota['limit_gb']} GB\n"
+            f"• 使用率: [{bar}] {quota['percent_str']}\n"
+            f"• 容量ステータス: {'⚠️ 警告 (使用率 >= 95%，不要なメールを整理してください)' if quota['percent'] >= 95 else ('⚠️ 注意 (使用率 >= 90%)' if quota['percent'] >= 90 else '✅ 正常 (安全閾値内)')}\n"
+            f"• システム警告ポリシー: 容量が 95% に達した際、システムから自動的に警告メールが送信されます。\n\n"
+            f"=====================================================\n"
+            f"🏖️ 不在時自動応答ステータス (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• 自動応答機能: {'🟢 有効 (期間: ' + vacation_period + ')' if vacation_active else '⚪ 現在は無効'}\n"
+            f"• 有効化コマンド: 件名「#autoreply on」で自身宛にメールを送信\n"
+            f"• 無効化コマンド: 件名「#autoreply off」で自身宛にメールを送信\n\n"
+            f"=====================================================\n"
+            f"⚙️ クライアント接続設定クイックリファレンス (Outlook / Thunderbird / スマートフォン)\n"
+            f"=====================================================\n"
+            f"• 受信サーバー (IMAP): Port 993 (SSL/TLS)\n"
+            f"• 送信サーバー (SMTP): Port 587 (STARTTLS) または Port 465 (SSL/TLS)\n"
+            f"• 認証ユーザー名: {user_name} (⚠️ 純粋なアカウント名を入力してください。@ドメインは付けないでください)\n"
+            f"• 送信サーバー認証: 必ず「送信サーバー (SMTP) は認証が必要」にチェックを入れてください\n"
+            f"-----------------------------------------------------\n"
+            f"レポート作成日時: {now_str}\n"
+        ),
+        "es": (
+            "[Informe de estado del sistema] Capacidad del buzón y estado de servicios",
+            f"Estimado/a usuario/a:\n\n"
+            f"A continuación se detalla el estado en tiempo real de su cuota de buzón, servicios y parámetros de conexión:\n"
+            f"=====================================================\n"
+            f"📊 Capacidad del buzón y cuota asignada (Storage Quota)\n"
+            f"=====================================================\n"
+            f"• Cuenta consultada: {from_addr}\n"
+            f"• Almacenamiento utilizado: {quota['used_mb']} MB ({quota['used_gb']} GB)\n"
+            f"• Límite de cuota asignado: {quota['limit_gb']} GB\n"
+            f"• Porcentaje de uso: [{bar}] {quota['percent_str']}\n"
+            f"• Estado de salud: {'⚠️ Crítico (>= 95%, se requiere limpieza)' if quota['percent'] >= 95 else ('⚠️ Advertencia (>= 90%)' if quota['percent'] >= 90 else '✅ Normal (Dentro del margen de seguridad)')}\n"
+            f"• Política de alertas: El sistema envía automáticamente una alerta al alcanzar el 95% de capacidad.\n\n"
+            f"=====================================================\n"
+            f"🏖️ Estado de respuesta automática por vacaciones (Vacation Auto-Reply)\n"
+            f"=====================================================\n"
+            f"• Respuesta automática: {'🟢 Activada (Período: ' + vacation_period + ')' if vacation_active else '⚪ Actualmente desactivada'}\n"
+            f"• Comando de activación: Envíese un correo a sí mismo con el asunto '#autoreply on'\n"
+            f"• Comando de desactivación: Envíese un correo a sí mismo con el asunto '#autoreply off'\n\n"
+            f"=====================================================\n"
+            f"⚙️ Parámetros de configuración del cliente (Outlook / Thunderbird / Móvil)\n"
+            f"=====================================================\n"
+            f"• Servidor entrante (IMAP): Puerto 993 (SSL/TLS)\n"
+            f"• Servidor saliente (SMTP): Puerto 587 (STARTTLS) o Puerto 465 (SSL/TLS)\n"
+            f"• Usuario de autenticación: {user_name} (⚠️ Ingrese solo la cuenta, NO agregue @dominio)\n"
+            f"• Autenticación del servidor saliente: Marque obligatoriamente 'Mi servidor de salida (SMTP) requiere autenticación'\n"
+            f"-----------------------------------------------------\n"
+            f"Fecha de generación: {now_str}\n"
+        )
+    }
+
+    subj, body = status_templates.get(lang, status_templates["zh-TW"])
+    send_notification(from_addr, subj, body)
+    log_maillog(f"Sent status and quota report to {from_addr} (used: {quota['percent_str']}, lang: {lang})", syslog.LOG_INFO if HAS_SYSLOG else None)
+
 def get_standard_templates(lang, user_name, start_str, end_str):
     templates = {
         "zh-TW": {
@@ -791,7 +1144,13 @@ def main():
     # Detect baseline language
     detected_lang = detect_language(subject_raw + " " + body)
 
-    # 2. Check for legacy explicit disable commands first
+    # 2. Check for #status / #quota self-inquiry command
+    status_regex = r"#(?:status|quota|容量|配額|狀態|dungluong|kiemtra)"
+    if re.search(status_regex, subject_raw, re.IGNORECASE):
+        handle_status_query(from_addr, detected_lang)
+        sys.exit(0)
+
+    # 3. Check for legacy explicit disable commands first
     disable_regex = r"#(?:autoreply|vacation|休假|不在|出差|請假)\s+(?:off|cancel|stop|關閉|取消|停用)"
     if re.search(disable_regex, subject_raw, re.IGNORECASE):
         disable_autoreply(from_addr, detected_lang)
