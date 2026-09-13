@@ -14,17 +14,18 @@ Content-Type: text/html; charset=UTF-8
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
     <h1 style="margin: 0; font-size: 22px;">Willkommen! Ihr geschäftliches E-Mail-Konto ist bereit</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">Client-Verbindungseinstellungen (SMTP 587 / IMAP 993) & Speicherplatz-Leitfaden</p>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Speicherplatzkontingent, Desktop-Client & Smartphone-App Anleitung (Unterstützt SMTP 587 / 465)</p>
   </div>
 
   <p>Guten Tag <strong>${ACCOUNT}</strong>,</p>
-  <p>herzlich willkommen im Team! Ihr Unternehmens-E-Mail-Konto wurde erfolgreich initialisiert. Nachfolgend finden Sie die Speicherplatzrichtlinie, Verbindungsparameter und Einrichtungsanweisungen:</p>
+  <p>herzlich willkommen im Team! Ihr Unternehmens-E-Mail-Konto wurde erfolgreich initialisiert. Nachfolgend finden Sie die Speicherplatzrichtlinie, Verbindungsparameter und Anleitungen für Computer und Mobilgeräte:</p>
 
+  <!-- 1. Speicherplatzkontingent -->
   <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 Speicherplatz-Informationen (Storage Quota)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">Zugewiesenes Postfach-Kontingent:</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT} (Gemäß Systemeinstellung)</td>
     </tr>
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Warnschwelle & Richtlinie bei Vollbelegung:</td>
@@ -41,8 +42,9 @@ Content-Type: text/html; charset=UTF-8
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Server-Verbindung & Authentifizierung (Client Settings)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  <!-- 2. Server-Einstellungen -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Server-Verbindung & Authentifizierung (Server Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
     <tr style="background-color: #f7fafc;">
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">Einstellungspunkt</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Einstellungswert & Hinweise</td>
@@ -52,11 +54,11 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
     </tr>
     <tr style="background-color: #fffaf0;">
-      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Anmelde-/Benutzername</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Server-Benutzername (Username)</td>
       <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
         <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
         <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
-          ⚠️ Wichtiger Hinweis: Der Benutzername ist Ihr reiner Kontoname. Fügen Sie KEIN "@${DOMAIN_NAME}" hinzu!
+          ⚠️ Wichtiger Hinweis: Als Benutzername gilt nur der reine Kontoname. Fügen Sie KEINESFALLS "@${DOMAIN_NAME}" hinzu!
         </div>
       </td>
     </tr>
@@ -68,27 +70,46 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Posteingangsserver (IMAP)</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Host <code>${HOST_NAME}</code> / Port <strong>993</strong> (SSL/TLS-Verschlüsselung)</td>
     </tr>
-    <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Posteingangsserver (POP3)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Host <code>${HOST_NAME}</code> / Port <strong>995</strong> (SSL/TLS-Verschlüsselung)</td>
-    </tr>
     <tr style="background-color: #ebf8ff;">
-      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Postausgangsserver (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Postausgangsserver (SMTP)</td>
       <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
         • Server-Adresse: <code>${HOST_NAME}</code><br>
-        • Port: <strong style="color: #2b6cb0; font-size: 15px;">587</strong> (Empfohlen, <strong>STARTTLS</strong>-Verschlüsselung) oder <strong>465</strong> (SSL/TLS-Verschlüsselung)<br>
-        • <strong style="color: #c53030;">Postausgangs-Authentifizierung</strong>: <strong>Muss aktiviert sein: «Der Postausgangsserver (SMTP) erfordert Authentifizierung»</strong>, mit gleichen Anmeldedaten wie der Posteingang (Benutzername: <code>${ACCOUNT}</code>)
+        • Beide Port-Optionen werden unterstützt:<br>
+        &nbsp;&nbsp;▸ <strong>Option 1: Port 587</strong> (Verschlüsselung: <strong>STARTTLS</strong> oder TLS)<br>
+        &nbsp;&nbsp;▸ <strong>Option 2: Port 465</strong> (Verschlüsselung: <strong>SSL/TLS</strong>)<br>
+        • <strong style="color: #c53030;">Postausgangs-Authentifizierung</strong>: <strong>Muss aktiviert sein: «Der Postausgangsserver (SMTP) erfordert Authentifizierung»</strong>, mit reinem Kontonamen <code>${ACCOUNT}</code> (ohne @${DOMAIN_NAME}).
       </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 Client-Einrichtungsanleitung (Outlook / Thunderbird / Mobilgeräte)</h3>
+  <!-- 3. Desktop-Anleitung -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">💻 Desktop-Client Einrichtungsanleitung (Outlook / Thunderbird / Mac Mail)</h3>
   <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
-    <li>Wählen Sie in Ihrem E-Mail-Programm «Konto hinzufügen» und wählen Sie <strong>«Manuelle Konfiguration (IMAP)»</strong>.</li>
-    <li>Geben Sie im Feld Benutzername Ihren reinen Kontonamen <code>${ACCOUNT}</code> und Ihr Domänenpasswort ein.</li>
-    <li>Wechseln Sie zum Reiter <strong>«Postausgangsserver»</strong> und aktivieren Sie <strong>«Der Postausgangsserver (SMTP) erfordert Authentifizierung»</strong>.</li>
-    <li>Wechseln Sie zum Reiter <strong>«Erweitert»</strong>, setzen Sie den SMTP-Port auf <strong>587</strong> und wählen Sie <strong>STARTTLS</strong> (oder TLS) als Verschlüsselungsmethode.</li>
+    <li>Wählen Sie im E-Mail-Programm «Konto hinzufügen» und wählen Sie <strong>«Manuelle Konfiguration (IMAP)»</strong>.</li>
+    <li>Geben Sie als E-Mail-Adresse <code>${EMAIL}</code> ein.</li>
+    <li><strong>Im Feld Benutzername (Username) unbedingt nur den reinen Kontonamen <code>${ACCOUNT}</code> eingeben (OHNE @${DOMAIN_NAME})</strong> und Ihr Kennwort eintragen.</li>
+    <li>Posteingangsserver (IMAP): <code>${HOST_NAME}</code>, Port: <strong>993</strong> (SSL/TLS).</li>
+    <li>Postausgangsserver (SMTP): <code>${HOST_NAME}</code>, Port: <strong>587 (STARTTLS)</strong> oder <strong>465 (SSL/TLS)</strong>.</li>
+    <li>Im Reiter «Postausgangsserver» <strong>unbedingt aktivieren: «Der Postausgangsserver (SMTP) erfordert Authentifizierung»</strong>.</li>
   </ol>
+
+  <!-- 4. Smartphone-Anleitung -->
+  <div style="background-color: #fffaf0; border-left: 4px solid #dd6b20; padding: 18px 20px; border-radius: 4px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #c05621; font-size: 16px;">📱 Wichtiger Hinweis für Smartphone-Apps (iOS / Android / Outlook Mobile)</h4>
+    <p style="margin: 0 0 8px 0; font-size: 14px; color: #7b341e;">
+      <strong>⚠️ Warum meldet das Smartphone anfangs «Authentifizierung fehlgeschlagen / Falsches Passwort»?</strong><br>
+      Beim Hinzufügen auf dem Smartphone verlangt die App zunächst die vollständige E-Mail (<code>${EMAIL}</code>) und das Passwort. Beim Verbindungstest verwendet sie diese automatisch als Benutzername. Da der Unternehmensserver ausschließlich den reinen Kontonamen akzeptiert, <strong>schlägt dieser erste Versuch zwangsläufig fehl. Dies ist völlig normal!</strong>
+    </p>
+    <div style="font-size: 14px; color: #2d3748; line-height: 1.8;">
+      <strong>Schnelle Behebung:</strong>
+      <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+        <li>Tippen Sie auf <strong>«Manuelle Einrichtung» oder «Erweiterte Einstellungen»</strong>.</li>
+        <li>Entfernen Sie im Feld <strong>Benutzername (Username)</strong> das automatisch eingefügte «@{DOMAIN_NAME}», sodass nur der reine Kontoname <code><span style="color: #c53030; font-weight: bold;">${ACCOUNT}</span></code> stehen bleibt!</li>
+        <li>Setzen Sie den SMTP-Port auf <strong>587 (STARTTLS)</strong> oder <strong>465 (SSL/TLS)</strong> und stellen Sie sicher, dass <strong>«Authentifizierung erforderlich»</strong> eingeschaltet ist.</li>
+        <li>Tippen Sie auf Speichern / Anmelden, um das Postfach erfolgreich einzurichten!</li>
+      </ol>
+    </div>
+  </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
   <p style="font-size: 12px; color: #718096; margin: 0;">IT-Infrastruktur-Team | Automatisch generierte Systembenachrichtigung - Bitte nicht antworten</p>

@@ -14,17 +14,18 @@ Content-Type: text/html; charset=UTF-8
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
     <h1 style="margin: 0; font-size: 22px;">Bienvenue ! Votre compte de messagerie d'entreprise est activé</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">Paramètres de connexion client (SMTP 587 / IMAP 993) et guide du quota de stockage</p>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Quota de stockage, configuration sur ordinateur et application mobile (Support SMTP 587 / 465)</p>
   </div>
 
   <p>Bonjour <strong>${ACCOUNT}</strong>,</p>
-  <p>Bienvenue au sein de notre équipe ! Votre compte de messagerie professionnelle a été initialisé avec succès. Vous trouverez ci-dessous la politique de quota, les paramètres de connexion et le guide de configuration client :</p>
+  <p>Bienvenue au sein de notre équipe ! Votre compte de messagerie professionnelle a été initialisé avec succès. Vous trouverez ci-dessous la politique de quota, les paramètres du serveur et les instructions pour ordinateur et mobile :</p>
 
+  <!-- 1. Quota de stockage -->
   <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 Informations sur le quota de stockage (Storage Quota)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">Limite de quota allouée :</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT} (Selon la configuration système)</td>
     </tr>
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Alerte de seuil et politique de dépassement :</td>
@@ -36,13 +37,14 @@ Content-Type: text/html; charset=UTF-8
     <tr style="background-color: #ebf8ff;">
       <td style="padding: 10px 15px; font-weight: bold; color: #2b6cb0;">Commande d'auto-vérification :</td>
       <td style="padding: 10px 15px; color: #2d3748;">
-        Envoyez un e-mail à vous-même avec pour objet <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#status</code> ou <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#quota</code>, le robot du système vous répondra instantanément avec votre capacité en temps réel, le pourcentage utilisé et l'état des services !
+        Envoyez un e-mail à vous-même avec pour objet <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#status</code> ou <code style="background-color: #bee3f8; padding: 3px 6px; border-radius: 4px; font-weight: bold; color: #2b6cb0;">#quota</code>, le robot du système vous répondra instantanément avec votre capacité en temps réel, la barre de progression et l'état des services !
       </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Paramètres de connexion et d'authentification du serveur (Client Settings)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  <!-- 2. Paramètres du serveur -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Paramètres de connexion et d'authentification du serveur (Server Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
     <tr style="background-color: #f7fafc;">
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">Élément de configuration</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Valeur et instructions</td>
@@ -52,11 +54,11 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
     </tr>
     <tr style="background-color: #fffaf0;">
-      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Nom d'utilisateur / Connexion</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Nom d'utilisateur serveur (Username)</td>
       <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
         <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
         <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
-          ⚠️ Important : L'identifiant de connexion est votre compte pur (identifiant). N'ajoutez PAS "@${DOMAIN_NAME}" !
+          ⚠️ Important : L'identifiant de connexion est votre compte pur. N'ajoutez JAMAIS "@${DOMAIN_NAME}" !
         </div>
       </td>
     </tr>
@@ -68,27 +70,46 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Serveur entrant (IMAP)</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Hôte <code>${HOST_NAME}</code> / Port <strong>993</strong> (Chiffrement SSL/TLS)</td>
     </tr>
-    <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Serveur entrant (POP3)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Hôte <code>${HOST_NAME}</code> / Port <strong>995</strong> (Chiffrement SSL/TLS)</td>
-    </tr>
     <tr style="background-color: #ebf8ff;">
-      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Serveur sortant (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Serveur sortant (SMTP)</td>
       <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
         • Adresse de l'hôte : <code>${HOST_NAME}</code><br>
-        • Port : <strong style="color: #2b6cb0; font-size: 15px;">587</strong> (Recommandé, chiffrement <strong>STARTTLS</strong>) ou <strong>465</strong> (chiffrement SSL/TLS)<br>
-        • <strong style="color: #c53030;">Authentification sortante</strong> : <strong>Cochez obligatoirement « Mon serveur sortant (SMTP) requiert une authentification »</strong> et utilisez les mêmes paramètres que le serveur entrant (Identifiant : <code>${ACCOUNT}</code>)
+        • Deux options de ports prises en charge :<br>
+        &nbsp;&nbsp;▸ <strong>Option 1 : Port 587</strong> (Chiffrement : <strong>STARTTLS</strong> ou TLS)<br>
+        &nbsp;&nbsp;▸ <strong>Option 2 : Port 465</strong> (Chiffrement : <strong>SSL/TLS</strong>)<br>
+        • <strong style="color: #c53030;">Authentification sortante</strong> : <strong>Cochez obligatoirement « Mon serveur sortant (SMTP) requiert une authentification »</strong> avec votre compte pur <code>${ACCOUNT}</code> (sans @${DOMAIN_NAME}).
       </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 Guide de configuration client (Outlook / Thunderbird / Mobile)</h3>
+  <!-- 3. Guide ordinateur -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">💻 Guide de configuration ordinateur (Outlook / Thunderbird / Mac Mail)</h3>
   <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
-    <li>Ajoutez un compte dans votre client de messagerie et sélectionnez <strong>« Configuration manuelle (IMAP) »</strong>.</li>
-    <li>Dans le champ Nom d'utilisateur, saisissez votre compte pur <code>${ACCOUNT}</code> et votre mot de passe de domaine.</li>
-    <li>Dans l'onglet <strong>« Serveur sortant »</strong>, <strong>cochez « Mon serveur sortant (SMTP) requiert une authentification »</strong>.</li>
-    <li>Dans l'onglet <strong>« Avancé »</strong>, réglez le port du serveur sortant (SMTP) sur <strong>587</strong> et sélectionnez le chiffrement <strong>STARTTLS</strong> (ou TLS).</li>
+    <li>Ajoutez un compte dans votre client et sélectionnez <strong>« Configuration manuelle (IMAP) »</strong>.</li>
+    <li>Dans l'adresse e-mail, saisissez <code>${EMAIL}</code>.</li>
+    <li><strong>Dans le champ Nom d'utilisateur (Username), saisissez impérativement le compte pur <code>${ACCOUNT}</code> (SANS @${DOMAIN_NAME})</strong> et votre mot de passe.</li>
+    <li>Serveur entrant (IMAP) : <code>${HOST_NAME}</code>, Port : <strong>993</strong> (SSL/TLS).</li>
+    <li>Serveur sortant (SMTP) : <code>${HOST_NAME}</code>, Port : <strong>587 (STARTTLS)</strong> ou <strong>465 (SSL/TLS)</strong>.</li>
+    <li>Dans l'onglet "Serveur sortant", <strong>cochez « Mon serveur sortant (SMTP) requiert une authentification »</strong>.</li>
   </ol>
+
+  <!-- 4. Guide mobile -->
+  <div style="background-color: #fffaf0; border-left: 4px solid #dd6b20; padding: 18px 20px; border-radius: 4px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #c05621; font-size: 16px;">📱 Remarque essentielle pour application mobile (iOS / Android / Outlook Mobile)</h4>
+    <p style="margin: 0 0 8px 0; font-size: 14px; color: #7b341e;">
+      <strong>⚠️ Pourquoi la saisie initiale sur mobile affiche-t-elle « Échec de l'authentification » ?</strong><br>
+      Lors de l'ajout d'un compte sur smartphone, l'application demande initialement l'e-mail complet (<code>${EMAIL}</code>) et le mot de passe. En testant la connexion, elle utilise automatiquement cet e-mail complet comme identifiant. Le serveur exigeant un compte pur, <strong>cette première tentative échoue systématiquement. C'est normal, pas d'inquiétude !</strong>
+    </p>
+    <div style="font-size: 14px; color: #2d3748; line-height: 1.8;">
+      <strong>Solution rapide :</strong>
+      <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+        <li>Touchez <strong>« Configuration manuelle » ou « Paramètres avancés »</strong>.</li>
+        <li>Dans le champ <strong>Nom d'utilisateur (Username)</strong> des serveurs entrant et sortant, <strong>supprimez la partie « @{DOMAIN_NAME} » pour ne garder que le compte pur <code><span style="color: #c53030; font-weight: bold;">${ACCOUNT}</span></code></strong> !</li>
+        <li>Réglez le port SMTP sur <strong>587 (STARTTLS)</strong> ou <strong>465 (SSL/TLS)</strong> et assurez-vous que <strong>« Authentification requise »</strong> est cochée.</li>
+        <li>Touchez Enregistrer / Connexion pour valider et utiliser votre messagerie !</li>
+      </ol>
+    </div>
+  </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
   <p style="font-size: 12px; color: #718096; margin: 0;">Support Informatique | Notification automatique du système - Merci de ne pas répondre à cet e-mail</p>

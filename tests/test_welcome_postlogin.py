@@ -74,6 +74,7 @@ class TestWelcomePostlogin(unittest.TestCase):
             self.assertIn("${EMAIL}", content)
             self.assertIn("${ACCOUNT}", content)
             self.assertIn("587", content, f"範本 {lang} 應包含外寄伺服器 Port 587 設定")
+            self.assertIn("465", content, f"範本 {lang} 應包含外寄伺服器 Port 465 設定")
             self.assertIn("STARTTLS", content, f"範本 {lang} 應包含 STARTTLS 加密協定說明")
             self.assertTrue("#status" in content or "#quota" in content, f"範本 {lang} 應包含 #status 或 #quota 自助查詢指令")
 

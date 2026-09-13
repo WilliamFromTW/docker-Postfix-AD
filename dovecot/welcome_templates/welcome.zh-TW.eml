@@ -14,17 +14,18 @@ Content-Type: text/html; charset=UTF-8
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
     <h1 style="margin: 0; font-size: 22px;">歡迎加入！您的企業電子郵箱已開通</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">客戶端連線設定（SMTP 587 / IMAP 993）與信箱儲存配額指引</p>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">信箱空間配額、電腦客戶端與手機 App 設定說明（支援 SMTP 587 / 465）</p>
   </div>
 
   <p>親愛的同仁 <strong>${ACCOUNT}</strong> 您好：</p>
-  <p>歡迎您加入團隊！您的公司專屬電子郵件帳號已完成初始化配置，以下為您的信箱儲存空間政策、連線參數與客戶端設定教學：</p>
+  <p>歡迎您加入團隊！您的公司專屬電子郵件帳號已完成初始化配置，以下為您的信箱儲存空間政策、連線參數與電腦／手機客戶端設定教學：</p>
 
+  <!-- 1. 信箱配額區塊 -->
   <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 信箱空間配額資訊 (Storage Quota)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">個人信箱配額上限：</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}（依系統設定）</td>
     </tr>
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">容量預警與滿額政策：</td>
@@ -41,8 +42,9 @@ Content-Type: text/html; charset=UTF-8
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ 伺服器連線與驗證設定 (Client Settings)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  <!-- 2. 伺服器連線參數總表 -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ 伺服器連線與驗證設定 (Server Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
     <tr style="background-color: #f7fafc;">
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">設定項目</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">設定值與規範說明</td>
@@ -52,11 +54,11 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
     </tr>
     <tr style="background-color: #fffaf0;">
-      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">登入／驗證使用者名稱</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">伺服器登入帳號 (Username)</td>
       <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
         <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
         <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
-          ⚠️ 重要防呆：登入名稱必須輸入「純帳號／工號」，切勿加上「@${DOMAIN_NAME}」！
+          ⚠️ 重要防呆：伺服器登入名稱請輸入「純帳號／工號」，絕對切勿加上「@${DOMAIN_NAME}」！
         </div>
       </td>
     </tr>
@@ -68,27 +70,46 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">收信伺服器 (IMAP)</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">主機 <code>${HOST_NAME}</code> / 連接埠 <strong>993</strong> (SSL/TLS 加密)</td>
     </tr>
-    <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">收信伺服器 (POP3)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">主機 <code>${HOST_NAME}</code> / 連接埠 <strong>995</strong> (SSL/TLS 加密)</td>
-    </tr>
     <tr style="background-color: #ebf8ff;">
-      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">外寄伺服器 (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">外寄伺服器 (SMTP)</td>
       <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
         • 主機位址：<code>${HOST_NAME}</code><br>
-        • 連接埠 (Port)：<strong style="color: #2b6cb0; font-size: 15px;">587</strong>（推薦，<strong>STARTTLS</strong> 加密）或 <strong>465</strong>（SSL/TLS 加密）<br>
-        • <strong style="color: #c53030;">外寄伺服器驗證</strong>：<strong>必須勾選「我的外寄伺服器 (SMTP) 需要驗證」</strong>，並選擇「使用與接收郵件伺服器相同的設定」（登入使用者名稱為純帳號 <code>${ACCOUNT}</code>）
+        • 連接埠兩種選擇皆可支援：<br>
+        &nbsp;&nbsp;▸ <strong>選擇一：連接埠 587</strong>（加密連線：<strong>STARTTLS</strong> 或 TLS）<br>
+        &nbsp;&nbsp;▸ <strong>選擇二：連接埠 465</strong>（加密連線：<strong>SSL/TLS</strong>）<br>
+        • <strong style="color: #c53030;">外寄伺服器驗證</strong>：<strong>必須勾選「我的外寄伺服器 (SMTP) 需要驗證」</strong>，登入使用者名稱為純帳號 <code>${ACCOUNT}</code>（不加 @${DOMAIN_NAME}）。
       </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 收發信軟體設定教學 (Outlook / Thunderbird / 手機)</h3>
+  <!-- 3. 電腦端客戶端設定教學 -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">💻 電腦端客戶端設定教學 (Outlook / Thunderbird / Mac Mail)</h3>
   <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
-    <li>於收發信軟體新增帳號，選擇<strong>「手動設定伺服器 (IMAP)」</strong>。</li>
-    <li>使用者名稱欄位請輸入純帳號 <code>${ACCOUNT}</code>，密碼填寫您的網域密碼。</li>
-    <li>進入<strong>「外寄伺服器」</strong>設定分頁，<strong>務必勾選「我的外寄伺服器 (SMTP) 需要驗證」</strong>。</li>
-    <li>進入<strong>「進階」</strong>分頁，將外寄伺服器 (SMTP) 連接埠改為 <strong>587</strong>，加密連線類型選擇 <strong>STARTTLS</strong>（或 TLS）。</li>
+    <li>於郵件軟體新增帳號，選擇<strong>「手動設定伺服器 (IMAP)」</strong>。</li>
+    <li>電子郵件地址填寫 <code>${EMAIL}</code>。</li>
+    <li><strong>使用者名稱欄位請務必輸入純帳號 <code>${ACCOUNT}</code>（請勿填寫 @${DOMAIN_NAME}）</strong>，密碼填寫您的網域密碼。</li>
+    <li>收信伺服器填寫 <code>${HOST_NAME}</code>，連接埠為 <strong>993</strong> (SSL/TLS)。</li>
+    <li>外寄伺服器填寫 <code>${HOST_NAME}</code>，連接埠可依偏好選擇 <strong>587 (STARTTLS)</strong> 或 <strong>465 (SSL/TLS)</strong>。</li>
+    <li>進入「外寄伺服器」分頁，<strong>務必勾選「我的外寄伺服器 (SMTP) 需要驗證」</strong>，並選擇與收信伺服器相同設定。</li>
   </ol>
+
+  <!-- 4. 手機 App 初次設定避坑指南 -->
+  <div style="background-color: #fffaf0; border-left: 4px solid #dd6b20; padding: 18px 20px; border-radius: 4px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #c05621; font-size: 16px;">📱 手機 / 行動裝置 App 初次設定特別提醒 (iOS / Android / Outlook Mobile)</h4>
+    <p style="margin: 0 0 8px 0; font-size: 14px; color: #7b341e;">
+      <strong>⚠️ 為什麼一開始在手機輸入 Email 帳號密碼會顯示「認證錯誤 / 驗證失敗」？</strong><br>
+      在手機新增帳號時，App 第一步通常會要求輸入完整 Email（<code>${EMAIL}</code>）與密碼。送出後，App 會自動拿該 Email 去嘗試登入，因公司伺服器只接受純帳號驗證，此時<strong>必然會顯示認證失敗，此為正常現象，請勿慌張！</strong>
+    </p>
+    <div style="font-size: 14px; color: #2d3748; line-height: 1.8;">
+      <strong>簡易排除步驟：</strong>
+      <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+        <li>點選畫面上的<strong>「手動設定」或「進階設定」</strong>。</li>
+        <li>在收件與外寄伺服器的【使用者名稱 / 帳號】欄位中，<strong>將系統自動帶出的「@{DOMAIN_NAME}」手動刪除，只保留純帳號 <code><span style="color: #c53030; font-weight: bold;">${ACCOUNT}</span></code></strong>！</li>
+        <li>外寄伺服器連接埠設定為 <strong>587 (STARTTLS)</strong> 或 <strong>465 (SSL/TLS)</strong>，並確認已開啟<strong>「需要驗證」</strong>。</li>
+        <li>再次點選儲存／登入，即可順利連線收發郵件！</li>
+      </ol>
+    </div>
+  </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
   <p style="font-size: 12px; color: #718096; margin: 0;">資訊管理處 | 系統自動發送，請勿直接回覆本信</p>

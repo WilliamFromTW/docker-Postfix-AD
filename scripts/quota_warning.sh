@@ -65,16 +65,20 @@ fi
 # 4. 動態提取當前生效配額 ${QUOTA_LIMIT}
 QUOTA_LIMIT=""
 if command -v doveadm >/dev/null 2>&1; then
-  RAW_LIMIT=$(doveadm quota get -u "$USER_ID" 2>/dev/null | awk '$2=="STORAGE" {print $4}')
-  if [ -n "$RAW_LIMIT" ] && [ "$RAW_LIMIT" -gt 0 ] 2>/dev/null; then
-    GB=$(( RAW_LIMIT / 1024 / 1024 ))
-    if [ "$GB" -gt 0 ]; then
-      QUOTA_LIMIT="${GB} GB"
-    else
-      MB=$(( RAW_LIMIT / 1024 ))
-      QUOTA_LIMIT="${MB} MB"
+  for cand in "$USER_ID" "$ACCOUNT" "${USER_EMAIL}"; do
+    [ -z "$cand" ] && continue
+    RAW_LIMIT=$(doveadm quota get -u "$cand" 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(toupper($i)=="STORAGE") print $(i+2)}')
+    if [ -n "$RAW_LIMIT" ] && [ "$RAW_LIMIT" -gt 0 ] 2>/dev/null; then
+      GB=$(( RAW_LIMIT / 1024 / 1024 ))
+      if [ "$GB" -gt 0 ]; then
+        QUOTA_LIMIT="${GB} GB"
+      else
+        MB=$(( RAW_LIMIT / 1024 ))
+        QUOTA_LIMIT="${MB} MB"
+      fi
+      break
     fi
-  fi
+  done
 fi
 
 if [ -z "$QUOTA_LIMIT" ] && [ -f "/etc/dovecot/conf.d/90-quota.conf" ]; then

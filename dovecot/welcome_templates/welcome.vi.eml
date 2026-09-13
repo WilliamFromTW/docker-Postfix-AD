@@ -14,17 +14,18 @@ Content-Type: text/html; charset=UTF-8
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 680px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #2b6cb0; color: #ffffff; padding: 22px; border-radius: 6px; margin-bottom: 25px;">
     <h1 style="margin: 0; font-size: 22px;">Chào mừng bạn! Hòm thư doanh nghiệp của bạn đã sẵn sàng</h1>
-    <p style="margin: 8px 0 0 0; opacity: 0.9;">Thông số kết nối (SMTP 587 / IMAP 993) & Chính sách hạn ngạch dung lượng</p>
+    <p style="margin: 8px 0 0 0; opacity: 0.9;">Hạn mức dung lượng, hướng dẫn cài đặt máy tính & điện thoại di động (Hỗ trợ SMTP 587 / 465)</p>
   </div>
 
   <p>Thân gửi đồng nghiệp <strong>${ACCOUNT}</strong>:</p>
-  <p>Chào mừng bạn gia nhập đội ngũ! Hòm thư điện tử doanh nghiệp của bạn đã được khởi tạo thành công. Dưới đây là chính sách hạn ngạch dung lượng, thông số kết nối và hướng dẫn cài đặt máy khách:</p>
+  <p>Chào mừng bạn gia nhập đội ngũ! Hòm thư điện tử doanh nghiệp của bạn đã được khởi tạo thành công. Dưới đây là chính sách hạn ngạch dung lượng, thông số kết nối và hướng dẫn cài đặt trên máy tính & điện thoại:</p>
 
+  <!-- 1. Hạn mức dung lượng -->
   <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📊 Thông tin hạn mức dung lượng (Storage Quota)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f7fafc; border-radius: 6px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f7fafc; border-radius: 6px;">
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 35%;">Hạn mức dung lượng cá nhân:</td>
-      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT}</td>
+      <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; color: #2b6cb0; font-weight: bold; font-size: 16px;">${QUOTA_LIMIT} (Theo cấu hình hệ thống)</td>
     </tr>
     <tr>
       <td style="padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Cảnh báo dung lượng & Đầy hòm thư:</td>
@@ -41,8 +42,9 @@ Content-Type: text/html; charset=UTF-8
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Thông số kết nối & Xác thực máy chủ (Client Settings)</h3>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  <!-- 2. Thông số kết nối máy chủ -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Thông số kết nối & Xác thực máy chủ (Server Settings)</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
     <tr style="background-color: #f7fafc;">
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; width: 30%;">Mục cấu hình</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Giá trị thiết lập & Lưu ý</td>
@@ -52,11 +54,11 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><code style="color: #2b6cb0; font-weight: bold; font-size: 15px;">${EMAIL}</code></td>
     </tr>
     <tr style="background-color: #fffaf0;">
-      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Tên đăng nhập / Xác thực</td>
+      <td style="padding: 8px 12px; border: 1px solid #ecc94b; font-weight: bold; color: #b7791f;">Tên đăng nhập máy chủ (Username)</td>
       <td style="padding: 8px 12px; border: 1px solid #ecc94b;">
         <code style="color: #c53030; font-weight: bold; font-size: 16px;">${ACCOUNT}</code>
         <div style="font-size: 13px; color: #c53030; margin-top: 4px; font-weight: bold;">
-          ⚠️ Lưu ý quan trọng: Tên đăng nhập là tài khoản thuần (mã nhân viên), KHÔNG thêm "@${DOMAIN_NAME}"!
+          ⚠️ Lưu ý quan trọng: Tên đăng nhập là tài khoản thuần (mã nhân viên), tuyệt đối KHÔNG thêm "@${DOMAIN_NAME}"!
         </div>
       </td>
     </tr>
@@ -68,27 +70,46 @@ Content-Type: text/html; charset=UTF-8
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Máy chủ nhận thư (IMAP)</td>
       <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Máy chủ <code>${HOST_NAME}</code> / Cổng <strong>993</strong> (Mã hóa SSL/TLS)</td>
     </tr>
-    <tr>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold;">Máy chủ nhận thư (POP3)</td>
-      <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Máy chủ <code>${HOST_NAME}</code> / Cổng <strong>995</strong> (Mã hóa SSL/TLS)</td>
-    </tr>
     <tr style="background-color: #ebf8ff;">
-      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Máy chủ gửi thư (SMTP 587)</td>
+      <td style="padding: 8px 12px; border: 1px solid #bee3f8; font-weight: bold; color: #2b6cb0;">Máy chủ gửi thư (SMTP)</td>
       <td style="padding: 8px 12px; border: 1px solid #bee3f8;">
         • Địa chỉ máy chủ: <code>${HOST_NAME}</code><br>
-        • Cổng (Port): <strong style="color: #2b6cb0; font-size: 15px;">587</strong> (Khuyên dùng, mã hóa <strong>STARTTLS</strong>) hoặc <strong>465</strong> (mã hóa SSL/TLS)<br>
-        • <strong style="color: #c53030;">Xác thực gửi thư</strong>: <strong>Bắt buộc tích chọn "Máy chủ gửi thư (SMTP) yêu cầu xác thực"</strong>, sử dụng cùng thông số với máy chủ nhận thư (Tên đăng nhập: <code>${ACCOUNT}</code>)
+        • Hai lựa chọn cổng kết nối đều được hỗ trợ:<br>
+        &nbsp;&nbsp;▸ <strong>Lựa chọn 1: Cổng 587</strong> (Mã hóa: <strong>STARTTLS</strong> hoặc TLS)<br>
+        &nbsp;&nbsp;▸ <strong>Lựa chọn 2: Cổng 465</strong> (Mã hóa: <strong>SSL/TLS</strong>)<br>
+        • <strong style="color: #c53030;">Xác thực gửi thư</strong>: <strong>Bắt buộc tích chọn "Máy chủ gửi thư (SMTP) yêu cầu xác thực"</strong>, tên đăng nhập là tài khoản thuần <code>${ACCOUNT}</code> (không thêm @${DOMAIN_NAME}).
       </td>
     </tr>
   </table>
 
-  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📱 Hướng dẫn cấu hình phần mềm (Outlook / Thunderbird / Di động)</h3>
+  <!-- 3. Hướng dẫn trên máy tính -->
+  <h3 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">💻 Hướng dẫn cài đặt trên máy tính (Outlook / Thunderbird / Mac Mail)</h3>
   <ol style="padding-left: 20px; margin-bottom: 25px; line-height: 1.8;">
     <li>Trong phần mềm email, chọn thêm tài khoản mới và chọn <strong>"Cấu hình thủ công máy chủ (IMAP)"</strong>.</li>
-    <li>Tại ô tên đăng nhập, điền tài khoản thuần <code>${ACCOUNT}</code> và mật khẩu miền của bạn.</li>
-    <li>Chuyển sang tab <strong>"Máy chủ gửi thư (Outgoing Server)"</strong>, <strong>bắt buộc tích chọn "Máy chủ gửi thư (SMTP) của tôi yêu cầu xác thực"</strong>.</li>
-    <li>Chuyển sang tab <strong>"Nâng cao (Advanced)"</strong>, đổi cổng SMTP thành <strong>587</strong> và chọn loại mã hóa là <strong>STARTTLS</strong> (hoặc TLS).</li>
+    <li>Tại ô địa chỉ email, điền <code>${EMAIL}</code>.</li>
+    <li><strong>Tại ô Tên đăng nhập (Username), bắt buộc điền tài khoản thuần <code>${ACCOUNT}</code> (không điền @${DOMAIN_NAME})</strong> và mật khẩu miền của bạn.</li>
+    <li>Máy chủ nhận (IMAP): <code>${HOST_NAME}</code>, Cổng <strong>993</strong> (SSL/TLS).</li>
+    <li>Máy chủ gửi (SMTP): <code>${HOST_NAME}</code>, Cổng <strong>587 (STARTTLS)</strong> hoặc <strong>465 (SSL/TLS)</strong>.</li>
+    <li>Chuyển sang tab "Máy chủ gửi thư", <strong>bắt buộc tích chọn "Máy chủ gửi thư (SMTP) của tôi yêu cầu xác thực"</strong> (sử dụng cùng thông số nhận).</li>
   </ol>
+
+  <!-- 4. Hướng dẫn trên điện thoại -->
+  <div style="background-color: #fffaf0; border-left: 4px solid #dd6b20; padding: 18px 20px; border-radius: 4px; margin-bottom: 25px;">
+    <h4 style="margin: 0 0 10px 0; color: #c05621; font-size: 16px;">📱 Lưu ý quan trọng khi cài đặt trên điện thoại di động (iOS / Android / Outlook Mobile)</h4>
+    <p style="margin: 0 0 8px 0; font-size: 14px; color: #7b341e;">
+      <strong>⚠️ Tại sao lần đầu nhập Email trên điện thoại lại báo "Lỗi xác thực / Sai mật khẩu"?</strong><br>
+      Khi thêm tài khoản trên điện thoại, ứng dụng ban đầu sẽ yêu cầu nhập đầy đủ Email (<code>${EMAIL}</code>) và mật khẩu. Khi kiểm tra kết nối, ứng dụng tự động lấy Email đó làm tên đăng nhập. Do máy chủ công ty chỉ chấp nhận tài khoản thuần, <strong>bước này chắc chắn sẽ báo lỗi xác thực, đây là hiện tượng bình thường, xin đừng lo lắng!</strong>
+    </p>
+    <div style="font-size: 14px; color: #2d3748; line-height: 1.8;">
+      <strong>Cách khắc phục nhanh:</strong>
+      <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+        <li>Nhấn chọn <strong>"Cài đặt thủ công" hoặc "Cài đặt nâng cao"</strong> trên màn hình điện thoại.</li>
+        <li>Tại ô <strong>Tên người dùng (Username)</strong> của cả máy chủ nhận và gửi, <strong>hãy xóa phần "@{DOMAIN_NAME}" tự động điền, chỉ giữ lại tài khoản thuần <code><span style="color: #c53030; font-weight: bold;">${ACCOUNT}</span></code></strong>!</li>
+        <li>Đặt cổng SMTP thành <strong>587 (STARTTLS)</strong> hoặc <strong>465 (SSL/TLS)</strong>, và đảm bảo đã bật <strong>"Yêu cầu xác thực"</strong>.</li>
+        <li>Nhấn Lưu / Đăng nhập lại là sẽ kết nối thành công và nhận gửi thư bình thường!</li>
+      </ol>
+    </div>
+  </div>
 
   <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
   <p style="font-size: 12px; color: #718096; margin: 0;">Bộ phận CNTT | Thư thông báo tự động từ hệ thống - Vui lòng không trả lời thư này</p>
