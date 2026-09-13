@@ -84,7 +84,7 @@ class TestQuotaStatusQuery(unittest.TestCase):
         languages = ["zh-TW", "zh-CN", "en", "vi", "fr", "de", "ja", "es"]
         for lang in languages:
             mock_send.reset_mock()
-            handle_status_query("alice@example.com", lang)
+            handle_status_query("alice@example.com", lang, ignore_cooldown=True)
             self.assertTrue(mock_send.called, f"send_notification should be called for lang: {lang}")
             
             call_args = mock_send.call_args[0]
@@ -97,6 +97,86 @@ class TestQuotaStatusQuery(unittest.TestCase):
             self.assertIn("587", body, f"Body for {lang} should mention Port 587")
             self.assertIn("alice", body, f"Body for {lang} should mention pure username alice")
             self.assertIn("50.0", body, f"Body for {lang} should mention allocated quota")
+
+    @patch("handle_autoreply.send_notification")
+    @patch("handle_autoreply.get_user_quota_info")
+    def test_status_query_cooldown_rate_limit(self, mock_quota, mock_send):
+        from handle_autoreply import handle_status_query
+        import tempfile
+        import shutil
+
+        mock_quota.return_value = {
+            "used_mb": 512.0, "used_gb": 0.5, "limit_gb": 50.0, "percent": 1.0, "percent_str": "1.0%"
+        }
+
+        test_user = f"rate_limit_test_{os.getpid()}@example.com"
+        
+        # 第一次呼叫：成功發送
+        mock_send.reset_mock()
+        handle_status_query(test_user, "zh-TW")
+        self.assertTrue(mock_send.called, "第一次查詢應正常發送通知")
+
+        # 10 秒內第二次呼叫：被冷卻阻擋，不觸發發送
+        mock_send.reset_mock()
+        handle_status_query(test_user, "zh-TW")
+        self.assertFalse(mock_send.called, "10秒內重複查詢應被防狂按保護攔截，不發送通知")
+
+    @patch("handle_autoreply.handle_status_query")
+    def test_main_exclusive_self_sent_guardrails(self, mock_status):
+        import io
+        from handle_autoreply import main
+
+        def make_raw_email(from_val, to_val, cc_val=None, bcc_val=None, subject="#status"):
+            lines = [
+                f"From: {from_val}",
+                f"To: {to_val}",
+            ]
+            if cc_val:
+                lines.append(f"Cc: {cc_val}")
+            if bcc_val:
+                lines.append(f"Bcc: {bcc_val}")
+            lines.extend([
+                f"Subject: {subject}",
+                "Content-Type: text/plain; charset=utf-8",
+                "",
+                "Please check status"
+            ])
+            return "\n".join(lines).encode("utf-8")
+
+        # 案例 1：嚴格本人單一收件人 -> 通過並調用 handle_status_query
+        mock_status.reset_mock()
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(make_raw_email("user@example.com", "user@example.com")))), \
+             self.assertRaises(SystemExit):
+            main()
+        mock_status.assert_called_once()
+
+        # 案例 2：To 包含多個收件人 -> 阻擋退出，不調用 handle_status_query
+        mock_status.reset_mock()
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(make_raw_email("user@example.com", "user@example.com, colleague@example.com")))), \
+             self.assertRaises(SystemExit):
+            main()
+        mock_status.assert_not_called()
+
+        # 案例 3：From != To (他人寄送) -> 阻擋退出
+        mock_status.reset_mock()
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(make_raw_email("attacker@example.com", "user@example.com")))), \
+             self.assertRaises(SystemExit):
+            main()
+        mock_status.assert_not_called()
+
+        # 案例 4：有副本 (Cc) 存在 -> 阻擋退出
+        mock_status.reset_mock()
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(make_raw_email("user@example.com", "user@example.com", cc_val="boss@example.com")))), \
+             self.assertRaises(SystemExit):
+            main()
+        mock_status.assert_not_called()
+
+        # 案例 5：有密件副本 (Bcc) 存在 -> 阻擋退出
+        mock_status.reset_mock()
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(make_raw_email("user@example.com", "user@example.com", bcc_val="boss@example.com")))), \
+             self.assertRaises(SystemExit):
+            main()
+        mock_status.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

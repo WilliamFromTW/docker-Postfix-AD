@@ -15,7 +15,7 @@ import json
 import email
 from email.header import decode_header
 from email.mime.text import MIMEText
-from email.utils import parseaddr, formatdate
+from email.utils import parseaddr, formatdate, getaddresses
 from datetime import datetime, time, timedelta, timezone
 import subprocess
 import urllib.request
@@ -550,16 +550,35 @@ def make_progress_bar(percent, length=10):
     empty = length - filled
     return "■" * filled + "□" * empty
 
-def handle_status_query(from_addr, lang="zh-TW"):
+def handle_status_query(from_addr, lang="zh-TW", ignore_cooldown=False):
     """
     即時回覆同仁信箱容量用量、健康狀態、休假回覆設定與客戶端連線參數。
+    具備 10 秒防狂按冷卻保護機制。
     """
+    sieve_dir = find_user_sieve_dir(from_addr)
+    cooldown_file = os.path.join(sieve_dir, ".status_cooldown")
+    current_ts = datetime.now().timestamp()
+    if not ignore_cooldown and os.path.exists(cooldown_file):
+        try:
+            with open(cooldown_file, "r", encoding="utf-8") as f:
+                last_ts = float(f.read().strip())
+            if current_ts - last_ts < 10.0:
+                log_maillog(f"Rate limit: status query for {from_addr} within 10s cooldown, skipping", syslog.LOG_INFO if HAS_SYSLOG else None)
+                return
+        except Exception:
+            pass
+
+    try:
+        with open(cooldown_file, "w", encoding="utf-8") as f:
+            f.write(str(current_ts))
+    except Exception:
+        pass
+
     quota = get_user_quota_info(from_addr)
     user_name = from_addr.split("@")[0]
     bar = make_progress_bar(quota["percent"])
     
     # 檢查休假自動回覆當前狀態
-    sieve_dir = find_user_sieve_dir(from_addr)
     cfg_file = os.path.join(sieve_dir, "autoreply_config.json")
     vacation_active = False
     vacation_period = ""
@@ -1122,20 +1141,24 @@ def main():
 
     from_header = decode_mime_words(msg.get("From", ""))
     to_header = decode_mime_words(msg.get("To", ""))
+    cc_header = decode_mime_words(msg.get("Cc", ""))
+    bcc_header = decode_mime_words(msg.get("Bcc", ""))
     subject_raw = decode_mime_words(msg.get("Subject", ""))
     body = get_email_body(msg)
 
     _, from_addr = parseaddr(from_header)
-    _, to_addr = parseaddr(to_header)
-
     from_addr = from_addr.lower().strip()
-    to_addr = to_addr.lower().strip()
-
-    if not from_addr or not to_addr:
+    if not from_addr:
         sys.exit(0)
 
-    # 1. Verify self-sent email (From == To)
-    if from_addr != to_addr:
+    # 1. 嚴格獨佔檢查 (Exclusive Self-Sent Verification):
+    # - 收件人 (To) 必須恰好只有 1 個地址，且必須 100% 等於發件人 (From == To)
+    # - 副本 (Cc) 與密件副本 (Bcc) 必須為空，絕不可包含任何其他收件人
+    to_addrs = [addr.lower().strip() for _, addr in getaddresses([to_header]) if addr]
+    cc_addrs = [addr.lower().strip() for _, addr in getaddresses([cc_header]) if addr]
+    bcc_addrs = [addr.lower().strip() for _, addr in getaddresses([bcc_header]) if addr]
+
+    if len(to_addrs) != 1 or to_addrs[0] != from_addr or cc_addrs or bcc_addrs:
         sys.exit(0)
 
     log_maillog(f"Received self-sent command email for {from_addr}: Subject='{subject_raw}'", syslog.LOG_INFO if HAS_SYSLOG else None)
