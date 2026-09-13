@@ -102,7 +102,9 @@ def main():
         if not os.path.isdir(template_dir):
             # Fallback to local script relative directory if running in dev/test
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            dev_template_dir = os.path.join(os.path.dirname(script_dir), "welcome_templates")
+            dev_template_dir = os.path.join(os.path.dirname(script_dir), "dovecot", "welcome_templates")
+            if not os.path.isdir(dev_template_dir):
+                dev_template_dir = os.path.join(script_dir, "templates")
             if os.path.isdir(dev_template_dir):
                 template_dir = dev_template_dir
 

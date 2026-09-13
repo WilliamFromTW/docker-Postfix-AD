@@ -187,6 +187,9 @@ chmod -R 755 /usr/lib/dovecot/sieve-pipe
 # 首次登入歡迎信 (First-Login Welcome Email) 初始化
 # -------------------------------------------------------------
 mkdir -p /etc/dovecot/welcome_templates
+if [ -d "/usr/lib/dovecot/sieve-pipe/templates" ]; then
+  cp -rf /usr/lib/dovecot/sieve-pipe/templates/* /etc/dovecot/welcome_templates/ 2>/dev/null || true
+fi
 chown -R vmail:vmail /etc/dovecot/welcome_templates
 chmod -R 755 /etc/dovecot/welcome_templates
 

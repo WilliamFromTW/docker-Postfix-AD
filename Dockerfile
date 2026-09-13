@@ -17,7 +17,6 @@ COPY listen.conf /etc/rsyslog.d/listen.conf
 COPY postfix_config/ /etc/postfix/
 COPY sysconfig/ /etc/sysconfig/
 COPY dovecot/ /etc/dovecot/
-COPY welcome_templates/ /etc/dovecot/welcome_templates/
 COPY opendkim/ /etc/opendkim/
 COPY rspamd/  /etc/rspamd/
 COPY clamd/clamd.d/   /etc/clamd.d/
